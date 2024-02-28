@@ -1,0 +1,38 @@
+<div class="flex flex-col gap-2 py-4 pt-0">
+  <a
+    id="{{ item.id }}"
+    class="flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent"
+    href="{{ url }}/chats/{{ item.id }}"
+    preload="mouseover"
+  >
+    <div class="flex w-full flex-col gap-1">
+      <div class="flex items-center">
+        <div class="flex items-center gap-2">
+          <div class="flex items-center justify-center space-x-2">
+            <div class="bg-muted rounded-full">
+              <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-user-round"><path d="M18 20a6 6 0 0 0-12 0"/><circle cx="12" cy="10" r="4"/><circle cx="12" cy="12" r="10"/></svg>
+            </div>
+            <div class="font-semibold">
+                {{ item.name }}
+            </div>
+          </div>
+          {% if item.workspace %}
+            <span class="flex py-[1px] px-3 text-[10px] bg-blue-500 rounded-full" title="{{ item.workspace }} hub">{{ item.workspace }}</span>
+          {% endif %}
+          {% if not item.read %}
+            <span class="flex h-2 w-2 rounded-full bg-blue-600" title="message not read"></span>
+          {% else %}
+            <span class="flex h-2 w-2 rounded-full bg-blue-800" title="message read"></span>
+          {% endif %}
+        </div>
+        <div class="ml-auto text-xs">
+          {{ formatDistanceToNow(item.date) }}
+        </div>
+      </div>
+      <div class="text-xs font-medium">{{ item.subject }}</div>
+    </div>
+    <div class="line-clamp-2 text-xs text-muted-foreground">
+      {{ subString(item.markdown.text, 300) }}
+    </div>
+  </a>
+</div>

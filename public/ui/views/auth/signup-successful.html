@@ -1,0 +1,18 @@
+{% extends "views/layouts/base.html" %}
+
+{% block content %}
+<section class="relative container mt-8 py-24">
+  <div class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-96">
+    <div class="flex flex-col space-y-2 text-center">
+      <h1 class="z-50 text-2xl font-semibold tracking-tight">Sign up successful</h1>
+      <p class="z-50 text-sm text-muted-foreground">
+        Check your email to verify your Jetei account
+      </p>
+    </div>
+
+    <div class="mt-32 flex flex-col items-center justify-center px-8">
+      <img class="absolute top-10 md:top-5 z-20 w-4/5 md:w-2/5" src="/assets/images/confetti.png" alt="Signup succesful" />    
+    </div> 
+  </div>
+</section>
+{% endblock %}

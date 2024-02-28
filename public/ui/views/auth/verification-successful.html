@@ -1,0 +1,37 @@
+{% extends "views/layouts/base.html" %}
+
+{% block content %}
+<section class="relative container mt-8 py-24">
+  <div class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-96">
+    <div class="flex flex-col space-y-2 text-center">
+      <h1 class="z-50 text-2xl font-semibold tracking-tight">Account verification successful</h1>
+      <p class="z-50 text-sm text-muted-foreground">
+        Your knowlegde hub awaits, proceed to login. 
+      </p>
+      <a id="login_btn" href="/login" rel="noreferrer" class="btn-base-variant btn-base-size rounded-sm text-sm">Login</a>
+    </div>
+
+    <div class="mt-32 flex flex-col items-center justify-center px-8">
+      <img class="absolute top-10 md:top-5 z-20 w-4/5 md:w-2/5" src="/assets/images/confetti.png" alt="Verification succesful" />    
+    </div> 
+  </div>
+</section>
+<script nonce="{{ nonce }}">
+    /**
+     * @type {HTMLAnchorElement} 
+     */
+    let login_btn;
+
+    login_btn = document.getElementById('login_btn');
+
+    if (!login_btn) {
+        console.error('Button to proceed to login page not found')
+    } 
+
+    if (login_btn) {
+        setTimeout(() => {
+            window.location.href = '/login'
+        }, 3500)
+    }
+</script>
+{% endblock %}

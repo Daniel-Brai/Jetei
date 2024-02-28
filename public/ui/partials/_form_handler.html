@@ -1,0 +1,86 @@
+<script nonce="{{ nonce }}">
+  let form;
+
+  form = document.getElementById('{{ form_id }}');
+
+  if (!form) {
+    console.error('Form with name {{ form_name }} not found');
+    throw new Error('Form with name {{ form_name }} not found');
+  }
+
+  form.addEventListener('htmx:afterRequest', (event) => {
+    let response;
+    let message;
+    let desc;
+    let status;
+
+    /**
+     * @type {HTMLDivElement}
+     */
+    let toast_provider;
+
+    /**
+     * @type {HTMLDivElement}
+     */
+    let toast_close;
+
+    /**
+     * @type {HTMLParagraphElement}
+     */
+    let toast_title;
+
+    /**
+     * @type {HTMLParagraphElement}
+     */
+    let toast_desc;
+
+    form.reset();
+
+    try {
+      response = JSON.parse(event.detail.xhr.response);
+      message = response['api_message'];
+      desc = response['api_description'];
+      status = response['status_code'];
+    } catch (e) {
+      response = null;
+      status = event.detail.xhr.status;
+    }
+
+    toast_provider = document.getElementById('toast-provider');
+    toast_title = document.getElementById('toast-title');
+    toast_desc = document.getElementById('toast-description');
+    toast_close = document.getElementById('toast-close');
+
+    if (window.location.pathname !== '/login')  {
+      if (!toast_title) {
+        console.error('Toast title element not found');
+      }
+
+      if (!toast_desc) {
+        console.error('Toast description element not found');
+      }
+
+      if (!toast_provider) {
+        console.error('Toast provider element not found');
+      }
+    }
+   
+    if (status === 200 || status === 201) {
+      if (toast_close) {
+        toast_close.addEventListener('click', () => {
+          toast_provider.setAttribute('data-state', 'close');
+        });
+      }
+
+      if (window.location.pathname === '/login') {
+        window.location.href = '/workspace';
+      }
+
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+        setTimeout(() => {
+              window.location.href = '{{ redirectUrl }}';
+        }, 3500);
+      }
+    }
+  });
+</script>

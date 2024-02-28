@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="ip" content="{{ ip }}" />
+    <link rel="canonical" href="{{ canonicalURL }}" />
+    <link rel="shortcut icon" type="icon" href="/assets/favicon.ico" />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/assets/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/assets/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/assets/favicon-16x16.png"
+    />
+    <link rel="manifest" href="/assets/site.webmanifest" />
+    <title>{{ title }}</title>
+    <meta name="title" content="{{ title }}" />
+    <meta name="description" content="{{ description }}" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="{{ canonicalURL }}" />
+    <meta property="og:title" content="{{ title }}" />
+    <meta property="og:description" content="{{ description }}" />
+    <meta property="og:image" content="{{ ogImagePath }}" />
+
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="{{ canonicalURL }}" />
+    <meta property="twitter:title" content="{{ title }}" />
+    <meta property="twitter:description" content="{{ description }}" />
+    <meta property="twitter:image" content="{{ ogImagePath }}" />
+
+    <link rel="stylesheet" href="/assets/css/globals.min.css" />
+    <script nonce="{{ nonce }}" src="/assets/js/htmx.min.js"></script>
+    {% block js %}{% endblock %}
+  </head>
+  <body class="min-h-screen bg-background font-sans antialiased" hx-ext="loading-states">
+    <div class="relative flex min-h-screen flex-col">
+      {% include "partials/_header.html" %}
+      <main class="flex-auto">
+      {% block content %}{% endblock %}
+      </main>
+      {% include "partials/_footer_alt.html" %}
+    </div>
+    <script defer nonce="{{ nonce }}" src="/assets/js/preload.js"></script>
+    <script defer nonce="{{ nonce }}" src="/assets/js/loading-states.js"></script>
+  </body>
+</html>

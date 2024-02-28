@@ -1,0 +1,29 @@
+<footer class="border-t py-4 md:px-8 md:py-0">
+  <div
+    class="container flex flex-col items-center justify-center gap-4 md:h-16 md:flex-row"
+  >
+    <p
+      class="text-center text-sm leading-loose text-muted-foreground md:text-left"
+    >
+      &copy; {{ year }} Built by
+      <a
+        href="mailto:{{ author.email }}"
+        target="_blank"
+        rel="noreferrer"
+        class="ml-0.5 font-medium underline underline-offset-4"
+      >
+        {{ author.name }}
+      </a>
+      . The source code is available on
+      <a
+        href="{{ links.github }}"
+        target="_blank"
+        rel="noreferrer"
+        class="ml-0.5 font-medium underline underline-offset-4"
+      >
+         GitHub
+      </a>
+      .
+    </p>
+  </div>
+</footer>

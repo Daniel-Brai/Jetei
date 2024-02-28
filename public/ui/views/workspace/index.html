@@ -1,0 +1,223 @@
+{% extends "views/layouts/base.html" %} {% block content %}
+
+<div id="result"></div>
+
+<template id="toast">
+  <div
+    id="toast-renderer-{{ id }}"
+    class="fixed top-0 z-[100] hidden sm:flex max-h-screen w-full flex-col-reverse p-4 sm:right-4 sm:top-16 sm:flex-col md:max-w-[420px]"
+  >
+    <div
+      id="toast-provider"
+      class="group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full {% if type == 'success' %}toast-default{% elif type == 'error' %}toast-error{% endif %}"
+    >
+      <div
+        id="toast-close"
+        class="cursor-pointer absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600"
+      >
+        <div class="mx-auto">
+          <svg
+            class="size-4"
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-x"
+          >
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </div>
+      </div>
+      <div class="grid gap-1">
+        <p id="toast-title" class="text-sm font-semibold">
+          {% raw %}{{api_message}}{% endraw %}
+        </p>
+        <p id="toast-description" class="text-sm opacity-90">
+          {% raw %}{{api_description}}{% endraw %}
+        </p>
+      </div>
+    </div>
+  </div>
+</template>
+
+{% from "macros/icon.html" import folder_button, bookmark_button, draft_button %}
+
+<section class="container mt-12 grid-cols-1 sm:grid-cols-2" hx-ext="preload">
+  <div class="flex w-full flex-col space-y-6 sm:w-[600px]">
+    <div class="flex flex-col space-y-2 text-left">
+      <div class="text-2xl md:text-4xl font-semibold tracking-tight flex items-center w-full">
+        Welcome Back, {% if user %}{{ user.email }}{% else %}Daniel Brai{% endif %}
+      </div>
+    </div>
+
+    <div class="px-2 w-full -ml-2">
+      <div class="grid grid-cols-2 gap-y-4 gap-x-8 px-2 w-full">
+        <div class="-ml-2">
+          {{ folder_button(id="workspace-btn", text="Hubs",
+          href="workspace/hubs", btn_class="btn-secondary btn-lg rounded-md flex
+          items-center justify-center", svg_fill="#FFF" ) }}
+        </div>
+        <div class="-ml-2">
+          {{ bookmark_button(id="bookmark-btn", text="Bookmarks",
+          href="workspace/bookmarks", btn_class="btn-secondary btn-lg rounded-md
+          flex items-center justify-center", svg_fill="#FFF" ) }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex flex-col justify-around md:flex-row md:space-x-8">
+    <div
+      class="relative py-10 -mb-8 md:mt-6 flex flex-col md:py-10 text-white rounded-md"
+    >
+      <div
+        class="relative z-20 flex space-x-6 items-center justify-between text-lg font-medium -mt-2"
+      >
+        <span class="font-medium text-xl sm:text-2xl lg:text-2xl">
+          My Hubs
+        </span>
+        <div
+          class="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        >
+          <a href="{{ url }}/hubs/new">
+            <div
+              class="relative btn-outline rounded-md flex items-center px-3 py-2 space-x-2 cursor-pointer"
+            >
+              <div class="text-muted-foreground">
+                <svg
+                  class="size-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-plus-circle"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M8 12h8" />
+                  <path d="M12 8v8" />
+                </svg>
+              </div>
+              <p class="text-sm">Create Hub</p>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div class="relative z-20 my-6 w-full">
+        {% for item in hubs %} {% include "partials/_hubs_card.html" %} {% else
+        %}
+        <div
+          class="mt-4 mb-10 flex flex-col items-center justify-center space-y-4"
+        >
+          <img
+            class="w-36 h-48"
+            src="/assets/images/no-hubs.png"
+            alt="Empty Hub"
+          />
+          <p class="text-sm font-medium text-center">
+            Whoa! Looks like you don't have any hubs!
+          </p>
+        </div>
+        {% endfor %} {% if arrayLengthInString(hubs) > '2' %}
+        <div
+          class="w-32 mx-auto bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        >
+          <form>
+            <div
+              class="relative btn-outline rounded-md flex items-center px-3 py-2 mx-auto space-x-2 cursor-pointer"
+            >
+              <div class="text-muted-foreground">
+                <svg
+                  class="size-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-eye"
+                >
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </div>
+              <p class="text-sm">See more</p>
+            </div>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div
+      class="relative -mb-4 md:mt-6 flex flex-col md:py-10 text-white rounded-md"
+    >
+      <div
+        class="relative z-20 flex space-x-6 items-center justify-between text-lg font-medium -mt-2"
+      >
+        <span class="font-medium text-xl sm:text-2xl lg:text-2xl"> Chats </span>
+        {% from 'macros/form.html' import input_required %}
+        <div
+          class="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        >
+          <form>
+            <div class="relative">
+              <div class="absolute left-2 top-2.5 text-muted-foreground">
+                <svg
+                  class="size-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-search"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+              </div>
+              {{ input_required(type="search", extra_class="pl-10",
+              id="search-chats", name="search-chats", placeholder="Search for
+              chats") }}
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="relative z-20 my-6 w-full">
+        {% for item in chats %} {% include "partials/_chats_card.html" %} {%
+        else %}
+        <div class="mt-4 flex flex-col items-center justify-center space-y-4">
+          <img
+            class="w-32 h-48"
+            src="/assets/images/empty-mailbox.png"
+            alt="Empty Chats"
+          />
+          <p class="text-sm font-medium text-center">
+            You don't have any message yet!
+          </p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

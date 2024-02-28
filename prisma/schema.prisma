@@ -1,0 +1,165 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("PG_URL")
+}
+
+model User {
+  id              String            @id @default(uuid())
+  email           String            @unique @db.VarChar(255)
+  password        String            @db.VarChar(255)
+  role            UserRole          @default(OWNER)
+  profile         Profile?
+  isVerified      Boolean           @default(false)
+  hubs            Hub[]             @relation("HubOwner")
+  note            Note[]
+  chats           Chat[]
+  bookmarks       Bookmark[]
+  tokens          AuthToken[]
+  chatParticipant ChatParticipant[]
+  message         Message?          @relation("MessageSender")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([id, email])
+}
+
+model Hub {
+  id          String    @id @default(uuid())
+  name        String    @db.VarChar(255)
+  description String?
+  user        User      @relation("HubOwner", fields: [userId], references: [id])
+  userId      String    @unique
+  notes       Note[]    @relation("IsConnectedTo")
+  invitee     Invitee[] @relation("HubInvitee")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([id, userId])
+}
+
+model Invitee {
+  id        String      @id @default(uuid())
+  hubId     String
+  email     String      @unique
+  role      UserRole
+  tokens    AuthToken[]
+  hub       Hub         @relation("HubInvitee", fields: [hubId], references: [id])
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Profile {
+  id     Int     @id @default(autoincrement())
+  name   String?
+  avatar String?
+  bio    String?
+  user   User    @relation(fields: [userId], references: [id])
+  userId String  @unique
+}
+
+model AuthToken {
+  id                                 String   @id @default(uuid())
+  userId                             String?
+  inviteeId                          String?
+  user                               User?    @relation(fields: [userId], references: [id])
+  invitee                            Invitee? @relation(fields: [inviteeId], references: [id])
+  name                               String?
+  content                            String?
+  expiryTimeInSecsToBeElaspedFromNow Int
+  isBlackListed                      Boolean  @default(false)
+  createdAt                          DateTime @default(now())
+  updatedAt                          DateTime @updatedAt
+}
+
+model Note {
+  id          String   @id @default(uuid())
+  name        String
+  markdown    String?
+  text        String?
+  hub         Hub      @relation("IsConnectedTo", fields: [hubId], references: [id])
+  hubId       String
+  links       Link[]   @relation("SourceLinks")
+  targetLink  Link?    @relation("TargetLinks")
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Link {
+  id           String   @id @default(uuid())
+  sourceNote   Note     @relation("SourceLinks", fields: [sourceNoteId], references: [id])
+  sourceNoteId String
+  targetNote   Note?    @relation("TargetLinks", fields: [targetNoteId], references: [id])
+  targetNoteId String?  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([id, sourceNoteId, targetNoteId])
+}
+
+model Chat {
+  id              String            @id @default(uuid())
+  name            String?
+  type            ChatType          @default(DIRECT)
+  messages        Message[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  User            User?             @relation(fields: [userId], references: [id])
+  userId          String?
+  ChatParticipant ChatParticipant[]
+}
+
+model ChatParticipant {
+  id            String   @id @default(uuid())
+  chat          Chat     @relation(fields: [chatId], references: [id])
+  chatId        String
+  participant   User     @relation(fields: [participantId], references: [id])
+  participantId String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([chatId, participantId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  sender    User     @relation("MessageSender", fields: [senderId], references: [id])
+  senderId  String   @unique
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  chatId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum UserRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum ChatType {
+  DIRECT
+  GROUP
+}

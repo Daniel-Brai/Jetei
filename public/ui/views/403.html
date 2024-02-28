@@ -1,0 +1,108 @@
+{% extends "views/layouts/base.html" %} {% block content %}
+<div class="mt-32 flex flex-col items-center justify-center px-8">
+  <p class="text-sm text-muted-foreground">403</p>
+  <h1 class="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
+    Forbidden Access
+  </h1>
+  <p class="mb-4 leading-7 [&:not(:first-child)]:mt-6 text-center">
+    Sorry, you are unable to access that resource.
+  </p>
+  {% if not isAuthenticated() %}
+  <a
+    href="/"
+    rel="noreferrer"
+    class="btn-base-variant btn-base-size rounded-sm text-sm"
+  >
+    Go back home</a
+  >
+  {% else %}
+    <div class="mx-auto flex items-center justify-center space-x-5">
+      <div>
+        <a
+          href="/workspace"
+          rel="noreferrer"
+          class="btn-base-variant btn-base-size rounded-sm text-sm"
+        >
+          Go to workspace</a
+        >
+      </div>
+      <button
+        id="request-access-btn"
+        data-base="Request access"
+        data-success="Request access sent"
+        data-failure="Request access failed"
+        class="btn-base-size btn-outline px-2 text-sm flex items-center text-center justify-center rounded-md"
+      >
+        Request access
+      </button>
+    </div>
+    <script nonce="{{ nonce }}">
+
+      /**
+        * @typedef {Object} ApiResponse
+        * @property {number} status_code The HTTP status code.
+        * @property {Object | null} data The response data (if status is 400).
+      */
+
+      /**
+        * @typedef {"GET" | "POST" | "PUT" | "PATCH" | "DELETE"} RequestMethod
+      */
+
+      /**
+       * typedef {Object} Body
+       * @property {string} email - The email of the current user
+      */
+
+      /**
+        * Fetches data from a URL and returns a Promise resolving to an ApiResponse.
+        *
+        * @param {string} url The URL to fetch data from.
+        * @param {RequestMethod} method The HTTP method to use.
+        * @returns {Promise<Response>} A Promise resolving to an Response.
+      */
+      async function requestHandler(url, data, method='GET') {
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data)
+        });
+        return response;
+      }
+
+      const current_user_email = "{{ current_user.email }}"
+      const current_workspace = "{{ workspace }}"
+      const request_access_btn = document.getElementById('request-access-btn')
+      if(!request_access_btn) {
+        console.error('Unable to fulfill request access for resource')
+        throw new Error('Unable to fulfill request access for resource')
+      }
+      request_access_btn.addEventListener('click', async (e) => {
+        try {
+          let req = await requestHandler(`/api/v1/workspace/hubs/${current_workspace}/request-access`, { 'email': current_user_email }, 'POST')
+          let res = await req.json()
+        } catch(err) {
+          res = null
+        }
+
+        if(!res) {
+          request_access_btn.textContent = request_access_btn.dataset.failure;
+          setTimeout(() => {
+            request_access_btn.textContent = request_access_btn.dataset.base;
+          }, 3000)
+        }
+
+        if (res && res.status_code === 200) {
+          request_access_btn.textContent = request_access_btn.dataset.success;
+          setTimeout(() => {
+            request_access_btn.textContent = request_access_btn.dataset.base;
+          }, 2500)
+        } else if (res && res.status_code === 400) {
+          request_access_btn.textContent = request_access_btn.dataset.failure;
+        }
+      })
+    </script>
+  {% endif %}
+</div>
+{% endblock %}

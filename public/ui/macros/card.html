@@ -1,0 +1,25 @@
+<div className="flex flex-col gap-2 p-4 pt-0">
+  {% for item in items %}
+  <button
+    id="{{ item.id }}"
+    class="flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent"
+  >
+    <div class="flex w-full flex-col gap-1">
+      <div class="flex items-center">
+        <div class="flex items-center gap-2">
+          <div class="font-semibold">{{ item.name }}</div>
+          {% if not item.read %}
+            <span class="flex h-2 w-2 rounded-full bg-blue-600"></span>
+          {% endif %}
+        </div>
+        <div class="ml-auto text-xs">
+          {{ formatDistanceToNow(item.date) }}
+        </div>
+      </div>
+      <div class="text-xs font-medium">{{ item.subject }}</div>
+    </div>
+    <div class="line-clamp-2 text-xs text-muted-foreground">
+      {{ subString(item.name, 300) }}
+    </div>
+  </button>
+</div>

@@ -1,0 +1,55 @@
+{% macro input_required(name, id, extra_class="", type='text', placeholder='', pattern='', title='', minlength="1") %}
+<input
+  class="flex h-10 w-full {{ extra_class }} rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+  type="{{ type }}"
+  id="{{ id }}"
+  name="{{ name }}"
+  pattern="{{ pattern | e }}"
+  minlength="{{ minlength | int }}"
+  title="{{ title | e }}"
+  placeholder="{{ placeholder | e }}"
+  required
+/>
+{% endmacro %}
+
+{% macro input_required_no_pattern(name, id, extra_class="", type='text', placeholder='', title='', minlength="1") %}
+<input
+  class="flex h-10 w-full {{ extra_class }} rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+  type="{{ type }}"
+  id="{{ id }}"
+  name="{{ name }}"
+  minlength={{ minlength | int }}
+  title="{{ title | e }}"
+  placeholder="{{ placeholder | e }}"
+  required
+/>
+{% endmacro %}
+
+{% macro input_non_required(name, id, extra_class="", type='text', placeholder='', pattern='', title='', minlength="1") %}
+<input
+  class="flex h-10 w-full {{ extra_class | e }}rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+  type="{{ type }}"
+  id="{{ id }}"
+  name="{{ name }}"
+  pattern="{{ pattern | e }}"
+  minlength="{{ minlength | int }}"
+  title="{{ title | e }}"
+  placeholder="{{ placeholder | e }}"
+/>
+{% endmacro %}
+
+{% macro input_disabled(name, id, extra_class="", type='text', value) %}
+<input
+  class="flex h-10 w-full {{ extra_class | e }}rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+  type="{{ type }}"
+  id="{{ id }}"
+  name="{{ name }}"
+  value="{{ value }}"
+  disabled
+/>
+{% endmacro %}
+
+
+{% macro button(class, id='', type='submit', text) %}
+<button id="{{ id }}" type="{{ type }}" class="{{ class }} disabled:cursor-not-allowed disabled:opacity-50" data-loading-disable>{{ text | e }}</button>
+{% endmacro %}

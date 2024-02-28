@@ -1,0 +1,15 @@
+<div
+  class="border-border text-foreground/70 hover:bg-muted hover:text-foreground inline-flex max-w-fit items-center gap-2 rounded-md border px-3 py-1 text-sm"
+  title="Jetei Status: {{ status.name }}"
+>
+  {{ status.name }}
+  <span class="relative flex h-2 w-2">
+    {% if status.name == 'Operational' %}
+    <span
+      class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-500 opacity-75 duration-1000"
+    ></span>
+    {% else %}
+    <span class="relative inline-flex h-2 w-2 rounded-full {{ status.color }}"></span>
+    {% endif %}
+  </span>
+</div>
