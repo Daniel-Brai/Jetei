@@ -1,13 +1,11 @@
 import {
   Body,
   Post,
-  Get,
   Req,
-  Param,
   HttpCode,
   HttpStatus,
   UseGuards,
-  Res,
+  Query,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { RequestUser } from '@/interfaces';
@@ -42,9 +40,9 @@ export class AuthenticationController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('/verify-account/:token')
-  public async verify(@Param() params: UserVerifyAccountDto) {
-    return await this.authService.verify(params);
+  @Post('/verify-account')
+  public async verify(@Query() query: UserVerifyAccountDto) {
+    return await this.authService.verify(query);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -56,9 +54,9 @@ export class AuthenticationController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('/reset-password/:token')
+  @Post('/reset-password')
   public async resetPassword(
-    @Param('token') token: string,
+    @Query('token') token: string,
     @Body() body: UserResetPasswordDto,
   ) {
     return await this.authService.ResetPasswordByToken(token, body);

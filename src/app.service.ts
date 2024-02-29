@@ -120,9 +120,6 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }
@@ -157,9 +154,6 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }
@@ -217,9 +211,6 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }
@@ -255,9 +246,6 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }
@@ -292,9 +280,6 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }
@@ -326,9 +311,6 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }
@@ -372,9 +354,6 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }
@@ -409,9 +388,6 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }
@@ -444,9 +420,6 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }
@@ -479,9 +452,6 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }
@@ -517,9 +487,6 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.UNEXPECTED_RESULT,
-        {
-          cause: e,
-        },
       );
     }
   }
@@ -561,9 +528,6 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }
@@ -597,9 +561,6 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }
@@ -633,14 +594,14 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }
 
-  public async getWorkspaceHubs(req: Request, res: Response): Promise<void> {
+  public async getWorkspaceHubs(
+    req: RequestUser,
+    res: Response,
+  ): Promise<void> {
     this.logger.log(`Get Jetei Workspace Hubs page`);
 
     try {
@@ -650,15 +611,16 @@ export class AppService {
 
       setLocals(req, res);
 
-      return res.render('views/workspace/index', {
+      return res.render('views/workspace/hubs/index', {
         canonicalURL: canonicalURL,
-        title: `Your Workspace | ${this.siteConfig.name}`,
+        title: `Your Hubs | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
+        form_id: '/api/v1/hubs',
+        form_name: 'Hub get',
         hubs: hubs,
-        chats: chats,
         status: status,
         ...this.siteConfig,
       });
@@ -668,16 +630,13 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }
 
   public async getWorkspaceHubsCreate(
+    req: RequestUser,
     res: Response,
-    req: Request,
   ): Promise<void> {
     this.logger.log(`Get Jetei Workspace Hubs create page`);
 
@@ -690,9 +649,11 @@ export class AppService {
 
       return res.render('views/workspace/hubs/new', {
         canonicalURL: canonicalURL,
-        title: `Your Workspace | ${this.siteConfig.name}`,
+        title: `Create a Hub | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
+        form_id: '/api/v1/hubs',
+        form_name: 'Hub create',
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
         status: status,
@@ -704,9 +665,6 @@ export class AppService {
       });
       throw new InternalServerErrorException(
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-        {
-          cause: e,
-        },
       );
     }
   }

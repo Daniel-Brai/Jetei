@@ -11,13 +11,13 @@ export interface MailResult {
  */
 export interface IMailerBody {
   readonly to: string;
-  readonly from: string;
+  readonly from?: string;
   readonly subject: string;
   readonly text?: string;
   readonly html?: string;
   readonly templatePath?: string;
-  readonly data: {
-    name_or_email: string;
+  readonly data?: {
+    name_or_email?: string;
     url?: string;
   };
 }

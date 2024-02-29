@@ -29,6 +29,7 @@ export const MessageHelpers = {
   HTTP_INTERNAL_SERVER_ERROR: 'Internal Server Error',
   INVALID_TOKEN: 'Invalid token',
   UNEXPECTED_RESULT: 'Something went wrong, try again',
+  RETRIEVAL_ACTION_FAILED: 'Failed to fetch resource',
   UPDATE_ACTION_FAILED: 'Failed to update resource',
   USER_FORGOT_PASSWORD_FAILED: 'Failed to complete forgot password action',
   USER_ACCOUNT_NOT_EXISTING: 'Account does not exist',

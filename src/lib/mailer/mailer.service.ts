@@ -6,10 +6,10 @@ import { MailerAdapter } from './mailer.adapters';
 export class MailerService implements IMailerService {
   private readonly logger = new Logger(MailerService.name);
 
-  constructor(private readonly mailerAdapter: MailerAdapter) { }
+  constructor(private readonly mailerAdapter: MailerAdapter) {}
 
   public async sendEmail(
-    provider: string,
+    provider: 'brevo' | 'base',
     body: IMailerBody,
   ): Promise<MailResult> {
     this.logger.log(`Send an email to ${body.to}`);

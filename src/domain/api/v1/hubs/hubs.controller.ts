@@ -24,7 +24,9 @@ export class HubsController {
   @UseGuards(AuthenticatedGuard)
   @HttpCode(HttpStatus.OK)
   @Get()
-  public async getUserHubs(@Req() req: RequestUser) {}
+  public async getUserHubs(@Req() req: RequestUser) {
+    return await this.hubsService.getUserHubs(req);
+  }
 
   @UseGuards(AuthenticatedGuard)
   @HttpCode(HttpStatus.OK)
@@ -32,7 +34,9 @@ export class HubsController {
   public async getUserHubById(
     @Req() req: RequestUser,
     @Param('hubId', ParseUUIDPipe) hubId: string,
-  ) {}
+  ) {
+    return await this.hubsService.getUserHubDetailsById(req, hubId);
+  }
 
   @UseGuards(AuthenticatedGuard)
   @HttpCode(HttpStatus.CREATED)
@@ -64,5 +68,7 @@ export class HubsController {
   public async deleteHubById(
     @Req() req: RequestUser,
     @Param('hubId', ParseUUIDPipe) hubId: string,
-  ) {}
+  ) {
+    return await this.hubsService.deleteUserHubById(req, hubId);
+  }
 }

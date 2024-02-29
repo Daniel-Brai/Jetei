@@ -1,4 +1,12 @@
-import { Controller, Get, Req, Res, Param, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Req,
+  Res,
+  Param,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthenticatedGuard } from '@/domain/api/v1/authentication/guards/authenticated.guard';
 import { RequestUser } from '@/interfaces';
@@ -91,5 +99,17 @@ export class AppController {
   @Get('/workspace')
   async getWorkspace(@Req() req: RequestUser, @Res() res: Response) {
     return await this.appService.getWorkspace(req, res);
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Get('/workspace/hubs')
+  async getWorkspaceHubs(@Req() req: RequestUser, @Res() res: Response) {
+    return await this.appService.getWorkspaceHubs(req, res);
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Get('/workspace/hubs/new')
+  async getWorkspaceHubsCreate(@Req() req: RequestUser, @Res() res: Response) {
+    return await this.appService.getWorkspaceHubsCreate(req, res);
   }
 }

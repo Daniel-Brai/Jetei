@@ -191,4 +191,152 @@ export class HubsService {
       throw new BadRequestException(this.messageHelpers.CREATE_ACTION_FAILED);
     }
   }
+
+  /**
+   * Get the authenticated user hubs
+   * @param req The request object
+   * @returns {Promise<Partial<APIResponse<Array<Hub>>>>} The user hubs
+   */
+  public async getUserHubs(
+    req: RequestUser,
+  ): Promise<Partial<APIResponse<Array<Hub>>>> {
+    this.logger.log(`Get user ${req.user.id} hubs`);
+    try {
+      const hubs = await this.prisma.$transaction(async (tx) => {
+        const foundUser = await tx.user.findUnique({
+          where: {
+            id: req.user.id,
+          },
+          include: {
+            hubs: true,
+          },
+        });
+
+        if (!foundUser) {
+          throw new Error(this.messageHelpers.USER_ACCOUNT_NOT_EXISTING);
+        }
+
+        if (!foundUser.hubs) {
+          return null;
+        }
+        return foundUser.hubs;
+      });
+      return {
+        status_code: 200,
+        data: hubs,
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelpers.CREATE_ACTION_FAILED, {
+        context: `Get user ${req.user.id} hubs`,
+        error: e,
+      });
+      throw new BadRequestException(
+        this.messageHelpers.RETRIEVAL_ACTION_FAILED,
+      );
+    }
+  }
+
+  /**
+   * Get a user hub details by id
+   * @param {RequestUser} req The request object
+   * @param {string} hubId The id of the hub
+   * @returns {Promise<Partial<APIResponse<Hub>>>} The matched hub with its details
+   */
+  public async getUserHubDetailsById(
+    req: RequestUser,
+    hubId: string,
+  ): Promise<Partial<APIResponse<Hub>>> {
+    this.logger.log(
+      `Get the details of a user hub with userId ${req.user.id} and hubId ${hubId}`,
+    );
+    try {
+      const hub = await this.prisma.$transaction(async (tx) => {
+        const foundUser = await tx.user.findUnique({
+          where: {
+            id: req.user.id,
+          },
+        });
+
+        if (!foundUser) {
+          throw new Error(this.messageHelpers.USER_ACCOUNT_NOT_EXISTING);
+        }
+
+        const foundUserHub = await tx.hub.findUnique({
+          where: {
+            userId: foundUser.id,
+            id: hubId,
+          },
+          include: {
+            invitee: true,
+          },
+        });
+
+        if (!foundUserHub) {
+          throw new Error(this.messageHelpers.HUB_NOT_FOUND);
+        }
+        return foundUserHub;
+      });
+      return {
+        status_code: 200,
+        data: hub,
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelpers.RETRIEVAL_ACTION_FAILED, {
+        context: `Get user hub with id ${hubId}`,
+        error: e,
+      });
+      throw new BadRequestException(
+        this.messageHelpers.RETRIEVAL_ACTION_FAILED,
+      );
+    }
+  }
+
+  /**
+   * Removes a user hub
+   * @param {RequestUser} req The request object
+   * @param {string} hubId The id of hub
+   * @returns {Promise<Partial<APIResponse<any>>>}
+   */
+  public async deleteUserHubById(
+    req: RequestUser,
+    hubId: string,
+  ): Promise<Partial<APIResponse<any>>> {
+    this.logger.log(`Delete hub with userid ${req.user.id} and hubId ${hubId}`);
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const foundUser = await tx.user.findUnique({
+          where: {
+            id: req.user.id,
+          },
+        });
+
+        if (!foundUser) {
+          throw new Error(this.messageHelpers.USER_ACCOUNT_NOT_EXISTING);
+        }
+
+        const foundUserHubToBeDeleted = await tx.hub.delete({
+          where: {
+            userId: foundUser.id,
+            id: hubId,
+          },
+        });
+
+        if (!foundUserHubToBeDeleted) {
+          throw new Error(
+            `${this.messageHelpers.RETRIEVAL_ACTION_FAILED} and ${this.messageHelpers.DELETE_ACTION_FAILED}`,
+          );
+        }
+      });
+      return {
+        status_code: 200,
+        api_message: 'Your hub has been deleted successfully',
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelpers.DELETE_ACTION_FAILED, {
+        context: `Delete user hub with id ${hubId}`,
+        error: e,
+      });
+      throw new BadRequestException(this.messageHelpers.DELETE_ACTION_FAILED);
+    }
+  }
 }

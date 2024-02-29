@@ -153,26 +153,12 @@ export class AuthenticationService {
           throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
         }
 
-        await this.mailerService.sendEmail('brevo', {
-          subject: 'Jetei Account Verification',
+        await this.mailerService.sendEmail('base', {
+          subject: 'Jetei Account Created',
           to: newUser.email,
-          from: `danielbrai.code@gmail.com`,
-          html: `
-          <html>
-            <body>
-              <h3>Dear {{ params.receiver }},</h3>
-
-              <p>Thank you for registering for Kida. To complete your registration and activate your accont, please click on the following link:</p>
-
-              <a href='{{ params.url }}'>{{ params.url }}</a>
-
-              <p>Please note that this link will expire within 4 hours.</p>
-            </body>
-          </html>
-        `,
+          templatePath: './registration-successful',
           data: {
             url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/verification?token=${jwtToken}` : `${this.appConfig.environment.NODE_ENV}/verification?token=${jwtToken}`}`,
-            name_or_email: `${newUser.email.split('@')[0]}`,
           },
         });
       });
@@ -218,7 +204,7 @@ export class AuthenticationService {
   public async verify(params: UserVerifyAccountDto): Promise<APIResponse<any>> {
     this.logger.log('Verify user account by token');
     try {
-      const user = await this.prisma.$transaction(async (tx) => {
+      await this.prisma.$transaction(async (tx) => {
         const authToken = await tx.authToken.findFirst({
           where: {
             content: params.token,
@@ -275,7 +261,14 @@ export class AuthenticationService {
         if (!updatedUser) {
           throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
         }
-        return updatedUser;
+        await this.mailerService.sendEmail('base', {
+          subject: 'Jetei Account Verification',
+          to: foundUser.email,
+          templatePath: './verification-successful',
+          data: {
+            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/login` : `${this.appConfig.environment.NODE_ENV}/login`}`,
+          },
+        });
       });
       return {
         type: 'success',
@@ -302,7 +295,7 @@ export class AuthenticationService {
   ): Promise<APIResponse<any>> {
     this.logger.log(`Forget password of user with email: ${data.email}`);
     try {
-      const user = await this.prisma.$transaction(async (tx) => {
+      await this.prisma.$transaction(async (tx) => {
         const foundUser = await tx.user.findUniqueOrThrow({
           where: {
             email: data.email,
@@ -351,7 +344,14 @@ export class AuthenticationService {
         if (!updatedUser) {
           throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
         }
-        return updatedUser;
+        await this.mailerService.sendEmail('base', {
+          subject: 'Jetei Account Reset Password',
+          to: updatedUser.email,
+          templatePath: './reset-password-started',
+          data: {
+            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/reset-password?token=${jwtToken}` : `${this.appConfig.environment.NODE_ENV}/account/reset-password?token=${jwtToken}`}`,
+          },
+        });
       });
       return {
         type: 'success',
@@ -379,7 +379,7 @@ export class AuthenticationService {
   ): Promise<APIResponse<any>> {
     this.logger.log(`Reset password of user with email: ${data.email}`);
     try {
-      const user = await this.prisma.$transaction(async (tx) => {
+      await this.prisma.$transaction(async (tx) => {
         const foundToken = await tx.authToken.findFirstOrThrow({
           where: {
             content: token,
@@ -433,7 +433,14 @@ export class AuthenticationService {
         if (!updatedUser) {
           throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
         }
-        return updatedUser;
+        await this.mailerService.sendEmail('base', {
+          subject: 'Jetei Account Reset Password Done',
+          to: updatedUser.email,
+          templatePath: './reset-password-done',
+          data: {
+            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/login` : `${this.appConfig.environment.NODE_ENV}/login`}`,
+          },
+        });
       });
       return {
         type: 'success',
