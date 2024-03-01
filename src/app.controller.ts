@@ -42,7 +42,10 @@ export class AppController {
   }
 
   @Get('/signup')
-  async getSignup(@Req() req: Request, @Res() res: Response) {
+  async getSignup(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     return await this.appService.getSignup(req, res);
   }
 

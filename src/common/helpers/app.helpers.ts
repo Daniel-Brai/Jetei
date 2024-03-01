@@ -3,6 +3,8 @@ import { formatDistanceToNow } from 'date-fns';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
+import * as markdownit from 'markdown-it';
+import * as sanitizeHtml from 'sanitize-html';
 import { v4 as uuidv4 } from 'uuid';
 import { ISiteLocals, RequestUser } from '@/interfaces';
 import { JwtPayload, JwtOptions } from '@/types';
@@ -11,6 +13,11 @@ import { AppConfig, SiteConfig } from '@/lib/config/config.provider';
 const salt = AppConfig.authentication.HASHING_SALT_OR_ROUNDS;
 const secret_key = AppConfig.authentication.SESSION_SECRET_KEY;
 const issuer = SiteConfig.name;
+const md = new markdownit({
+  html: true,
+  linkify: true,
+  breaks: true,
+});
 
 /**
  * Helpers for default messages given an action occurs
@@ -94,6 +101,68 @@ export const SiteHelpers = {
       return '0';
     }
     return `${arr.length}`;
+  },
+  /**
+   * Get the text in the markdown
+   * @param {string} markdownText The markdown edit
+   * @returns {string} The string in the markdown
+   */
+  stripMarkdown: (markdownText: string): string => {
+    markdownText = markdownText.replace(
+      /(\*|_)(.*?)(\*|_)/g,
+      (match, p1, p2, p3) => `${p1}${p2}${p3}`,
+    );
+    markdownText = markdownText.replace(
+      /\[(.*?)\]\((.*?)\)/g,
+      (match, p1, p2) => `${p1} (${p2})`,
+    );
+    markdownText = markdownText.replace(/`(.*?)`/g, (match, p1) => p1);
+    markdownText = markdownText.replace(
+      /`(.*?)`/gs,
+      (match, p1) => `\n${p1}\n`,
+    );
+
+    markdownText = markdownText.replace(
+      /(?<=^|\n)(#+)(.*?)\n/gm,
+      (match, p1, p2) => `${p2}\n`,
+    );
+
+    markdownText = markdownText.replace(
+      /(?<=^|\n)([-*+]\s+)(.*?)\n/gm,
+      (match, p1, p2) => `${p2}\n`,
+    );
+
+    markdownText = markdownText.replace(
+      /(?<=^|\n)>(.*?)\n/gm,
+      (match, p1) => `${p1}\n`,
+    );
+
+    markdownText = markdownText.replace(
+      /(?<=^|\n)(---|\*\*\*|\−{3,})\n/gm,
+      '\n',
+    );
+
+    markdownText = markdownText.replace(
+      /(?<=^|\n)\| (.*?)\|\n(.*?)\|\n/gm,
+      (match, p1, p2) => `${p1}\n${p2}\n`,
+    );
+
+    markdownText = markdownText.replace(
+      /!\[(.*?)\]\((.*?)\)/g,
+      (match, p1, p2) => (p1 ? `${p1}` : ''),
+    );
+
+    return markdownText;
+  },
+  /**
+   * Coverts markdown string to a santized html
+   * @param {string} markdownText The markdown source text
+   * @returns {Promise<string>} The html string
+   */
+  markdownToHtml: (markdownText: string): string => {
+    const html = md.render(markdownText);
+    const cleanHTML = sanitizeHtml(html);
+    return cleanHTML;
   },
   /**
    * Get the canoncial url of the site

@@ -13,6 +13,7 @@ import {
   UserVerifyAccountDto,
 } from './dtos/authentication.dtos';
 import { AppConfig } from '@/lib/config/config.provider';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthenticationService {
@@ -153,14 +154,14 @@ export class AuthenticationService {
           throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
         }
 
-        await this.mailerService.sendEmail('base', {
-          subject: 'Jetei Account Created',
-          to: newUser.email,
-          templatePath: './registration-successful',
-          data: {
-            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/verification?token=${jwtToken}` : `${this.appConfig.environment.NODE_ENV}/verification?token=${jwtToken}`}`,
-          },
-        });
+        // await this.mailerService.sendEmail('base', {
+        //   subject: 'Jetei Account Created',
+        //   to: newUser.email,
+        //   templatePath: './registration-successful',
+        //   data: {
+        //     url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/verification?token=${jwtToken}` : `${this.appConfig.environment.NODE_ENV}/verification?token=${jwtToken}`}`,
+        //   },
+        // });
       });
       return {
         type: 'success',
@@ -181,13 +182,13 @@ export class AuthenticationService {
    * @param {RequestUser} req The request user
    * @returns {void} Passes the user to request object
    */
-  public login(req: RequestUser): void {
+  public async login(req: RequestUser, res: Response): Promise<void> {
     this.logger.log(`Log in user`);
     try {
-      if (!req.user.isVerified) {
-        throw new Error(this.messageHelper.USER_VERIFICATION_FAILED);
-      }
-      return;
+      // if (!req.user.isVerified) {
+      //   throw new Error(this.messageHelper.USER_VERIFICATION_FAILED);
+      // }
+      return res.redirect('/workspace');
     } catch (e) {
       this.logger.error(this.messageHelper.USER_LOGIN_FAILED, {
         error: e,
@@ -456,6 +457,144 @@ export class AuthenticationService {
         },
       });
       throw new BadRequestException(this.messageHelper.INVALID_TOKEN);
+    }
+  }
+
+  /**
+   * Set the user token per login
+   * @param {RequestUser} req The request object
+   * @return {Promise<void>}
+   */
+  public async setUserToken(req: RequestUser, res: Response) {
+    this.logger.log(`Set the user jwt token for websocket concnetion`);
+    try {
+      if (!req.user.id) {
+        throw new Error(this.messageHelper.USER_VALIDATION_FAILED);
+      }
+      const token = await this.prisma.$transaction(async (tx) => {
+        const foundUser = await tx.user.findUnique({
+          where: {
+            id: req.user.id,
+          },
+        });
+        if (!foundUser) {
+          throw new Error(this.messageHelper.RETRIEVAL_ACTION_FAILED);
+        }
+
+        const expiryTimeInSecondstoElaspedFromNow =
+          this.authHelper.getEpochSecondsFromCreatedAt(
+            new Date().toISOString(),
+          ) + this.appConfig.authentication.COOKIE_MAX_AGE;
+
+        /**
+         * Note: JWT Token expiry would be the max age of a cookie so that Websocket connection will persist
+         */
+        const jwtToken = await this.authHelper.signPayload(
+          {
+            id: foundUser.id,
+            email: foundUser.email,
+          },
+          {
+            expiry_time_in_secs: this.appConfig.authentication.COOKIE_MAX_AGE,
+            subject: 'Jetei Session Persist JWT Token',
+          },
+        );
+
+        if (!jwtToken) {
+          throw new Error(
+            `${this.messageHelper.UNEXPECTED_RESULT} for JWT Token Creation`,
+          );
+        }
+
+        const updatedUser = await tx.user.update({
+          where: {
+            id: foundUser.id,
+          },
+          data: {
+            tokens: {
+              create: [
+                {
+                  name: `user_tokens:${foundUser.id}`,
+                  content: jwtToken,
+                  expiryTimeInSecsToBeElaspedFromNow: Number(
+                    expiryTimeInSecondstoElaspedFromNow,
+                  ),
+                },
+              ],
+            },
+          },
+        });
+
+        if (!updatedUser) {
+          throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
+        }
+
+        const foundToken = await tx.authToken.findFirst({
+          where: {
+            content: jwtToken,
+          },
+        });
+
+        if (!foundToken) {
+          throw new Error(this.messageHelper.RETRIEVAL_ACTION_FAILED);
+        }
+
+        return foundToken;
+      });
+      res.set('Authorization', `Bearer ${token.content} ${token.id}`);
+    } catch (e) {
+      this.logger.error(this.messageHelper.UPDATE_ACTION_FAILED, {
+        context: `Set user token for user ${req.user.id}`,
+        error: e,
+      });
+      throw new Error(e);
+    }
+  }
+  /**
+   * Invalidate user token on logout or expiry time
+   * @param req The request object
+   * @returns {Promise<void>}
+   */
+  public async invalidateUserToken(req: RequestUser, res: Response) {
+    this.logger.log(`Invalidate token for user ${req.user.id}`);
+    try {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        throw new Error(this.messageHelper.HTTP_UNAUTHORIZED);
+      }
+
+      const tokenId = authHeader.split(' ')[2];
+
+      await this.prisma.$transaction(async (tx) => {
+        const foundUser = await tx.user.findUnique({
+          where: {
+            id: req.user.id,
+          },
+        });
+        if (!foundUser) {
+          throw new Error(this.messageHelper.RETRIEVAL_ACTION_FAILED);
+        }
+        const updatedToken = await tx.authToken.update({
+          where: {
+            id: tokenId,
+          },
+          data: {
+            isBlackListed: true,
+          },
+        });
+
+        if (!updatedToken) {
+          throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
+        }
+      });
+      return res.set('Authorization', 'Bearer ');
+    } catch (e) {
+      this.logger.error(this.messageHelper.UPDATE_ACTION_FAILED, {
+        context: `Failed to invalidate token for user ${req.user.id}`,
+        error: e,
+      });
+      throw new Error(e);
     }
   }
 }

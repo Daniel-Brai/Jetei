@@ -13,6 +13,7 @@ export interface ISiteLocals {
   subString?: (text: string, end: string | number) => string;
   stringLength: (text: string) => number;
   authenticatedUser: () => any;
+  stripMarkdownToString?: (markdown: string) => string;
 }
 
 /**

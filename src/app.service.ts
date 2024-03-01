@@ -158,9 +158,9 @@ export class AppService {
     }
   }
 
-  public getLogout(req: RequestUser, res: Response) {
+  public async getLogout(req: RequestUser, res: Response) {
     this.logger.log(`Log out authenticated user`);
-    req.session.destroy((err: Error) => {
+    req.session.destroy(async (err: Error) => {
       if (err) {
         this.logger.error(this.messageHelpers.USER_LOGOUT_FAILED, {
           error: err,
@@ -177,7 +177,7 @@ export class AppService {
         api_description: 'Proceeding to homepage...',
       };
     });
-    res.redirect(301, '/');
+    return res.redirect(302, '/');
   }
 
   public async getSignup(req: Request, res: Response): Promise<void> {

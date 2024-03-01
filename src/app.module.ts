@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TerminusModule } from '@nestjs/terminus';
 import { LoggerModule, Params } from 'nestjs-pino';
+import { AppMiddleware } from '@/common/app.middlewares';
 import { AppConfig, SiteConfig } from '@/lib/config/config.provider';
 import { APIV1Module } from '@/domain/api/v1/api-v1.module';
 import { PrismaModule } from '@/infra/gateways/database/prisma/prisma.module';
@@ -31,6 +32,6 @@ const node_env = AppConfig.environment.NODE_ENV;
     TerminusModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, AppMiddleware],
 })
 export class AppModule {}
