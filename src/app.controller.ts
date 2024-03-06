@@ -3,9 +3,10 @@ import {
   Get,
   Req,
   Res,
-  Param,
   UseGuards,
   Query,
+  Param,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthenticatedGuard } from '@/domain/api/v1/authentication/guards/authenticated.guard';
@@ -42,10 +43,7 @@ export class AppController {
   }
 
   @Get('/signup')
-  async getSignup(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async getSignup(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getSignup(req, res);
   }
 
@@ -98,21 +96,84 @@ export class AppController {
     return await this.appService.getResetPasswordConfirmed(req, res);
   }
 
-  @UseGuards(AuthenticatedGuard)
+  // @UseGuards(AuthenticatedGuard)
   @Get('/workspace')
   async getWorkspace(@Req() req: RequestUser, @Res() res: Response) {
     return await this.appService.getWorkspace(req, res);
   }
 
-  @UseGuards(AuthenticatedGuard)
+  // @UseGuards(AuthenticatedGuard)
   @Get('/workspace/hubs')
   async getWorkspaceHubs(@Req() req: RequestUser, @Res() res: Response) {
     return await this.appService.getWorkspaceHubs(req, res);
   }
 
-  @UseGuards(AuthenticatedGuard)
+  // @UseGuards(AuthenticatedGuard)
   @Get('/workspace/hubs/new')
   async getWorkspaceHubsCreate(@Req() req: RequestUser, @Res() res: Response) {
     return await this.appService.getWorkspaceHubsCreate(req, res);
+  }
+
+  @Get('/workspace/hubs/add-invitee')
+  async getWorkspaceAddHubInvitee(
+    @Req() req: RequestUser,
+    @Res() res: Response,
+  ) {
+    return await this.appService.getWorkspaceHubAddInvitee(req, res);
+  }
+
+  @Get('/workspace/hubs/:hubId')
+  async getWorkspaceHubById(
+    @Param('hubId', ParseUUIDPipe) hubId: string,
+    @Req() req: RequestUser,
+    @Res() res: Response,
+  ) {
+    return await this.appService.getWorkspaceHubById(hubId, req, res);
+  }
+
+  @Get('/workspace/hubs/:hubId/edit')
+  async getWorkspaceHubsEdit(
+    @Param('hubId', ParseUUIDPipe) hubId: string,
+    @Req() req: RequestUser,
+    @Res() res: Response,
+  ) {
+    return await this.appService.getWorkspaceHubsEdit(hubId, req, res);
+  }
+
+  @Get('/workspace/hubs/:hubId/notes/new')
+  async getWorkspaceHubByIdAddNewNote(
+    @Param('hubId', ParseUUIDPipe) hubId: string,
+    @Req() req: RequestUser,
+    @Res() res: Response,
+  ) {
+    return await this.appService.getWorkspaceHubCreateNewNote(hubId, req, res);
+  }
+
+  @Get('/workspace/hubs/:hubId/notes/:noteId/edit')
+  async getWorkspaceHubByIdNoteByIdEdit(
+    @Param('hubId', ParseUUIDPipe) hubId: string,
+    @Param('noteId', ParseUUIDPipe) noteId: string,
+    @Req() req: RequestUser,
+    @Res() res: Response,
+  ) {
+    return await this.appService.getWorkspaceHubByIdNoteByIdEdit(
+      hubId,
+      noteId,
+      req,
+      res,
+    );
+  }
+
+  @Get('/workspace/hubs/invitees/:inviteeId/edit')
+  async getWorkspaceHubInviteeEdit(
+    @Param('inviteeId', ParseUUIDPipe) inviteeId: string,
+    @Req() req: RequestUser,
+    @Res() res: Response,
+  ) {
+    return await this.appService.getWorkspaceHubInviteeEdit(
+      inviteeId,
+      req,
+      res,
+    );
   }
 }

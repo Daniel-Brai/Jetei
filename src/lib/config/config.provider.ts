@@ -12,15 +12,16 @@ const configService = new ConfigService();
 export const AppConfig: IAppConfig = {
   environment: {
     NODE_ENV: configService.getOrThrow<string>('NODE_ENV'),
-    PORT: configService.get<number>('PORT'),
+    PORT: configService.get<number>('PORT') || 3000,
     PROD_URL: configService.get<string>('PROD_URL'),
   },
   authentication: {
     HASHING_SALT_OR_ROUNDS: configService.get<string | number>(
       'HASHING_SALT_OR_ROUNDS',
     ),
-    SESSION_SECRET_KEY: configService.getOrThrow<string>('SESSION_SECRET_KEY'),
-    COOKIE_MAX_AGE: Number(configService.getOrThrow<number>('COOKIE_MAX_AGE')),
+    ACCESS_JWT_TOKEN_SECRET_KEY: configService.getOrThrow<string>(
+      'ACCESS_JWT_TOKEN_SECRET_KEY',
+    ),
   },
   database: {
     pg: {
@@ -37,10 +38,10 @@ export const AppConfig: IAppConfig = {
       SENDWAVE_API_KEY: configService.get<string>('SENDWAVE_API_KEY'),
     },
     smtp: {
-      SMTP_HOST: configService.get<string>('SMTP_HOST'),
-      SMTP_PORT: Number(configService.get<number>('SMTP_PORT')),
-      SMTP_EMAIL_ADDRESS: configService.get<string>('SMTP_EMAIL_ADDRESS'),
-      SMTP_PASSWORD: configService.get<string>('SMTP_PASSWORD'),
+      SMTP_HOST: configService.getOrThrow<string>('SMTP_HOST'),
+      SMTP_PORT: Number(configService.getOrThrow<number>('SMTP_PORT')),
+      SMTP_EMAIL_ADDRESS: configService.getOrThrow<string>('SMTP_EMAIL_ADDRESS'),
+      SMTP_PASSWORD: configService.getOrThrow<string>('SMTP_PASSWORD'),
     },
   },
 };

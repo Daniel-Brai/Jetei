@@ -111,6 +111,26 @@
     @apply border bg-background text-foreground;
   }
 
+  .tooltip-container {
+   position: relative;
+    display: inline-block;
+  }
+
+  .tooltiptext {
+    @apply bg-secondary text-secondary-foreground px-6 w-fit text-center py-2 text-[10px] ;
+    visibility: hidden;
+    position: absolute;
+    z-index: 1;
+    bottom: 90%;
+    right: 90%;
+    transform: translateX(-50%);
+    border-radius: 12px;
+  }
+
+  .tooltip-container:hover .tooltiptext {
+    visibility: visible;
+  }
+
   [data-loading] {
     display: none;
   }
@@ -147,6 +167,10 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  option {
+    @apply text-muted-foreground;
   }
 
   .toast-error {

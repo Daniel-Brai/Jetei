@@ -48,7 +48,7 @@ export class MailerProcessor {
         template: job.data.templatePath,
         context: {
           url: job.data.data.url,
-          email: job.data.to,
+          to: job.data.to,
         },
       });
     } catch (e) {

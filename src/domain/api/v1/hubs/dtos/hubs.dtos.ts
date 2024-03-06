@@ -5,9 +5,18 @@ import {
   IsEnum,
   IsString,
   IsOptional,
+  IsUUID,
 } from 'class-validator';
 
 export class InviteeToHubDto {
+  @IsUUID()
+  @IsDefined()
+  public hubId: string;
+
+  @IsString()
+  @IsDefined()
+  public name: string;
+
   @IsEmail()
   @IsDefined()
   public email: string;

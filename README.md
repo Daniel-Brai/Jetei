@@ -1,6 +1,4 @@
-<p align="center">
-  <a style="font-size: 36px;" href="https://github.com/Daniel-Brai/Jetei">Jetei</a>
-</p>
+# Jetei
 
 ![image](https://github.com/Daniel-Brai/Jetei/assets/88239970/d72ee59b-c428-4619-a892-4fb948d90ae4)
 

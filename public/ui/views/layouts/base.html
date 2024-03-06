@@ -50,9 +50,9 @@
     <div class="relative flex min-h-screen flex-col">
       {% include "partials/_header.html" %}
       <main class="flex-auto">
-      {% block content %}{% endblock %}
+        {% block content %}{% endblock %}
       </main>
-      {% include "partials/_footer_alt.html" %}
+      {% block footer %} {% endblock %}
     </div>
     <script defer nonce="{{ nonce }}" src="/assets/js/preload.js"></script>
     <script defer nonce="{{ nonce }}" src="/assets/js/loading-states.js"></script>

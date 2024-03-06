@@ -14,6 +14,7 @@ import { PrefixedController } from '@/common/decorators/app.decorators';
 import { AuthenticationService } from './authentication.service';
 import {
   UserForgetPasswordDto,
+  UserLoginDto,
   UserResetPasswordDto,
   UserSignUpDto,
   UserVerifyAccountDto,
@@ -28,20 +29,17 @@ export class AuthenticationController {
   @HttpCode(HttpStatus.CREATED)
   @Post('/signup')
   public async signup(@Body() body: UserSignUpDto) {
-    return await this.authService.signup({
-      email: body.email,
-      password: body.password,
-    } as Prisma.UserCreateInput);
+    return await this.authService.signup(body);
   }
 
   @UseGuards(LocalGuard)
   @HttpCode(HttpStatus.OK)
   @Post('/login')
   public async login(
-    @Req() req: RequestUser,
+    @Body() body: UserLoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    return await this.authService.login(req, res);
+    return await this.authService.login(body, res);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -53,9 +51,7 @@ export class AuthenticationController {
   @HttpCode(HttpStatus.OK)
   @Post('/forgot-password')
   public async forgotPassword(@Body() body: UserForgetPasswordDto) {
-    return await this.authService.forgotPassword({
-      email: body.email,
-    } as Prisma.UserWhereUniqueInput);
+    return await this.authService.forgotPassword(body);
   }
 
   @HttpCode(HttpStatus.OK)

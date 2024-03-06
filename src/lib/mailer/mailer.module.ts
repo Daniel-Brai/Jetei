@@ -17,14 +17,10 @@ import { MailerProcessor } from './mailer.processor';
       transport: {
         host: AppConfig.services.smtp.SMTP_HOST,
         port: AppConfig.services.smtp.SMTP_PORT,
-        secure: false,
+        secure: true,
         auth: {
           user: AppConfig.services.smtp.SMTP_EMAIL_ADDRESS,
           pass: AppConfig.services.smtp.SMTP_PASSWORD,
-        },
-        tls: {
-          ciphers: 'SSLv3',
-          rejectUnauthorized: false,
         },
         pool: true,
       },

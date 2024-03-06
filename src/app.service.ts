@@ -1,6 +1,5 @@
 import {
   Injectable,
-  BadRequestException,
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
@@ -160,23 +159,6 @@ export class AppService {
 
   public async getLogout(req: RequestUser, res: Response) {
     this.logger.log(`Log out authenticated user`);
-    req.session.destroy(async (err: Error) => {
-      if (err) {
-        this.logger.error(this.messageHelpers.USER_LOGOUT_FAILED, {
-          error: err,
-          user: {
-            id: req.user.id,
-          },
-        });
-        throw new BadRequestException(err?.message);
-      }
-      return {
-        type: 'success',
-        status_code: 200,
-        api_message: `Logout successful`,
-        api_description: 'Proceeding to homepage...',
-      };
-    });
     return res.redirect(302, '/');
   }
 
@@ -325,8 +307,6 @@ export class AppService {
     try {
       const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
       const status = await this.healthCheck();
-
-      await this.authHelpers.verifyToken(token);
 
       const canonicalURL = getCanonicalUrl(req);
 
@@ -502,7 +482,6 @@ export class AppService {
       const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
       const canonicalURL = getCanonicalUrl(req);
       const status = await this.healthCheck();
-      const decoded = await this.authHelpers.verifyToken(token);
 
       setLocals(req, res);
 
@@ -519,7 +498,6 @@ export class AppService {
         form_name: 'Reset password',
         redirectUrl: '/account/reset-confirmed',
         logoutUrl: this.logoutUrl,
-        email: decoded?.email,
         ...this.siteConfig,
       });
     } catch (e) {
@@ -649,11 +627,232 @@ export class AppService {
 
       return res.render('views/workspace/hubs/new', {
         canonicalURL: canonicalURL,
-        title: `Create a Hub | ${this.siteConfig.name}`,
+        title: `Create Hub | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
         form_id: '/api/v1/hubs',
         form_name: 'Hub create',
+        nonce: generateNonce(),
+        logoutUrl: this.logoutUrl,
+        status: status,
+        ...this.siteConfig,
+      });
+    } catch (e) {
+      this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
+        error: e,
+      });
+      throw new InternalServerErrorException(
+        this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async getWorkspaceHubsEdit(
+    hubId: string,
+    req: RequestUser,
+    res: Response,
+  ): Promise<void> {
+    this.logger.log(`Get Jetei Workspace Hubs edit page`);
+
+    try {
+      const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
+      const status = await this.healthCheck();
+      const canonicalURL = getCanonicalUrl(req);
+
+      setLocals(req, res);
+
+      return res.render('views/workspace/hubs/edit', {
+        canonicalURL: canonicalURL,
+        title: `Edit Hub | ${this.siteConfig.name}`,
+        ip: req.ip,
+        url: req.url,
+        form_id: `/api/v1/hubs/${hubId}`,
+        form_name: 'Hub edit',
+        nonce: generateNonce(),
+        logoutUrl: this.logoutUrl,
+        status: status,
+        ...this.siteConfig,
+      });
+    } catch (e) {
+      this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
+        error: e,
+      });
+      throw new InternalServerErrorException(
+        this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async getWorkspaceHubAddInvitee(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    this.logger.log(`Get Jetei Workspace add invitee to hub page`);
+
+    try {
+      const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
+      const status = await this.healthCheck();
+      const canonicalURL = getCanonicalUrl(req);
+
+      setLocals(req, res);
+
+      return res.render('views/workspace/hubs/invitees/new', {
+        canonicalURL: canonicalURL,
+        title: `Invite to Hub | ${this.siteConfig.name}`,
+        ip: req.ip,
+        url: req.url,
+        form_id: `/api/v1/hubs/add-invitee`,
+        form_name: 'Hub add invitee',
+        nonce: generateNonce(),
+        logoutUrl: this.logoutUrl,
+        status: status,
+        ...this.siteConfig,
+      });
+    } catch (e) {
+      this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
+        error: e,
+      });
+      throw new InternalServerErrorException(
+        this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async getWorkspaceHubInviteeEdit(
+    inviteeId: string,
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    this.logger.log(`Get Jetei Workspace edit invitee to hub page`);
+
+    try {
+      const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
+      const status = await this.healthCheck();
+      const canonicalURL = getCanonicalUrl(req);
+
+      setLocals(req, res);
+
+      return res.render('views/workspace/hubs/invitees/edit', {
+        canonicalURL: canonicalURL,
+        title: `Invite to Hub | ${this.siteConfig.name}`,
+        ip: req.ip,
+        url: req.url,
+        inviteeId: inviteeId,
+        form_id: `/api/v1/hubs/invitees/${inviteeId}`,
+        form_name: 'Hub edit invitee',
+        nonce: generateNonce(),
+        logoutUrl: this.logoutUrl,
+        status: status,
+        ...this.siteConfig,
+      });
+    } catch (e) {
+      this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
+        error: e,
+      });
+      throw new InternalServerErrorException(
+        this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async getWorkspaceHubById(
+    hubId: string,
+    req: RequestUser,
+    res: Response,
+  ) {
+    this.logger.log(`Get the details for the hub: ${hubId}`);
+    try {
+      const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
+      const status = await this.healthCheck();
+      const canonicalURL = getCanonicalUrl(req);
+      const hubName = '';
+
+      setLocals(req, res);
+
+      return res.render('views/workspace/hubs/id', {
+        canonicalURL: canonicalURL,
+        title: `Your Hub - ${hubName} | ${this.siteConfig.name}`,
+        ip: req.ip,
+        url: req.url,
+        hubId: hubId,
+        nonce: generateNonce(),
+        logoutUrl: this.logoutUrl,
+        status: status,
+        ...this.siteConfig,
+      });
+    } catch (e) {
+      this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
+        error: e,
+      });
+      throw new InternalServerErrorException(
+        this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async getWorkspaceHubCreateNewNote(
+    hubId: string,
+    req: RequestUser,
+    res: Response,
+  ) {
+    this.logger.log(`Get page for the hub: ${hubId} to create new note`);
+    try {
+      const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
+      const status = await this.healthCheck();
+      const canonicalURL = getCanonicalUrl(req);
+      const hubName = '';
+
+      setLocals(req, res);
+
+      return res.render('views/workspace/hubs/notes/new', {
+        canonicalURL: canonicalURL,
+        title: `Create a Note - ${hubName}  | ${this.siteConfig.name}`,
+        ip: req.ip,
+        url: req.url,
+        api_url: `/api/v1/workspace/hubs/${hubId}/notes/new`,
+        form_id: `create-note`,
+        form_name: 'Create Note',
+        hubId: hubId,
+        nonce: generateNonce(),
+        logoutUrl: this.logoutUrl,
+        status: status,
+        ...this.siteConfig,
+      });
+    } catch (e) {
+      this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
+        error: e,
+      });
+      throw new InternalServerErrorException(
+        this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async getWorkspaceHubByIdNoteByIdEdit(
+    hubId: string,
+    noteId: string,
+    req: RequestUser,
+    res: Response,
+  ) {
+    this.logger.log(`Get page for editing note: ${noteId} in hub: ${hubId}`);
+    try {
+      const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
+      const status = await this.healthCheck();
+      const canonicalURL = getCanonicalUrl(req);
+      const hubName = '';
+
+      setLocals(req, res);
+
+      return res.render('views/workspace/hubs/notes/edit', {
+        canonicalURL: canonicalURL,
+        title: `Edit Note - ${hubName}  | ${this.siteConfig.name}`,
+        ip: req.ip,
+        url: req.url,
+        api_url: `/api/v1/workspace/hubs/${hubId}/notes/${noteId}`,
+        note_link_url: `/workspace/hubs/${hubId}/notes/${noteId}/link`,
+        form_id: `edit-note`,
+        form_name: 'Edit Note',
+        hubId: hubId,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
         status: status,

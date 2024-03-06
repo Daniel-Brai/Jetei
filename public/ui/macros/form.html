@@ -10,7 +10,7 @@
   placeholder="{{ placeholder | e }}"
   required
 />
-{% endmacro %}
+{% endmacro %} 
 
 {% macro input_required_no_pattern(name, id, extra_class="", type='text', placeholder='', title='', minlength="1") %}
 <input
@@ -18,16 +18,16 @@
   type="{{ type }}"
   id="{{ id }}"
   name="{{ name }}"
-  minlength={{ minlength | int }}
+  minlength="{{ minlength | int }}"
   title="{{ title | e }}"
   placeholder="{{ placeholder | e }}"
   required
 />
-{% endmacro %}
+{% endmacro %} 
 
 {% macro input_non_required(name, id, extra_class="", type='text', placeholder='', pattern='', title='', minlength="1") %}
 <input
-  class="flex h-10 w-full {{ extra_class | e }}rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+  class="flex h-10 w-full {{ extra_class }} rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
   type="{{ type }}"
   id="{{ id }}"
   name="{{ name }}"
@@ -36,7 +36,7 @@
   title="{{ title | e }}"
   placeholder="{{ placeholder | e }}"
 />
-{% endmacro %}
+{% endmacro %} 
 
 {% macro input_disabled(name, id, extra_class="", type='text', value) %}
 <input
@@ -47,9 +47,41 @@
   value="{{ value }}"
   disabled
 />
+{% endmacro %} 
+
+{% macro select(id, name, extra_class="", base_option, options) %}
+<select
+  name="{{ name }}"
+  id="{{ id }}"
+  class="{{ extra_class }}rounded-md border border-input bg-background pl-2 pr-4 py-3 mb-3 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+>
+  <option value="">{{ base_option }}</option>
+  {% for option in options %}
+  <option value="{{ option.value }}">{{ option.text }}</option>
+  {% endfor %}
+</select>
+{% endmacro %} 
+
+{% macro button(class, id='', type='submit', text) %}
+<button
+  id="{{ id }}"
+  type="{{ type }}"
+  class="{{ class }} disabled:cursor-not-allowed disabled:opacity-50"
+  data-loading-disable
+>
+  {{ text | e }}
+</button>
 {% endmacro %}
 
 
-{% macro button(class, id='', type='submit', text) %}
-<button id="{{ id }}" type="{{ type }}" class="{{ class }} disabled:cursor-not-allowed disabled:opacity-50" data-loading-disable>{{ text | e }}</button>
+{% macro textarea(id, name, extra_class="") %}
+<textarea
+  id="{{ id }}"
+  name="{{ name }}"
+  style="resize: none; overflow: hidden;"
+  class="{{ extra_class }} flex transition w-[90%] rounded-md bg-transparent px-3 py-2 text-[15.5px] shadow-sm placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+  placeholder="Start taking notes"
+  autofocus
+>
+</textarea>
 {% endmacro %}

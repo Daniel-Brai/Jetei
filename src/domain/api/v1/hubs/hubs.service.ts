@@ -3,6 +3,7 @@ import {
   AuthenticationHelpers,
 } from '@/common/helpers/app.helpers';
 import { PrismaService } from '@/infrastructure/gateways/database/prisma/prisma.service';
+import { AuthenticationService } from '@/domain/api/v1/authentication/authentication.service';
 import { RequestUser } from '@/interfaces';
 import { APIResponse } from '@/types';
 import {
@@ -12,6 +13,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Hub, Invitee, Prisma } from '@prisma/client';
+import { JwtService } from '@nestjs/jwt';
+import { v4 } from 'uuid';
 import { InviteeToHubDto } from './dtos/hubs.dtos';
 
 @Injectable()
@@ -19,7 +22,11 @@ export class HubsService {
   private readonly logger = new Logger(HubsService.name);
   private readonly messageHelpers = MessageHelpers;
   private readonly authHelpers = AuthenticationHelpers;
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly authService: AuthenticationService,
+  ) {}
 
   /**
    * Create a hub for an authenticated user;
@@ -30,7 +37,7 @@ export class HubsService {
     req: RequestUser,
     data: Prisma.HubCreateWithoutInviteeInput,
   ): Promise<Partial<APIResponse<Hub>>> {
-    this.logger.log(`Create hubs for user: ${req.user.id}`);
+    this.logger.log(`Create hubs for user: ${req.user.sub}`);
 
     try {
       if (!req.user) {
@@ -40,7 +47,7 @@ export class HubsService {
       const hub = await this.prisma.$transaction(async (tx) => {
         const foundUser = await tx.user.findUnique({
           where: {
-            id: req.user.id,
+            id: req.user.sub,
           },
         });
 
@@ -77,7 +84,7 @@ export class HubsService {
       };
     } catch (e) {
       this.logger.error(this.messageHelpers.CREATE_ACTION_FAILED, {
-        context: `Create a hub for user ${req.user.id}`,
+        context: `Create a hub for user ${req.user.sub}`,
         error: e,
       });
       throw new BadRequestException(this.messageHelpers.CREATE_ACTION_FAILED);
@@ -93,23 +100,23 @@ export class HubsService {
    */
   public async inviteToHubByIdAssignees(
     req: RequestUser,
-    hubId: string,
     data: InviteeToHubDto,
   ): Promise<Partial<APIResponse<Invitee>>> {
-    this.logger.log(`Invite a invitee to hub ${hubId}`);
+    this.logger.log(`Invite a invitee to hub ${data.hubId}`);
     try {
       const invitee = await this.prisma.$transaction(async (tx) => {
         const foundHub = await tx.hub.findUnique({
-          where: { id: hubId, userId: req.user.id },
+          where: { id: data.hubId, userId: req.user.sub },
         });
 
         if (!foundHub) {
           throw new Error(this.messageHelpers.HUB_NOT_FOUND);
         }
+
         const existingInvite = await tx.invitee.findFirst({
           where: {
             email: data.email,
-            hubId: hubId,
+            hubId: data.hubId,
           },
         });
         if (!existingInvite) {
@@ -117,6 +124,7 @@ export class HubsService {
         }
         const newInvitee = await tx.invitee.create({
           data: {
+            name: data.name,
             email: data.email,
             role: data.role,
             hub: { connect: { id: foundHub.id } },
@@ -127,26 +135,25 @@ export class HubsService {
           throw new Error(this.messageHelpers.CREATE_ACTION_FAILED);
         }
 
-        const expiryTimeInSecs = 14400;
+        const tokenId = v4();
 
-        const expiryTimeInSecondstoElaspedFromNow =
-          this.authHelpers.getEpochSecondsFromCreatedAt(
-            new Date().toISOString(),
-          ) + expiryTimeInSecs;
-
-        const jwtToken = await this.authHelpers.signPayload(
-          { id: newInvitee.id, email: newInvitee.email },
+        const accessToken = await this.authService.createToken(
           {
-            expiry_time_in_secs: expiryTimeInSecs,
-            subject: 'Jetei Invitee JWT Token',
+            sub: newInvitee.id,
+            email: newInvitee.email,
+            role: newInvitee.role,
           },
+          tokenId,
+          14400,
         );
 
-        if (!jwtToken) {
-          throw new Error(this.messageHelpers.UNEXPECTED_RESULT);
+        if (!accessToken) {
+          throw new Error(
+            `${this.messageHelpers.CREATE_ACTION_FAILED} - Token`,
+          );
         }
 
-        const tokenName = `invitee_token:${newInvitee.id}`;
+        const tokenName = `invitee_access_token:${newInvitee.id}`;
 
         const updateInviteeWithAuthToken = await tx.invitee.update({
           where: {
@@ -157,9 +164,8 @@ export class HubsService {
               create: [
                 {
                   name: tokenName,
-                  content: jwtToken,
-                  expiryTimeInSecsToBeElaspedFromNow:
-                    expiryTimeInSecondstoElaspedFromNow,
+                  content: `${accessToken}-${tokenId}`,
+                  expiryInMilliSecs: 14400000,
                 },
               ],
             },
@@ -185,7 +191,7 @@ export class HubsService {
       };
     } catch (e) {
       this.logger.error(this.messageHelpers.CREATE_ACTION_FAILED, {
-        context: `Invite user to hub ${hubId}`,
+        context: `Invite user to hub ${data.hubId}`,
         error: e,
       });
       throw new BadRequestException(this.messageHelpers.CREATE_ACTION_FAILED);
@@ -200,12 +206,12 @@ export class HubsService {
   public async getUserHubs(
     req: RequestUser,
   ): Promise<Partial<APIResponse<Array<Hub>>>> {
-    this.logger.log(`Get user ${req.user.id} hubs`);
+    this.logger.log(`Get user hubs by userId ${req.user.sub}`);
     try {
       const hubs = await this.prisma.$transaction(async (tx) => {
         const foundUser = await tx.user.findUnique({
           where: {
-            id: req.user.id,
+            id: req.user.sub,
           },
           include: {
             hubs: true,
@@ -226,8 +232,8 @@ export class HubsService {
         data: hubs,
       };
     } catch (e) {
-      this.logger.error(this.messageHelpers.CREATE_ACTION_FAILED, {
-        context: `Get user ${req.user.id} hubs`,
+      this.logger.error(this.messageHelpers.RETRIEVAL_ACTION_FAILED, {
+        context: `Get user hubs by userId ${req.user.sub}`,
         error: e,
       });
       throw new BadRequestException(
@@ -247,13 +253,13 @@ export class HubsService {
     hubId: string,
   ): Promise<Partial<APIResponse<Hub>>> {
     this.logger.log(
-      `Get the details of a user hub with userId ${req.user.id} and hubId ${hubId}`,
+      `Get the details of a user hub with userId ${req.user.sub} and hubId ${hubId}`,
     );
     try {
       const hub = await this.prisma.$transaction(async (tx) => {
         const foundUser = await tx.user.findUnique({
           where: {
-            id: req.user.id,
+            id: req.user.sub,
           },
         });
 
@@ -301,12 +307,14 @@ export class HubsService {
     req: RequestUser,
     hubId: string,
   ): Promise<Partial<APIResponse<any>>> {
-    this.logger.log(`Delete hub with userid ${req.user.id} and hubId ${hubId}`);
+    this.logger.log(
+      `Delete hub with userid ${req.user.sub} and hubId ${hubId}`,
+    );
     try {
       await this.prisma.$transaction(async (tx) => {
         const foundUser = await tx.user.findUnique({
           where: {
-            id: req.user.id,
+            id: req.user.sub,
           },
         });
 

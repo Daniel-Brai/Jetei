@@ -1,83 +1,46 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { User, Prisma } from '@prisma/client';
+import { Response } from 'express';
+import { JwtService } from '@nestjs/jwt';
+import { v4 } from 'uuid';
 import { RequestUser } from '@/interfaces';
-import { APIResponse } from '@/types';
+import { APIResponse, JwtPayload } from '@/types';
 import {
   AuthenticationHelpers,
   MessageHelpers,
+  SiteHelpers,
 } from '@/common/helpers/app.helpers';
 import { PrismaService } from '@/infra/gateways/database/prisma/prisma.service';
 import { MailerService } from '@/lib/mailer/mailer.service';
 import {
+  UserForgetPasswordDto,
+  UserLoginDto,
   UserResetPasswordDto,
+  UserSignUpDto,
   UserVerifyAccountDto,
 } from './dtos/authentication.dtos';
 import { AppConfig } from '@/lib/config/config.provider';
-import { Response } from 'express';
 
 @Injectable()
 export class AuthenticationService {
   private readonly logger = new Logger(AuthenticationService.name);
   private readonly appConfig = AppConfig;
   private readonly authHelper = AuthenticationHelpers;
+  private readonly siteHelper = SiteHelpers;
   private readonly messageHelper = MessageHelpers;
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
   ) {}
 
   /**
-   * validates the existence of the user
-   * @param email The email of the user
-   * @param password The password of the user
-   * @returns {Promise<User>} The user
-   */
-  async validate(email: string, password: string): Promise<User> {
-    try {
-      const user = await this.prisma.$transaction(async (tx) => {
-        const foundUser = await tx.user.findUniqueOrThrow({
-          where: {
-            email: email,
-          },
-        });
-
-        const isValid = await this.authHelper.verifyCredential(
-          password,
-          foundUser.password,
-        );
-
-        if (!foundUser || !isValid) {
-          throw new BadRequestException(this.messageHelper.USER_LOGIN_FAILED);
-        }
-
-        if (!foundUser && !foundUser.isVerified) {
-          throw new BadRequestException(
-            this.messageHelper.USER_VERIFICATION_FAILED,
-          );
-        }
-
-        return foundUser;
-      });
-      return user;
-    } catch (e) {
-      this.logger.error(this.messageHelper.USER_VALIDATION_FAILED, {
-        error: e,
-        user: { email: email },
-      });
-      throw new BadRequestException(this.messageHelper.UNEXPECTED_RESULT, {
-        description: e?.message,
-      });
-    }
-  }
-
-  /**
    * Register a user by email and password
-   * @param {Prisma.UserCreateInput} data The request data
+   * @param {UserSignUpDto} data The request data
    * @returns {Promise<APIResponse<any>>} Redirects to signup success page if successful
    */
-  public async signup(data: Prisma.UserCreateInput): Promise<APIResponse<any>> {
-    this.logger.log('Register user with email and password');
+  public async signup(data: UserSignUpDto): Promise<APIResponse<any>> {
+    this.logger.log(`Register user with email: ${data.email}`);
     try {
       await this.prisma.$transaction(async (tx) => {
         const foundUser = await tx.user.findUnique({
@@ -95,7 +58,9 @@ export class AuthenticationService {
         );
 
         if (!hashedPassword) {
-          throw new Error('Password Hashing failed');
+          throw new Error(
+            `${this.messageHelper.UNEXPECTED_RESULT} - Password Hashing failed`,
+          );
         }
 
         const newUser = await tx.user.create({
@@ -103,6 +68,7 @@ export class AuthenticationService {
             id: true,
             email: true,
             password: true,
+            role: true,
           },
           data: {
             email: data.email,
@@ -110,58 +76,63 @@ export class AuthenticationService {
           },
         });
 
-        const expiryTimeInSecs = 14400;
+        if (!newUser) {
+          throw new Error(`${this.messageHelper.CREATE_ACTION_FAILED} - User`);
+        }
 
-        const expiryTimeInSecondstoElaspedFromNow =
-          this.authHelper.getEpochSecondsFromCreatedAt(
-            new Date().toISOString(),
-          ) + expiryTimeInSecs;
-
-        const jwtToken = await this.authHelper.signPayload(
-          { id: newUser.id, email: newUser.email },
-          {
-            expiry_time_in_secs: expiryTimeInSecs,
-            subject: 'Jetei Verification JWT Token',
+        const newProfile = await tx.profile.create({
+          data: {
+            name: data.name,
+            userId: newUser.id,
           },
-        );
+        });
 
-        if (!jwtToken) {
+        if (!newProfile) {
           throw new Error(
-            `${this.messageHelper.UNEXPECTED_RESULT} for JWT Token Creation`,
+            `${this.messageHelper.CREATE_ACTION_FAILED} - Profile`,
           );
         }
 
-        const newUserToken = await tx.user.update({
-          where: {
-            id: newUser.id,
+        const tokenId = v4();
+
+        const verificationToken = await this.createToken(
+          {
+            sub: newUser.id,
+            name: newProfile.name,
+            email: newUser.email,
+            role: newUser.role,
           },
+          tokenId,
+          14400,
+        );
+
+        if (!verificationToken) {
+          throw new Error(`${this.messageHelper.CREATE_ACTION_FAILED} - Token`);
+        }
+
+        const newUserToken = await tx.authToken.create({
           data: {
-            tokens: {
-              create: [
-                {
-                  name: `user_tokens:${newUser.id}`,
-                  content: jwtToken,
-                  expiryTimeInSecsToBeElaspedFromNow: Number(
-                    expiryTimeInSecondstoElaspedFromNow,
-                  ),
-                },
-              ],
-            },
+            name: `verification_token:${newUser.id}`,
+            content: `${verificationToken}-${tokenId}`,
+            userId: newUser.id,
+            expiryInMilliSecs: 14400000,
           },
         });
 
         if (!newUserToken) {
-          throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
+          throw new Error(
+            `${this.messageHelper.CREATE_ACTION_FAILED} - AuthToken`,
+          );
         }
 
-        // await this.mailerService.sendEmail('base', {
-        //   subject: 'Jetei Account Created',
-        //   to: newUser.email,
-        //   templatePath: './registration-successful',
-        //   data: {
-        //     url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/verification?token=${jwtToken}` : `${this.appConfig.environment.NODE_ENV}/verification?token=${jwtToken}`}`,
-        //   },
-        // });
+        await this.mailerService.sendEmail('base', {
+          subject: 'Jetei Account Creation',
+          to: newUser.email,
+          templatePath: './registration-successful',
+          data: {
+            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/verification?token=${newUserToken.content}` : `${this.appConfig.environment.NODE_ENV}/verification?token=${newUserToken.content}`}`,
+          },
+        });
       });
       return {
         type: 'success',
@@ -170,7 +141,8 @@ export class AuthenticationService {
         api_description: 'Please check your email',
       };
     } catch (e) {
-      this.logger.error(this.messageHelper.UNEXPECTED_RESULT, {
+      this.logger.error(this.messageHelper.CREATE_ACTION_FAILED, {
+        context: `Failed to create user ${data.email}`,
         error: e,
       });
       throw new BadRequestException(e?.message);
@@ -178,19 +150,84 @@ export class AuthenticationService {
   }
 
   /**
-   * Log in a user
-   * @param {RequestUser} req The request user
-   * @returns {void} Passes the user to request object
+   * Log in a user via email and password
+   * @param {UserLoginDto} data The data passed to create the user
+   * @param {Response} res The response object
+   * @returns {any} Passes the user cookies to response object
    */
-  public async login(req: RequestUser, res: Response): Promise<void> {
-    this.logger.log(`Log in user`);
+  public async login(data: UserLoginDto, res: Response): Promise<any> {
+    this.logger.log(`Log in user with email: ${data.email}`);
     try {
-      // if (!req.user.isVerified) {
-      //   throw new Error(this.messageHelper.USER_VERIFICATION_FAILED);
-      // }
-      return res.redirect('/workspace');
+      const foundUser = await this.validateUser(data.email);
+
+      if (!foundUser) {
+        throw new Error(this.messageHelper.USER_ACCOUNT_NOT_EXISTING);
+      }
+
+      const isValid = await this.authHelper.verifyCredential(
+        data.password,
+        foundUser.password,
+      );
+
+      if (!isValid) {
+        throw new Error(this.messageHelper.USER_LOGIN_FAILED);
+      }
+
+      const tokenId = v4();
+
+      const accessToken = await this.createToken(
+        {
+          sub: foundUser.id,
+          name: foundUser.profile.name,
+          email: foundUser.email,
+          role: foundUser.role,
+        },
+        tokenId,
+        36000,
+      );
+
+      if (!accessToken) {
+        throw new Error(`${this.messageHelper.CREATE_ACTION_FAILED} - Token`);
+      }
+
+      const newUserToken = await this.prisma.authToken.create({
+        data: {
+          name: `access_token:${foundUser.id}`,
+          content: `${accessToken}-${tokenId}`,
+          userId: foundUser.id,
+          expiryInMilliSecs: 36000000,
+        },
+      });
+
+      if (!newUserToken) {
+        throw new Error(
+          `${this.messageHelper.CREATE_ACTION_FAILED} - AuthToken`,
+        );
+      }
+
+      res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure:
+          this.appConfig.environment.NODE_ENV === 'production' ? true : false,
+        expires: new Date(Date.now() + 36000000),
+        sameSite: 'lax',
+      });
+      res.cookie('accessTokenId', tokenId, {
+        httpOnly: true,
+        secure:
+          this.appConfig.environment.NODE_ENV === 'production' ? true : false,
+        expires: new Date(Date.now() + 36000000),
+        sameSite: 'lax',
+      });
+      return res.send({
+        status_code: 200,
+        type: 'success',
+        api_message: 'Login successful',
+        api_description: 'Proceeding to your workspace...',
+      } as APIResponse<any>);
     } catch (e) {
       this.logger.error(this.messageHelper.USER_LOGIN_FAILED, {
+        context: `Unable to login in user :${data.email}`,
         error: e,
       });
       throw new BadRequestException(e?.message);
@@ -199,16 +236,16 @@ export class AuthenticationService {
 
   /**
    * Verify a user by token
-   * @param token The token passed via the request
+   * @param {UserVerifyAccountDto} query The query passed via the request
    * @returns {Promise<APIResponse<any>>} Redirects to login page if successful
    */
-  public async verify(params: UserVerifyAccountDto): Promise<APIResponse<any>> {
+  public async verify(query: UserVerifyAccountDto): Promise<APIResponse<any>> {
     this.logger.log('Verify user account by token');
     try {
       await this.prisma.$transaction(async (tx) => {
         const authToken = await tx.authToken.findFirst({
           where: {
-            content: params.token,
+            content: query.token,
           },
         });
 
@@ -216,7 +253,31 @@ export class AuthenticationService {
           throw new Error(this.messageHelper.INVALID_TOKEN);
         }
 
-        const foundUser = await tx.user.findFirst({
+        const authArr = this.siteHelper.splitAtFirstOccurrenceRegex(
+          authToken.content,
+          '-',
+        );
+
+        const jwtToken = authArr[0];
+        const tokenId = authArr[1];
+
+        const decoded = await this.validateToken(jwtToken, tokenId);
+
+        if (!decoded) {
+          throw new Error(this.messageHelper.INVALID_TOKEN);
+        }
+
+        const expiryDate = new Date(
+          authToken.createdAt.getMilliseconds() + authToken.expiryInMilliSecs,
+        );
+
+        const currentDate = new Date(Date.now());
+
+        if (currentDate > expiryDate) {
+          throw new Error(this.messageHelper.EXPIRED_TOKEN);
+        }
+
+        const foundUser = await tx.user.findUnique({
           where: {
             id: authToken.userId,
           },
@@ -224,20 +285,6 @@ export class AuthenticationService {
 
         if (!foundUser) {
           throw new Error(this.messageHelper.USER_ACCOUNT_NOT_EXISTING);
-        }
-
-        const decoded = await this.authHelper.verifyToken(authToken.content);
-
-        if (!decoded) {
-          throw new Error(this.messageHelper.INVALID_TOKEN);
-        }
-
-        const isTokenExpired = await this.authHelper.isTokenExpired(
-          authToken.expiryTimeInSecsToBeElaspedFromNow,
-        );
-
-        if (!isTokenExpired) {
-          throw new Error(this.messageHelper.EXPIRED_TOKEN);
         }
 
         const updatedUser = await tx.user.update({
@@ -262,6 +309,7 @@ export class AuthenticationService {
         if (!updatedUser) {
           throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
         }
+
         await this.mailerService.sendEmail('base', {
           subject: 'Jetei Account Verification',
           to: foundUser.email,
@@ -287,12 +335,12 @@ export class AuthenticationService {
 
   /**
    * Forgot password by email
-   * @param {Prisma.UserWhereUniqueInput} data The data passed
+   * @param {UserForgetPasswordDto} data The data passed
    * @returns {Promise<void>} Sends a email if the user account exists
    */
 
   public async forgotPassword(
-    data: Prisma.UserWhereUniqueInput,
+    data: UserForgetPasswordDto,
   ): Promise<APIResponse<any>> {
     this.logger.log(`Forget password of user with email: ${data.email}`);
     try {
@@ -300,57 +348,54 @@ export class AuthenticationService {
         const foundUser = await tx.user.findUniqueOrThrow({
           where: {
             email: data.email,
-            ...data,
+          },
+          include: {
+            profile: true,
           },
         });
+
         if (!foundUser) {
           throw new Error(this.messageHelper.USER_ACCOUNT_NOT_EXISTING);
         }
 
-        const expiryTimeInSecs = 14400;
+        const tokenId = v4();
 
-        const expiryTimeInSecondstoElaspedFromNow =
-          this.authHelper.getEpochSecondsFromCreatedAt(
-            new Date().toISOString(),
-          ) + expiryTimeInSecs;
-
-        const jwtToken = await this.authHelper.signPayload(
-          { id: foundUser.id, email: foundUser.email },
+        const forgotPasswordToken = await this.createToken(
           {
-            expiry_time_in_secs: expiryTimeInSecs,
-            subject: 'Jetei Reset Password JWT Token',
+            sub: foundUser.id,
+            name: foundUser.profile.name,
+            email: foundUser.email,
+            role: foundUser.role,
           },
+          tokenId,
+          36000,
         );
 
-        if (!jwtToken) {
-          throw new Error(this.messageHelper.UNEXPECTED_RESULT);
+        if (!forgotPasswordToken) {
+          throw new Error(`${this.messageHelper.CREATE_ACTION_FAILED} - Token`);
         }
-        const updatedUser = await tx.user.update({
-          where: {
-            id: foundUser.id,
-          },
+
+        const newUserToken = await this.prisma.authToken.create({
           data: {
-            tokens: {
-              create: [
-                {
-                  name: `user_tokens:${foundUser.id}`,
-                  content: jwtToken,
-                  expiryTimeInSecsToBeElaspedFromNow:
-                    expiryTimeInSecondstoElaspedFromNow,
-                },
-              ],
-            },
+            name: `forgot_password_token:${foundUser.id}`,
+            content: `${forgotPasswordToken}-${tokenId}`,
+            userId: foundUser.id,
+            expiryInMilliSecs: 36000000,
           },
         });
-        if (!updatedUser) {
-          throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
+
+        if (!newUserToken) {
+          throw new Error(
+            `${this.messageHelper.CREATE_ACTION_FAILED} - AuthToken`,
+          );
         }
+
         await this.mailerService.sendEmail('base', {
           subject: 'Jetei Account Reset Password',
-          to: updatedUser.email,
+          to: foundUser.email,
           templatePath: './reset-password-started',
           data: {
-            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/reset-password?token=${jwtToken}` : `${this.appConfig.environment.NODE_ENV}/account/reset-password?token=${jwtToken}`}`,
+            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/reset-password?token=${newUserToken.content}` : `${this.appConfig.environment.NODE_ENV}/account/reset-password?token=${newUserToken.content}`}`,
           },
         });
       });
@@ -378,30 +423,40 @@ export class AuthenticationService {
     token: string,
     data: UserResetPasswordDto,
   ): Promise<APIResponse<any>> {
-    this.logger.log(`Reset password of user with email: ${data.email}`);
+    this.logger.log(`Reset password of user`);
     try {
       await this.prisma.$transaction(async (tx) => {
-        const foundToken = await tx.authToken.findFirstOrThrow({
+        const authToken = await tx.authToken.findFirst({
           where: {
             content: token,
           },
         });
 
-        if (!foundToken) {
+        if (!authToken) {
           throw new Error(this.messageHelper.INVALID_TOKEN);
         }
 
-        const decoded = await this.authHelper.verifyToken(foundToken.content);
+        const authArr = this.siteHelper.splitAtFirstOccurrenceRegex(
+          authToken.content,
+          '-',
+        );
+
+        const jwtToken = authArr[0];
+        const tokenId = authArr[1];
+
+        const decoded = await this.validateToken(jwtToken, tokenId);
 
         if (!decoded) {
           throw new Error(this.messageHelper.INVALID_TOKEN);
         }
 
-        const isTokenExpired = await this.authHelper.isTokenExpired(
-          foundToken.expiryTimeInSecsToBeElaspedFromNow,
+        const expiryDate = new Date(
+          authToken.createdAt.getMilliseconds() + authToken.expiryInMilliSecs,
         );
 
-        if (!isTokenExpired) {
+        const currentDate = new Date(Date.now());
+
+        if (currentDate > expiryDate) {
           throw new Error(this.messageHelper.EXPIRED_TOKEN);
         }
 
@@ -415,14 +470,14 @@ export class AuthenticationService {
 
         const updatedUser = await tx.user.update({
           where: {
-            id: foundToken.userId,
+            id: authToken.userId,
           },
           data: {
             password: hashedPassword,
             tokens: {
               update: {
                 where: {
-                  id: foundToken.id,
+                  id: authToken.id,
                 },
                 data: {
                   isBlackListed: true,
@@ -431,9 +486,11 @@ export class AuthenticationService {
             },
           },
         });
+
         if (!updatedUser) {
           throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
         }
+
         await this.mailerService.sendEmail('base', {
           subject: 'Jetei Account Reset Password Done',
           to: updatedUser.email,
@@ -451,125 +508,27 @@ export class AuthenticationService {
       };
     } catch (e) {
       this.logger.error(this.messageHelper.USER_FORGOT_PASSWORD_FAILED, {
+        context: `User forgot password failed`,
         error: e,
-        user: {
-          email: data.email,
-        },
       });
       throw new BadRequestException(this.messageHelper.INVALID_TOKEN);
     }
   }
 
-  /**
-   * Set the user token per login
-   * @param {RequestUser} req The request object
-   * @return {Promise<void>}
-   */
-  public async setUserToken(req: RequestUser, res: Response) {
-    this.logger.log(`Set the user jwt token for websocket concnetion`);
-    try {
-      if (!req.user.id) {
-        throw new Error(this.messageHelper.USER_VALIDATION_FAILED);
-      }
-      const token = await this.prisma.$transaction(async (tx) => {
-        const foundUser = await tx.user.findUnique({
-          where: {
-            id: req.user.id,
-          },
-        });
-        if (!foundUser) {
-          throw new Error(this.messageHelper.RETRIEVAL_ACTION_FAILED);
-        }
-
-        const expiryTimeInSecondstoElaspedFromNow =
-          this.authHelper.getEpochSecondsFromCreatedAt(
-            new Date().toISOString(),
-          ) + this.appConfig.authentication.COOKIE_MAX_AGE;
-
-        /**
-         * Note: JWT Token expiry would be the max age of a cookie so that Websocket connection will persist
-         */
-        const jwtToken = await this.authHelper.signPayload(
-          {
-            id: foundUser.id,
-            email: foundUser.email,
-          },
-          {
-            expiry_time_in_secs: this.appConfig.authentication.COOKIE_MAX_AGE,
-            subject: 'Jetei Session Persist JWT Token',
-          },
-        );
-
-        if (!jwtToken) {
-          throw new Error(
-            `${this.messageHelper.UNEXPECTED_RESULT} for JWT Token Creation`,
-          );
-        }
-
-        const updatedUser = await tx.user.update({
-          where: {
-            id: foundUser.id,
-          },
-          data: {
-            tokens: {
-              create: [
-                {
-                  name: `user_tokens:${foundUser.id}`,
-                  content: jwtToken,
-                  expiryTimeInSecsToBeElaspedFromNow: Number(
-                    expiryTimeInSecondstoElaspedFromNow,
-                  ),
-                },
-              ],
-            },
-          },
-        });
-
-        if (!updatedUser) {
-          throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
-        }
-
-        const foundToken = await tx.authToken.findFirst({
-          where: {
-            content: jwtToken,
-          },
-        });
-
-        if (!foundToken) {
-          throw new Error(this.messageHelper.RETRIEVAL_ACTION_FAILED);
-        }
-
-        return foundToken;
-      });
-      res.set('Authorization', `Bearer ${token.content} ${token.id}`);
-    } catch (e) {
-      this.logger.error(this.messageHelper.UPDATE_ACTION_FAILED, {
-        context: `Set user token for user ${req.user.id}`,
-        error: e,
-      });
-      throw new Error(e);
-    }
-  }
-  /**
-   * Invalidate user token on logout or expiry time
-   * @param req The request object
-   * @returns {Promise<void>}
-   */
   public async invalidateUserToken(req: RequestUser, res: Response) {
-    this.logger.log(`Invalidate token for user ${req.user.id}`);
+    this.logger.log(`Invalidate token for user ${req.user.sub}`);
     try {
-      const authHeader = req.headers.authorization;
+      const token: string = req.cookies['accessToken'];
+      const tokenId: string = req.cookies['accessTokenId'];
 
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      if (!token || !tokenId) {
         throw new Error(this.messageHelper.HTTP_UNAUTHORIZED);
       }
-
-      const tokenId = authHeader.split(' ')[2];
 
       await this.prisma.$transaction(async (tx) => {
         const foundUser = await tx.user.findUnique({
           where: {
-            id: req.user.id,
+            id: req.user.sub,
           },
         });
         if (!foundUser) {
@@ -588,13 +547,91 @@ export class AuthenticationService {
           throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
         }
       });
-      return res.set('Authorization', 'Bearer ');
+      res.cookie('accessToken', token, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure:
+          this.appConfig.environment.NODE_ENV === 'production' ? true : false,
+        expires: new Date(Date.now()),
+      });
+      return res.send({
+        status_code: 200,
+        type: 'success',
+      } as APIResponse<any>);
     } catch (e) {
       this.logger.error(this.messageHelper.UPDATE_ACTION_FAILED, {
-        context: `Failed to invalidate token for user ${req.user.id}`,
+        context: `Failed to invalidate token for user ${req.user.sub}`,
         error: e,
       });
       throw new Error(e);
     }
+  }
+
+  /**
+   * Validates the existence of the user
+   * @param email The email of the user
+   * @returns {Promise<User>} The user
+   */
+  public async validateUser(email: string) {
+    try {
+      const foundUser = await this.prisma.user.findUniqueOrThrow({
+        where: {
+          email: email,
+        },
+        include: {
+          profile: true,
+        },
+      });
+
+      if (!foundUser) {
+        throw new BadRequestException(
+          this.messageHelper.USER_ACCOUNT_NOT_EXISTING,
+        );
+      }
+
+      return foundUser;
+    } catch (e) {
+      this.logger.error(this.messageHelper.USER_ACCOUNT_NOT_EXISTING, {
+        context: `User validation failed: ${email}`,
+        error: e,
+      });
+      throw new BadRequestException(
+        this.messageHelper.USER_ACCOUNT_NOT_EXISTING,
+      );
+    }
+  }
+
+  /**
+   * Generate a jwt token
+   * @param {JwtPayload} payload The jwt payload
+   * @param {string} tokenId The id of jwt token
+   * @param {number} expiryTime The expiry time of the token in seconds
+   * @returns {Promise<string>} The token
+   */
+  public async createToken(
+    payload: JwtPayload,
+    tokenId: string,
+    expiryTime: number,
+  ): Promise<string> {
+    const token = await this.jwtService.signAsync(payload, {
+      secret: this.appConfig.authentication.ACCESS_JWT_TOKEN_SECRET_KEY,
+      expiresIn: expiryTime,
+      jwtid: tokenId,
+    });
+    return token;
+  }
+
+  /**
+   * Validate and decode a jwt token
+   * @param {token} token The jwt token
+   * @param {string} tokenId The id of jwt token
+   * @returns {Promise<any>} The payload
+   */
+  public async validateToken(token: string, tokenId?: string): Promise<any> {
+    const decoded = await this.jwtService.verifyAsync(token, {
+      secret: this.appConfig.authentication.ACCESS_JWT_TOKEN_SECRET_KEY,
+      jwtid: tokenId,
+    });
+    return decoded;
   }
 }

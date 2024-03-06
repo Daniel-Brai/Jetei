@@ -53,13 +53,12 @@ export class HubsController {
 
   @UseGuards(AuthenticatedGuard)
   @HttpCode(HttpStatus.CREATED)
-  @Post(':hubId/invite-users')
+  @Post('/add-invitee')
   public async addInviteeToHubByHubId(
     @Req() req: RequestUser,
-    @Param('hubId', ParseUUIDPipe) hubId: string,
     @Body() body: InviteeToHubDto,
   ) {
-    return await this.hubsService.inviteToHubByIdAssignees(req, hubId, body);
+    return await this.hubsService.inviteToHubByIdAssignees(req, body);
   }
 
   @UseGuards(AuthenticatedGuard)

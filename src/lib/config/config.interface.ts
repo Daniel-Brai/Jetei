@@ -22,13 +22,9 @@ export interface IAppConfig {
      */
     HASHING_SALT_OR_ROUNDS: string | number;
     /**
-     * The session secret key
+     * The access token secret key
      */
-    SESSION_SECRET_KEY: string;
-    /**
-     * The cookie max age
-     */
-    COOKIE_MAX_AGE: number;
+    ACCESS_JWT_TOKEN_SECRET_KEY: string;
   };
   database: {
     pg: {
@@ -57,10 +53,10 @@ export interface IAppConfig {
       SENDWAVE_API_KEY?: string;
     };
     smtp: {
-      SMTP_HOST?: string;
-      SMTP_PORT?: number;
-      SMTP_PASSWORD?: string;
-      SMTP_EMAIL_ADDRESS?: string;
+      SMTP_HOST: string;
+      SMTP_PORT: number;
+      SMTP_PASSWORD: string;
+      SMTP_EMAIL_ADDRESS: string;
     };
   };
 }

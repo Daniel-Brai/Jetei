@@ -1,3 +1,6 @@
+import { UserRole } from '@prisma/client';
+import { OperationType } from './interfaces';
+
 /**
  * Describes a response for the client to consume
  */
@@ -17,8 +20,10 @@ export type APIResponse<T> = {
  * Describes the payload passed
  */
 export type JwtPayload = {
-  id: string;
+  sub: string;
+  name?: string;
   email: string;
+  role: UserRole;
 };
 
 /**
@@ -29,3 +34,22 @@ export type JwtOptions = {
   subject: string;
   expiry_time_in_secs: number;
 };
+
+/**
+ * Describes a document to be operated on
+ */
+export class Document {
+  private content: string;
+
+  constructor(content: string = '') {
+    this.content = content;
+  }
+
+  /**
+   * Gets the document content
+   * @returns {string} The cotent of the document
+   */
+  public getContent(): string {
+    return this.content;
+  }
+}

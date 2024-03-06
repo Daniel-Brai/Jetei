@@ -1,17 +1,20 @@
-{% extends "views/layouts/base.html" %} {% block js %}
+{% extends "views/layouts/base.html" %} 
+
+{% block js %}
 <script nonce="{{ nonce }}" src="/assets/js/json-enc.js"></script>
 <script nonce="{{ nonce }}" src="/assets/js/client-side-templates.js"></script>
 <script nonce="{{ nonce }}" src="/assets/js/nunjucks.min.js"></script>
-{% endblock %} {% block content %}
+{% endblock %} 
+
+{% block content %}
 <section class="container mt-8 py-24" data-hx-ext="client-side-templates">
   <div class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-96">
     <div class="flex flex-col space-y-2 text-center">
       <h1 class="text-2xl font-semibold tracking-tight">
-        Build Your Knowledge Base
+        Build your team privileges here
       </h1>
       <p class="text-sm text-muted-foreground">
-        Jetei makes it simple and efficient to organize your team's knowledge in
-        one place.
+        Organize and manage your team's knowledge capablities in one place.
       </p>
     </div>
 
@@ -25,14 +28,22 @@
       data-hx-target="#result"
       nunjucks-template="toast"
     >
-      {% from "macros/form.html" import input_required_no_pattern, input_non_required, button %}
-      {{ input_required_no_pattern(type="text", id="name", name="name", placeholder="Name", title="Name must be at least 4 characters long") }}
-      {{ input_non_required(type="text", id="description", name="description", placeholder="Description") }} 
-      <div class="w-full inline-flex items-end justify-end" data-hx-ext="preload">
-        <a class="btn-link text-gradient_indigo-purple font-semibold text-[13px] text-right" href="/workspace/hubs/add-invitee" preload="mouseover">Add Invitee</a>
-      </div>
+
+      {% from "macros/form.html" import input_required_no_pattern, input_non_required, button, select with context %}
+
+      {% set options = [{ value: "EDITOR", text: "Editor" }, { value: "VIEWER", text: "Viewer" }] %}
+
+      {{ input_required_no_pattern(type="text",id="name", name="name", placeholder="Name", title="Name must be at least 4 characters long") }} 
+      {{ input_required_no_pattern(type="email",id="email", name="email", placeholder="Email", title="Email must be a valid email") }} 
+      {{ select(name="hubId", id="hubId", base_option="Select a Hub", options=options) }}
+      {{ select(name="role", id="user-roles", base_option="Select invitee permissions", options=options) }}
       
-      {{ button(class="btn-base-variant btn-base-size text-sm rounded-md flex items-center justify-center", text="Save") }}
+      <div class="w-full inline-flex items-end justify-end">
+        <a class="btn-link text-gradient_indigo-purple font-semibold text-[13px] text-right hover:bg-white" href="/workspace/hubs">Go to hubs</a>
+      </div>
+
+      {{ button(class="btn-base-variant btn-base-size text-sm rounded-md flex
+      items-center justify-center", text="Save") }}
 
       <div id="result"></div>
 
@@ -82,9 +93,8 @@
     </form>
   </div>
 </section>
-{% include 'partials/_form_handler.html' %}
+{% include 'partials/_form_handler.html' %} 
 {% endblock %}
-
 
 {% block footer %}
     {% include "partials/_footer_alt.html" %}

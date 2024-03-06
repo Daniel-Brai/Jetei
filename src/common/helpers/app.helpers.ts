@@ -4,6 +4,7 @@ import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import * as markdownit from 'markdown-it';
+import { markdownItTable } from 'markdown-it-table';
 import * as sanitizeHtml from 'sanitize-html';
 import { v4 as uuidv4 } from 'uuid';
 import { ISiteLocals, RequestUser } from '@/interfaces';
@@ -11,13 +12,15 @@ import { JwtPayload, JwtOptions } from '@/types';
 import { AppConfig, SiteConfig } from '@/lib/config/config.provider';
 
 const salt = AppConfig.authentication.HASHING_SALT_OR_ROUNDS;
-const secret_key = AppConfig.authentication.SESSION_SECRET_KEY;
+const secret_key = AppConfig.authentication.ACCESS_JWT_TOKEN_SECRET_KEY;
+const deployed_url = AppConfig.environment.PROD_URL;
 const issuer = SiteConfig.name;
 const md = new markdownit({
   html: true,
   linkify: true,
   breaks: true,
 });
+md.use(markdownItTable, {});
 
 /**
  * Helpers for default messages given an action occurs
@@ -67,6 +70,10 @@ export const SiteHelpers = {
    * @returns {string} The distance in time
    */
   formatDistanceToNow: (date: Date | string): string => {
+    if (!date) {
+      return '';
+    }
+
     return formatDistanceToNow(new Date(date), {
       addSuffix: true,
     });
@@ -84,6 +91,15 @@ export const SiteHelpers = {
     return text.substring(0, end);
   },
   /**
+   * Split a array on the occurences of a character
+   * @param {string} str The string you want to split
+   * @param {string} char THe character you want to split at
+   * @returns {string[]} A array of string
+   */
+  splitAtFirstOccurrenceRegex: (str: string, char: string): string[] => {
+    return str.split(char, 1);
+  },
+  /**
    * Get a string length
    * @param text The text passed
    * @returns {number} The text length
@@ -97,10 +113,51 @@ export const SiteHelpers = {
    * @returns {string} The length of the array in string
    */
   arrayLengthInString: (arr: Array<object>): string => {
-    if (arr.length === 0) {
+    if (arr.length === 0 || typeof arr === 'undefined' || arr === null) {
       return '0';
     }
     return `${arr.length}`;
+  },
+  /**
+   * Generate an anonymous profile name
+   * @returns {string} The generated profile name
+   */
+  generateAnonymousProfileName: (): string => {
+    const adjectives: string[] = [
+      'Curious',
+      'Adventurous',
+      'Creative',
+      'Reliable',
+      'Enthusiastic',
+      'Thoughtful',
+      'Insightful',
+      'Vigilant',
+      'Serene',
+    ];
+
+    const nouns: string[] = [
+      'Explorer',
+      'Learner',
+      'Builder',
+      'Observer',
+      'Trailblazer',
+      'Analyst',
+      'Navigator',
+      'Strategist',
+      'Dreamer',
+      'Catalyst',
+    ];
+
+    const randomAdjective =
+      adjectives[Math.floor(Math.random() * adjectives.length)];
+    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+
+    const profileName = `${randomAdjective}-${randomNoun}`;
+
+    const randomNumber = Math.floor(Math.random() * 1000);
+    const finalName = `${profileName}-${randomNumber}`;
+
+    return finalName;
   },
   /**
    * Get the text in the markdown
@@ -165,6 +222,22 @@ export const SiteHelpers = {
     return cleanHTML;
   },
   /**
+   * Strips HTML to text
+   * @param {string} htmlString The HTML String
+   * @returns {string} The normalized text
+   */
+  stripHtmlPreservingStructure: (htmlString: string): string => {
+    const tagRegex = /<[^>]+(>|$)/g;
+
+    const strippedText = htmlString.replace(tagRegex, ' ');
+
+    const normalizedText = strippedText.replace(/\s+/g, ' ');
+
+    const lineBreakReplaced = normalizedText.replace(/(\r?\n|\r)/g, ' ');
+
+    return lineBreakReplaced.trim();
+  },
+  /**
    * Get the canoncial url of the site
    * @param {Request} req - The request object
    * @returns {string} The full request url
@@ -182,6 +255,10 @@ export const SiteHelpers = {
       arrayLengthInString: (arr) => SiteHelpers.arrayLengthInString(arr),
       formatDistanceToNow: (date) => SiteHelpers.formatDistanceToNow(date),
       getFullYear: () => new Date().getFullYear(),
+      generateProfileName: () => SiteHelpers.generateAnonymousProfileName(),
+      htmlToText: (htmlString: string) =>
+        SiteHelpers.stripHtmlPreservingStructure(htmlString),
+      baseUrl: () => '',
       genId: () => uuidv4(),
       isAuthenticated: () => AuthenticationHelpers.isAuthenticated(req),
       subString: (text, end) => SiteHelpers.subString(text, end),
@@ -202,7 +279,7 @@ export const AuthenticationHelpers = {
    * @returns {boolean} A true or false value
    */
   isAuthenticated: (req: Request): boolean => {
-    return req.isAuthenticated();
+    return req.user === null;
   },
   /**
    * Hashes a credential
@@ -257,13 +334,14 @@ export const AuthenticationHelpers = {
   },
   /**
    * Verify a jwt token signature
-   * @param {string} token The JWT Token
-   * @param {string | null} secret The secret key used to sign the payload, otherwise the one set from the enviroment varaible is used
+   * @param {string} jwtToken The JWT Token
    * @returns {Promise<any>} The decoded payload
    */
-  verifyToken: async (token: string, secret?: string): Promise<any> => {
+  verifyToken: async (jwtToken: string): Promise<any> => {
     try {
-      const decoded = await jwt.verify(token, secret || secret_key);
+      const token = jwtToken.split('-')[0];
+      const tokenId = jwtToken.split('-')[1];
+      const decoded = await jwt.verify(token, secret_key, { jwtid: tokenId });
       return decoded;
     } catch (e) {
       throw new Error(e);
@@ -289,5 +367,31 @@ export const AuthenticationHelpers = {
     const jsDate = new Date(createdAt);
     const differenceInMilliseconds = jsDate.getTime() - Date.UTC(1970, 0, 1);
     return Math.floor(differenceInMilliseconds / 1000);
+  },
+  /**
+   * Parses the cookies in the request
+   * @param inputString The request cookie
+   * @returns The parsed cookies
+   */
+  parseAccessCookies: (
+    inputString: string,
+  ): { accessToken: string; accessTokenId: string } => {
+    const accessTokenRegex = /accessToken=([^;]+)/;
+    const accessTokenIdRegex = /accessTokenId=([^;]+)/;
+
+    const accessTokenMatch = accessTokenRegex.exec(inputString);
+    const accessTokenIdMatch = accessTokenIdRegex.exec(inputString);
+
+    if (!accessTokenMatch) {
+      throw new Error('accessToken not found in the request cookie.');
+    }
+    if (!accessTokenIdMatch) {
+      throw new Error('accessTokenId not found in the request cookie.');
+    }
+
+    return {
+      accessToken: accessTokenMatch[1],
+      accessTokenId: accessTokenIdMatch[1],
+    };
   },
 };
