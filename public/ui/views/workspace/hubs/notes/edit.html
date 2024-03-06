@@ -1,0 +1,435 @@
+{% extends "views/layouts/base.html" %} {% block js %}
+<script nonce="{{ nonce }}" src="/assets/js/json-enc.js"></script>
+<script nonce="{{ nonce }}" src="/assets/js/ws.js"></script>
+{% endblock %} {% block content %}
+<div id="message-container" class="hidden items-center justify-center btn-outline w-[40%] rounde-md">
+  <p id="message-renderer"></p>
+</div>
+<section
+  class="container py-10 min-h-full relative"
+  data-hx-ext="client-side-templates"
+>
+  {% from "macros/form.html" import textarea, input_required_no_pattern, input_non_required %}
+
+  <form>
+    {{ textarea(id="edit-note-md", name="markdown") }}
+
+    <div id="link-dialog" class="hidden flex-col space-y-2 w-[300px]">
+      {{ input_required_no_pattern(name="link-url", type="url", id="link-url", placeholder="Enter URL", title="The URL must be a valid url") }}
+      {{ input_non_required(name="link-text", id="link-text", placeholder="Enter link text") }}
+      <button id="insert-link-btn" type="button" class="btn-base-variant btn-base-size text-sm rounded-md disabled:cursor-not-allowed disabled:opacity-50">Insert Link</button>
+    </div>
+
+    <div id="table-dialog" class="hidden flex-col space-y-2 w-[300px]">
+      {{ input_required_no_pattern(name="table-row", type="number", id="table-row", placeholder="Enter number of rows", title="The table rows must be greater than 0") }}
+      {{ input_required_no_pattern(name="table-col", type="number", id="table-col", placeholder="Enter number of columns", title="The table columns must be greater than 0") }}
+      <button id="table-create-btn" type="button" class="btn-base-variant btn-base-size text-sm rounded-md disabled:cursor-not-allowed disabled:opacity-50">Create table</button>
+    </div>
+
+    <div
+      class="absolute top-5 z-50 right-6 p-4 mx-auto rounded-xl border bg-card text-card-foreground shadow"
+    >
+      <div class="flex flex-col items-center space-y-2">
+        <div id="save-note" class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md">
+          <span id="save-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+          </span>
+          <div class="tooltiptext">Save</div>
+        </div>
+        <div
+          class=" tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md"
+          onclick="bold()"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-bold"
+          >
+            <path d="M14 12a4 4 0 0 0 0-8H6v8" />
+            <path d="M15 20a4 4 0 0 0 0-8H6v8Z" />
+          </svg>
+          </svg>
+          <div class="tooltiptext">Bold</div>
+        </div>
+        <div
+          class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md"
+          onclick="underline()"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-underline"
+          >
+            <path d="M6 4v6a6 6 0 0 0 12 0V4" />
+            <line x1="4" x2="20" y1="20" y2="20" />
+          </svg>
+          </svg>
+          <div class="tooltiptext">Underline</div>
+        </div>
+        <div
+          class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md"
+          onclick="italicize()"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-italic"
+          >
+            <line x1="19" x2="10" y1="4" y2="4" />
+            <line x1="14" x2="5" y1="20" y2="20" />
+            <line x1="15" x2="9" y1="4" y2="20" />
+          </svg>
+          </svg>
+          <div class="tooltiptext">Italics</div>
+        </div>
+        <div
+          class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md"
+          onclick="copy()"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-clipboard"
+          >
+            <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+            <path
+              d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
+            />
+          </svg>
+          <div class="tooltiptext">Copy</div>
+        </div>
+        <div id="download-note" class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-download"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" x2="12" y1="15" y2="3" />
+          </svg>
+          <div class="tooltiptext">Download</div>
+        </div>
+        <div id="table-btn" class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-table-properties"
+          >
+            <path d="M15 3v18" />
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+            <path d="M21 9H3" />
+            <path d="M21 15H3" />
+          </svg>
+          <div class="tooltiptext">Insert table</div>
+        </div>
+        <div id="link-note" class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md" onclick="window.location.href='{{ note_link_url }}'">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-file-symlink"
+          >
+            <path d="m10 18 3-3-3-3" />
+            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+            <path
+              d="M4 11V4a2 2 0 0 1 2-2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h7"
+            />
+          </svg>
+          <div class="tooltiptext">Link note</div>
+        </div>
+        <div id="linkbtn" class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-link"
+          >
+            <path
+              d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+            />
+            <path
+              d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+            />
+          </svg>
+          <div class="tooltiptext">Insert link</div>
+        </div>
+      </div>
+    </div>
+  </form>
+</section>
+<script nonce="{{ nonce }}">
+  const markdownInput = document.getElementById('edit-note-md');
+  const linkBtn = document.getElementById('linkbtn')
+  const insertLinkBtn = document.getElementById('insert-link-btn')
+  const linkDialog = document.getElementById('link-dialog');
+  const linkUrlInput = document.getElementById('link-url');
+  const linkTextInput = document.getElementById('link-text');
+  const tableRows = document.getElementById('table-row')
+  const tableCols = document.getElementById('table-col')
+  const tableBtn = document.getElementById('table-btn')
+  const tableDialog = document.getElementById('table-dialog')
+  const tableCreateBtn = document.getElementById('table-create-btn')
+  const message = document.getElementById('message-renderer')
+  const messageContainer = document.getElementById('message-container')
+  const saveNoteBtn = document.getElementById('save-note')
+  const downloadNoteBtn = document.getElementById('download-note')
+
+  let isLinkActive = false;
+  let isTableDialogActive = false;
+
+  async function saveNote() {
+    const value = markdownInput.value
+    let res = await fetch("{{ api_url }}", {
+      method: "POST"
+    })
+    res = await res.json()
+    if (res['status_code'] === 200) {
+      messageContainer.classList.remove('hidden')
+      messageContainer.classList.add('flex')
+      message.textContent = "Note saved successfully!"
+      setTimeout(() => {
+        messageContainer.classList.add('hidden')
+        messageContainer.classList.remove('flex')
+      }, 3500)
+    } else {
+      messageContainer.classList.remove('hidden')
+      messageContainer.classList.add('flex')
+      message.textContent = "Something went wrong!"
+      setTimeout(() => {
+        messageContainer.classList.add('hidden')
+        messageContainer.classList.remove('flex')
+      }, 3500)
+    }
+  }
+
+  async function downloadNote() {
+    await saveNote();
+    await fetch('{{ api_url }}/download', {
+      method: "POST"
+    })
+  }
+
+  saveNoteBtn.addEventListener('click', async () => await saveNote() )
+  downloadNoteBtn.addEventListener('click', async () => await downloadNote() )
+
+  function bold() {
+    const selectionStart = markdownInput.selectionStart;
+    const selectionEnd = markdownInput.selectionEnd;
+    const currentText = markdownInput.value;
+
+    if (selectionStart !== selectionEnd) {
+      const selectedText = currentText.slice(selectionStart, selectionEnd);
+      const updatedText = `${currentText.slice(0, selectionStart)}**${selectedText}**${currentText.slice(selectionEnd)}`;
+      markdownInput.value = updatedText;
+      markdownInput.focus();
+      markdownInput.selectionStart = selectionStart + 2;
+      markdownInput.selectionEnd = selectionStart + 2 + selectedText.length;
+    } else {
+      const updatedText = `${currentText.slice(0, selectionStart)}**${currentText.slice(selectionStart)}**`;
+      markdownInput.value = updatedText;
+      markdownInput.focus();
+      markdownInput.selectionStart = selectionStart + 2;
+      markdownInput.selectionEnd = selectionStart + 2;
+    }
+  }
+
+  function underline() {
+    const selectionStart = markdownInput.selectionStart;
+    const selectionEnd = markdownInput.selectionEnd;
+    const currentText = markdownInput.value;
+
+    if (selectionStart !== selectionEnd) {
+      const selectedText = currentText.slice(selectionStart, selectionEnd);
+      const updatedText = `${currentText.slice(0, selectionStart)}<u>${selectedText}</u>${currentText.slice(selectionEnd)}`;
+      markdownInput.value = updatedText;
+      markdownInput.focus();
+      markdownInput.selectionStart = selectionStart + 2;
+      markdownInput.selectionEnd = selectionStart + 2 + selectedText.length;
+    } else {
+      const updatedText = `${currentText.slice(0, selectionStart)}<u>${currentText.slice(selectionStart)}</u>`;
+      markdownInput.value = updatedText;
+      markdownInput.focus();
+      markdownInput.selectionStart = selectionStart + 2;
+      markdownInput.selectionEnd = selectionStart + 2;
+    }
+  }
+
+  function italicize() {
+    const selectionStart = markdownInput.selectionStart;
+    const selectionEnd = markdownInput.selectionEnd;
+    const currentText = markdownInput.value;
+
+    if (selectionStart !== selectionEnd) {
+      const selectedText = currentText.slice(selectionStart, selectionEnd);
+      const updatedText = `${currentText.slice(0, selectionStart)}_${selectedText}_${currentText.slice(selectionEnd)}`;
+      markdownInput.value = updatedText;
+      markdownInput.focus();
+      markdownInput.selectionStart = selectionStart + 1;
+      markdownInput.selectionEnd = selectionStart + 1 + selectedText.length;
+    } else {
+      const updatedText = `${currentText.slice(0, selectionStart)}_${currentText.slice(selectionStart)}_`;
+      markdownInput.value = updatedText;
+      markdownInput.focus();
+      markdownInput.selectionStart = selectionStart + 1;
+      markdownInput.selectionEnd = selectionStart + 1;
+    }
+  }
+
+  function copy() {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard
+        .writeText(markdownInput.value)
+        .then(() => {
+          console.log('Text copied to clipboard successfully!');
+        })
+        .catch((err) => {
+          console.error('Failed to copy text to clipboard:', err);
+        });
+    } else {
+      // Fallback for older browsers: use a temporary element
+      const textArea = document.createElement('textarea');
+      textArea.value = markdownInput.value;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      console.log('Text copied to clipboard (fallback method).');
+    }
+  }
+
+  linkBtn.addEventListener('click', () => {
+    isLinkActive = true;
+    linkDialog.classList.remove('hidden')
+    linkDialog.classList.add('flex')
+  })
+
+  insertLinkBtn.addEventListener('click', () => {
+    isLinkActive = false;
+      const url = linkUrlInput.value;
+      const text = linkTextInput.value || url; // Use provided text or fallback to URL
+
+      if (url) {
+        const linkText = text.trim(); 
+        const updatedText = `${markdownInput.value}[${linkText}](${url})`;
+        markdownInput.value = updatedText;
+        markdownInput.focus();
+        const cursorPos = markdownInput.selectionStart + linkText.length + 3; 
+        markdownInput.selectionStart = cursorPos;
+        markdownInput.selectionEnd = cursorPos;
+        linkDialog.style.display = 'none';
+        linkUrlInput.value = '';
+        linkTextInput.value = '';
+        linkDialog.classList.remove('flex')
+        linkDialog.classList.add('hidden')
+      }
+  })
+
+  tableBtn.addEventListener('click', () => {
+    isTableDialogActive = true;
+    tableDialog.classList.remove('hidden')
+    tableDialog.classList.add('flex')
+  })
+
+  tableCreateBtn.addEventListener('click', () => {
+    isTableDialogActive = false;
+    tableDialog.classList.remove('flex')
+    tableDialog.classList.add('hidden')
+    
+    let rows = Number(tableRows.value)
+    let columns= Number(tableCols.value)
+    if (rows > 0 && columns > 0) {
+      let table = "";
+
+      table += "|" + Array(columns + 1).join(" --- |") + "\n";
+
+      for (let i = 0; i < rows - 1; i++) {
+        table += "|" + Array(columns + 1).join(" |") + "\n";
+      }
+
+      const updatedText = `${markdownInput.value}${table}`;
+      markdownInput.value = updatedText;
+      markdownInput.focus();
+      const cursorPos = markdownInput.selectionStart + table.length;
+      markdownInput.selectionStart = cursorPos;
+      markdownInput.selectionEnd = cursorPos;
+    } else {
+      alert("Please enter valid numbers of rows and columns (both must be greater than 0).");
+    }
+  })
+
+  function debounce(func, delay) {
+    let timeout;
+    return (...args) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), delay);
+    };
+  }
+
+  markdownInput.addEventListener('input', () => {
+    const prevHeight = markdownInput.offsetHeight;
+
+    markdownInput.style.height = 'auto';
+    const contentHeight = markdownInput.scrollHeight;
+
+    if (contentHeight !== prevHeight) {
+      markdownInput.style.height = `${contentHeight}px`;
+    }
+  });
+
+</script>
+{% endblock %}

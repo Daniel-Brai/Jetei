@@ -1,9 +1,91 @@
-{% extends "views/layouts/base.html" %} {
- 
-{% block js %}
+{% extends "views/layouts/base.html" %} {% block js %}
+<script nonce="{{ nonce }}" src="/assets/js/json-enc.js"></script>
+<script nonce="{{ nonce }}" src="/assets/js/client-side-templates.js"></script>
+<script nonce="{{ nonce }}" src="/assets/js/nunjucks.min.js"></script>
+{% endblock %} {% block content %}
+<section class="container mt-8 py-24" data-hx-ext="client-side-templates">
+  <div class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-96">
+    <div class="flex flex-col space-y-2 text-center">
+      <h1 class="text-2xl font-semibold tracking-tight">
+        Build Your Knowledge Base
+      </h1>
+      <p class="text-sm text-muted-foreground">
+        Jetei makes it simple and efficient to organize your team's knowledge in
+        one place.
+      </p>
+    </div>
 
+    <form
+      id="{{ form_id }}"
+      class="my-6 flex flex-col space-y-4 px-0"
+      data-hx-post="{{ api_url }}"
+      data-hx-ext="json-enc"
+      data-hx-trigger="submit"
+      data-hx-swap="innerHTML"
+      data-hx-target="#result"
+      nunjucks-template="toast"
+    >
+      {% from "macros/form.html" import input_required_no_pattern, input_non_required, button %}
+      {{ input_required_no_pattern(type="text", id="name", name="name", placeholder="Name", title="Name must be at least 4 characters long") }}
+      {{ input_non_required(type="text", id="description", name="description", placeholder="Description") }} 
+      <div class="w-full inline-flex items-end justify-end" data-hx-ext="preload">
+        <a class="btn-link text-gradient_indigo-purple font-semibold text-[13px] text-right" href="/workspace/hubs/add-invitee" preload="mouseover">Add Invitee</a>
+      </div>
+      
+      {{ button(class="btn-base-variant btn-base-size text-sm rounded-md flex items-center justify-center", text="Save") }}
+
+      <div id="result"></div>
+
+      <template id="toast">
+        <div
+          id="toast-renderer-{{ genId() }}"
+          class="fixed top-0 z-[100] hidden sm:flex max-h-screen w-full flex-col-reverse p-4 sm:right-4 sm:top-16 sm:flex-col md:max-w-[320px]"
+        >
+          <div
+            id="toast-provider"
+            class="group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full {% if type == 'success' %}toast-default{% elif type == 'error' %}toast-error{% endif %}"
+          >
+            <div
+              id="toast-close"
+              class="cursor-pointer absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600"
+            >
+              <div class="mx-auto">
+                <svg
+                  class="size-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-x"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </div>
+            </div>
+            <div class="grid gap-1">
+              <p id="toast-title" class="text-sm font-semibold">
+                {% raw %}{{api_message}}{% endraw %}
+              </p>
+              <p id="toast-description" class="text-sm opacity-90">
+                {% raw %}{{api_description}}{% endraw %}
+              </p>
+            </div>
+          </div>
+        </div>
+      </template>
+    </form>
+  </div>
+</section>
+{% include 'partials/_form_handler.html' %}
 {% endblock %}
 
-{% block content %}
 
+{% block footer %}
+    {% include "partials/_footer_alt.html" %}
 {% endblock %}

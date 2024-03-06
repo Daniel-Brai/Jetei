@@ -19,8 +19,9 @@ model User {
   email           String            @unique @db.VarChar(255)
   password        String            @db.VarChar(255)
   role            UserRole          @default(OWNER)
-  profile         Profile?
+  permissions     String?
   isVerified      Boolean           @default(false)
+  profile         Profile?
   hubs            Hub[]             @relation("HubOwner")
   note            Note[]
   chats           Chat[]
@@ -51,6 +52,7 @@ model Hub {
 model Invitee {
   id        String      @id @default(uuid())
   hubId     String
+  name      String
   email     String      @unique
   role      UserRole
   tokens    AuthToken[]
@@ -69,17 +71,17 @@ model Profile {
 }
 
 model AuthToken {
-  id                                 String   @id @default(uuid())
-  userId                             String?
-  inviteeId                          String?
-  user                               User?    @relation(fields: [userId], references: [id])
-  invitee                            Invitee? @relation(fields: [inviteeId], references: [id])
-  name                               String?
-  content                            String?
-  expiryTimeInSecsToBeElaspedFromNow Int
-  isBlackListed                      Boolean  @default(false)
-  createdAt                          DateTime @default(now())
-  updatedAt                          DateTime @updatedAt
+  id                String   @id @default(uuid())
+  userId            String?
+  inviteeId         String?
+  user              User?    @relation(fields: [userId], references: [id])
+  invitee           Invitee? @relation(fields: [inviteeId], references: [id])
+  name              String?
+  content           String?
+  expiryInMilliSecs Int
+  isBlackListed     Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model Note {

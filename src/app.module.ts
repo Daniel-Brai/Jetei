@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { TerminusModule } from '@nestjs/terminus';
 import { LoggerModule, Params } from 'nestjs-pino';
-import { AppMiddleware } from '@/common/app.middlewares';
+import { UserInterceptor } from '@/common/interceptors/app.interceptors';
 import { AppConfig, SiteConfig } from '@/lib/config/config.provider';
 import { APIV1Module } from '@/domain/api/v1/api-v1.module';
 import { PrismaModule } from '@/infra/gateways/database/prisma/prisma.module';
@@ -32,6 +34,13 @@ const node_env = AppConfig.environment.NODE_ENV;
     TerminusModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AppMiddleware],
+  providers: [
+    AppService,
+    JwtService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: UserInterceptor,
+    },
+  ],
 })
 export class AppModule {}

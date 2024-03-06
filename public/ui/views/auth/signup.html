@@ -19,6 +19,7 @@
     <form id="{{ form_id }}" class="my-6 flex flex-col space-y-4 px-0" data-hx-post="{{ api_url }}" data-hx-ext="json-enc" data-hx-trigger="submit" data-hx-swap="innerHTML" data-hx-target="#result" nunjucks-template="toast">
       {% from "macros/form.html" import input_required_no_pattern, button %}
 
+      {{ input_required_no_pattern(type="text", id="name", name="name", placeholder="Your name", title="Name musst be at least 4 characters long") }}
       {{ input_required_no_pattern(type="email", id="email", name="email", placeholder="Your email", title="Email must be a valid email") }}
       {{ input_required_no_pattern(type="password", id="password", name="password", placeholder="Password", minlength="8", title="Password must contain at least 8 characters, including 1 lowercase letter, 1 uppercase letter, 1 digit, and 1 special symbol.") }}
       <div class="w-full inline-flex items-end justify-end" data-hx-ext="preload">

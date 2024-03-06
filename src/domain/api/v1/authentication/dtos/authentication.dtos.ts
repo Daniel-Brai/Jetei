@@ -4,10 +4,33 @@ import {
   IsString,
   IsStrongPassword,
   Validate,
+  MaxLength,
 } from 'class-validator';
 import { CustomMatchPasswords } from '@/common/decorators/app.decorators';
 
 export class UserSignUpDto {
+  @MaxLength(255)
+  @IsString()
+  @IsDefined()
+  public name: string;
+
+  @IsEmail()
+  @IsDefined()
+  public email: string;
+
+  @IsStrongPassword({
+    minLength: 8,
+    minLowercase: 1,
+    minNumbers: 1,
+    minSymbols: 1,
+    minUppercase: 1,
+  })
+  @IsString()
+  @IsDefined()
+  public password: string;
+}
+
+export class UserLoginDto {
   @IsEmail()
   @IsDefined()
   public email: string;
@@ -37,10 +60,6 @@ export class UserVerifyAccountDto {
 }
 
 export class UserResetPasswordDto {
-  @IsEmail()
-  @IsDefined()
-  public email: string;
-
   @IsStrongPassword({
     minLength: 8,
     minLowercase: 1,

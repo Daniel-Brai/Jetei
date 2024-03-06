@@ -1,14 +1,12 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AppConfig } from '@/lib/config/config.provider';
 import { AllExceptionFilter } from '@/infra/interceptors/error.interceptor';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import * as nunjucks from 'nunjucks';
-import * as PgStore from 'connect-pg-simple';
 import * as express from 'express';
-import * as session from 'express-session';
-import * as passport from 'passport';
 import * as cookieParser from 'cookie-parser';
 import * as compression from 'compression';
 import helmet from 'helmet';
@@ -22,11 +20,8 @@ async function bootstrap() {
   });
   const logger = app.get(Logger);
   const reflector = app.get(Reflector);
-  const port = AppConfig.environment.PORT || 3000;
+  const port = AppConfig.environment.PORT;
   const node_env = AppConfig.environment.NODE_ENV;
-  const secret_key = AppConfig.authentication.SESSION_SECRET_KEY;
-  const cookie_max_age = AppConfig.authentication.COOKIE_MAX_AGE;
-  const database_connection_string = AppConfig.database.pg.PG_URL;
   const nunjucks_options: nunjucks.ConfigureOptions = {
     autoescape: true,
     throwOnUndefined: false,
@@ -78,38 +73,16 @@ async function bootstrap() {
       contentSecurityPolicy: false,
     }),
   );
-  app.use(
-    session({
-      store: new (PgStore(session))({
-        conObject: {
-          connectionString: `${database_connection_string}`,
-          ssl: node_env === 'production' ? true : false,
-        },
-        createTableIfMissing: true,
-        tableName: 'user_sessions',
-      }),
-      secret: `${secret_key}`,
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        maxAge: cookie_max_age,
-        httpOnly: true,
-        sameSite: 'strict',
-      },
-    }),
-  );
-  app.use(passport.initialize());
-  app.use(passport.session());
-
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
   app.use(compression({ level: 5, compression: 512 }));
+  app.useWebSocketAdapter(new IoAdapter());
 
   await app.listen(port, async () => {
     logger.log(
       `Nest application is up and running at -> ${await app.getUrl()}`,
-      { node_environment: node_env },
+      { config: node_env === 'development' ? AppConfig : null },
     );
   });
 }

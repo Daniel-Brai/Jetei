@@ -48,7 +48,11 @@ export class MailerAdapter {
     body: IMailerBody,
   ): Promise<MailResult> {
     try {
-      await this.mailerQueue.add(SEND_MAIL, body);
+      await this.mailerQueue.add(SEND_MAIL, body, {
+        attempts: 5,
+        removeOnComplete: true,
+        jobId: `send-to-${body.to}`,
+      });
       return {
         status: 'COMPLETED',
         message: `Email sent to ${body.to} successfully`,
