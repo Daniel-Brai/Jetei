@@ -38,7 +38,6 @@ export interface RequestUser extends Request {
 export enum OperationType {
   INSERT = 'insert',
   DELETE = 'delete',
-  REPLACE = 'replace',
 }
 
 /**
@@ -48,7 +47,7 @@ export interface Operation {
   readonly id: string;
   type: OperationType;
   userId: string;
-  userPreferenceId: string;
+  preferredUserId: string;
   document: Document;
   position: number;
   replaceLength?: number;

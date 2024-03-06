@@ -53,3 +53,11 @@ export class Document {
     return this.content;
   }
 }
+
+/**
+ * Describes a chat message
+ */
+export type Message = {
+  content: string;
+  sent: string;
+};

@@ -95,6 +95,7 @@ model Note {
   targetLink  Link?    @relation("TargetLinks")
   createdBy   User     @relation(fields: [createdById], references: [id])
   createdById String
+  updatedById String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -129,7 +130,7 @@ model Chat {
   updatedAt       DateTime          @updatedAt
   User            User?             @relation(fields: [userId], references: [id])
   userId          String?
-  ChatParticipant ChatParticipant[]
+  chatParticipant ChatParticipant[]
 }
 
 model ChatParticipant {

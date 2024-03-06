@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ISiteLocals, RequestUser } from '@/interfaces';
 import { JwtPayload, JwtOptions } from '@/types';
 import { AppConfig, SiteConfig } from '@/lib/config/config.provider';
+import { Prisma } from '@prisma/client';
 
 const salt = AppConfig.authentication.HASHING_SALT_OR_ROUNDS;
 const secret_key = AppConfig.authentication.ACCESS_JWT_TOKEN_SECRET_KEY;
@@ -220,6 +221,30 @@ export const SiteHelpers = {
     const html = md.render(markdownText);
     const cleanHTML = sanitizeHtml(html);
     return cleanHTML;
+  },
+  /**
+   * Formats date per timezone
+   * @param {Date} dateTime The date passed
+   * @returns The formatted date
+   */
+  formatDateTimeWithTimezone: (dateTime: Date | number | string): string => {
+    // Create a new Date object from the input dateTime
+    const date = new Date(dateTime);
+
+    // Get the browser's timezone offset
+    const timezoneOffset = date.getTimezoneOffset() * 60 * 1000;
+
+    // Adjust the date by the timezone offset to get the correct local time
+    const adjustedDate = new Date(date.getTime() + timezoneOffset);
+
+    const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(adjustedDate.getDate()).padStart(2, '0');
+    const year = adjustedDate.getFullYear();
+    const hours = String(adjustedDate.getHours()).padStart(2, '0');
+    const minutes = String(adjustedDate.getMinutes()).padStart(2, '0');
+    const ampm = adjustedDate.getHours() >= 12 ? 'PM' : 'AM';
+
+    return `${month}/${day}/${year} ${hours}:${minutes} ${ampm}`;
   },
   /**
    * Strips HTML to text
