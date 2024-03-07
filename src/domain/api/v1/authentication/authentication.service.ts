@@ -1,7 +1,6 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
-import { v4 } from 'uuid';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RequestUser } from '@/interfaces';
 import { APIResponse, JwtPayload } from '@/types';
 import {
@@ -10,7 +9,7 @@ import {
   SiteHelpers,
 } from '@/common/helpers/app.helpers';
 import { PrismaService } from '@/infra/gateways/database/prisma/prisma.service';
-import { MailerService } from '@/lib/mailer/mailer.service';
+import { AppConfig } from '@/lib/config/config.provider';
 import {
   UserForgetPasswordDto,
   UserLoginDto,
@@ -18,7 +17,9 @@ import {
   UserSignUpDto,
   UserVerifyAccountDto,
 } from './dtos/authentication.dtos';
-import { AppConfig } from '@/lib/config/config.provider';
+import { Response } from 'express';
+import { v4 } from 'uuid';
+import { MailerEvent } from '@/common/events/app.events';
 
 @Injectable()
 export class AuthenticationService {
@@ -31,7 +32,7 @@ export class AuthenticationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-    private readonly mailerService: MailerService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -42,7 +43,7 @@ export class AuthenticationService {
   public async signup(data: UserSignUpDto): Promise<APIResponse<any>> {
     this.logger.log(`Register user with email: ${data.email}`);
     try {
-      await this.prisma.$transaction(async (tx) => {
+      const d = await this.prisma.$transaction(async (tx) => {
         const foundUser = await tx.user.findUnique({
           where: {
             email: data.email,
@@ -113,7 +114,7 @@ export class AuthenticationService {
         const newUserToken = await tx.authToken.create({
           data: {
             name: `verification_token:${newUser.id}`,
-            content: `${verificationToken}-${tokenId}`,
+            content: `${verificationToken}--${tokenId}`,
             userId: newUser.id,
             expiryInMilliSecs: 14400000,
           },
@@ -125,15 +126,22 @@ export class AuthenticationService {
           );
         }
 
-        await this.mailerService.sendEmail('base', {
+        return {
+          email: newUser.email,
+          token: newUserToken.content,
+        };
+      });
+      this.eventEmitter.emit(
+        'user.email',
+        new MailerEvent('base', {
           subject: 'Jetei Account Creation',
-          to: newUser.email,
+          to: d.email,
           templatePath: './registration-successful',
           data: {
-            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/verification?token=${newUserToken.content}` : `${this.appConfig.environment.NODE_ENV}/verification?token=${newUserToken.content}`}`,
+            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/verification?token=${d.token}` : `${this.appConfig.environment.NODE_ENV}/verification?token=${d.token}`}`,
           },
-        });
-      });
+        }),
+      );
       return {
         type: 'success',
         status_code: 200,
@@ -162,6 +170,10 @@ export class AuthenticationService {
 
       if (!foundUser) {
         throw new Error(this.messageHelper.USER_ACCOUNT_NOT_EXISTING);
+      }
+
+      if (!foundUser.isVerified) {
+        throw new Error(this.messageHelper.USER_VERIFICATION_FAILED);
       }
 
       const isValid = await this.authHelper.verifyCredential(
@@ -193,7 +205,7 @@ export class AuthenticationService {
       const newUserToken = await this.prisma.authToken.create({
         data: {
           name: `access_token:${foundUser.id}`,
-          content: `${accessToken}-${tokenId}`,
+          content: `${accessToken}--${tokenId}`,
           userId: foundUser.id,
           expiryInMilliSecs: 36000000,
         },
@@ -240,9 +252,9 @@ export class AuthenticationService {
    * @returns {Promise<APIResponse<any>>} Redirects to login page if successful
    */
   public async verify(query: UserVerifyAccountDto): Promise<APIResponse<any>> {
-    this.logger.log('Verify user account by token');
+    this.logger.log(`Verify user account by token ${query.token}`);
     try {
-      await this.prisma.$transaction(async (tx) => {
+      const d = await this.prisma.$transaction(async (tx) => {
         const authToken = await tx.authToken.findFirst({
           where: {
             content: query.token,
@@ -255,11 +267,12 @@ export class AuthenticationService {
 
         const authArr = this.siteHelper.splitAtFirstOccurrenceRegex(
           authToken.content,
-          '-',
+          '--',
         );
 
         const jwtToken = authArr[0];
         const tokenId = authArr[1];
+        console.log(jwtToken, tokenId);
 
         const decoded = await this.validateToken(jwtToken, tokenId);
 
@@ -267,11 +280,10 @@ export class AuthenticationService {
           throw new Error(this.messageHelper.INVALID_TOKEN);
         }
 
-        const expiryDate = new Date(
-          authToken.createdAt.getMilliseconds() + authToken.expiryInMilliSecs,
-        );
+        const expiryDate =
+          authToken.createdAt.getMilliseconds() + authToken.expiryInMilliSecs;
 
-        const currentDate = new Date(Date.now());
+        const currentDate = new Date().getMilliseconds();
 
         if (currentDate > expiryDate) {
           throw new Error(this.messageHelper.EXPIRED_TOKEN);
@@ -310,15 +322,20 @@ export class AuthenticationService {
           throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
         }
 
-        await this.mailerService.sendEmail('base', {
+        return { email: updatedUser.email };
+      });
+
+      this.eventEmitter.emit(
+        'user.email',
+        new MailerEvent('base', {
           subject: 'Jetei Account Verification',
-          to: foundUser.email,
+          to: d.email,
           templatePath: './verification-successful',
           data: {
             url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/login` : `${this.appConfig.environment.NODE_ENV}/login`}`,
           },
-        });
-      });
+        }),
+      );
       return {
         type: 'success',
         status_code: 200,
@@ -327,9 +344,10 @@ export class AuthenticationService {
       };
     } catch (e) {
       this.logger.error(this.messageHelper.USER_VERIFICATION_FAILED, {
+        context: e.message,
         error: e,
       });
-      throw new BadRequestException(e?.message);
+      throw new BadRequestException(e);
     }
   }
 
@@ -344,7 +362,7 @@ export class AuthenticationService {
   ): Promise<APIResponse<any>> {
     this.logger.log(`Forget password of user with email: ${data.email}`);
     try {
-      await this.prisma.$transaction(async (tx) => {
+      const d = await this.prisma.$transaction(async (tx) => {
         const foundUser = await tx.user.findUniqueOrThrow({
           where: {
             email: data.email,
@@ -378,7 +396,7 @@ export class AuthenticationService {
         const newUserToken = await this.prisma.authToken.create({
           data: {
             name: `forgot_password_token:${foundUser.id}`,
-            content: `${forgotPasswordToken}-${tokenId}`,
+            content: `${forgotPasswordToken}--${tokenId}`,
             userId: foundUser.id,
             expiryInMilliSecs: 36000000,
           },
@@ -390,15 +408,20 @@ export class AuthenticationService {
           );
         }
 
-        await this.mailerService.sendEmail('base', {
+        return { email: foundUser.email, token: newUserToken.content };
+      });
+
+      this.eventEmitter.emit(
+        'user.email',
+        new MailerEvent('base', {
           subject: 'Jetei Account Reset Password',
-          to: foundUser.email,
+          to: d.email,
           templatePath: './reset-password-started',
           data: {
-            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/reset-password?token=${newUserToken.content}` : `${this.appConfig.environment.NODE_ENV}/account/reset-password?token=${newUserToken.content}`}`,
+            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/reset-password?token=${d.token}` : `${this.appConfig.environment.NODE_ENV}/account/reset-password?token=${d.token}`}`,
           },
-        });
-      });
+        }),
+      );
       return {
         type: 'success',
         status_code: 200,
@@ -425,7 +448,7 @@ export class AuthenticationService {
   ): Promise<APIResponse<any>> {
     this.logger.log(`Reset password of user`);
     try {
-      await this.prisma.$transaction(async (tx) => {
+      const d = await this.prisma.$transaction(async (tx) => {
         const authToken = await tx.authToken.findFirst({
           where: {
             content: token,
@@ -438,7 +461,7 @@ export class AuthenticationService {
 
         const authArr = this.siteHelper.splitAtFirstOccurrenceRegex(
           authToken.content,
-          '-',
+          '--',
         );
 
         const jwtToken = authArr[0];
@@ -450,11 +473,10 @@ export class AuthenticationService {
           throw new Error(this.messageHelper.INVALID_TOKEN);
         }
 
-        const expiryDate = new Date(
-          authToken.createdAt.getMilliseconds() + authToken.expiryInMilliSecs,
-        );
+        const expiryDate =
+          authToken.createdAt.getMilliseconds() + authToken.expiryInMilliSecs;
 
-        const currentDate = new Date(Date.now());
+        const currentDate = new Date().getMilliseconds();
 
         if (currentDate > expiryDate) {
           throw new Error(this.messageHelper.EXPIRED_TOKEN);
@@ -491,15 +513,19 @@ export class AuthenticationService {
           throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
         }
 
-        await this.mailerService.sendEmail('base', {
+        return { email: updatedUser.email };
+      });
+      this.eventEmitter.emit(
+        'user.email',
+        new MailerEvent('base', {
           subject: 'Jetei Account Reset Password Done',
-          to: updatedUser.email,
+          to: d.email,
           templatePath: './reset-password-done',
           data: {
             url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/login` : `${this.appConfig.environment.NODE_ENV}/login`}`,
           },
-        });
-      });
+        }),
+      );
       return {
         type: 'success',
         status_code: 200,
@@ -516,7 +542,7 @@ export class AuthenticationService {
   }
 
   public async invalidateUserToken(req: RequestUser, res: Response) {
-    this.logger.log(`Invalidate token for user ${req.user.sub}`);
+    this.logger.log(`Invalidate token for user ${req.user?.sub || null}`);
     try {
       const token: string = req.cookies['accessToken'];
       const tokenId: string = req.cookies['accessTokenId'];
@@ -525,39 +551,54 @@ export class AuthenticationService {
         throw new Error(this.messageHelper.HTTP_UNAUTHORIZED);
       }
 
+      const decoded = await this.validateToken(token, tokenId);
+
+      if (!decoded) {
+        throw new Error(this.messageHelper.INVALID_TOKEN);
+      }
+
       await this.prisma.$transaction(async (tx) => {
-        const foundUser = await tx.user.findUnique({
+        const foundAndUpdatedUserToken = await tx.user.update({
           where: {
-            id: req.user.sub,
-          },
-        });
-        if (!foundUser) {
-          throw new Error(this.messageHelper.RETRIEVAL_ACTION_FAILED);
-        }
-        const updatedToken = await tx.authToken.update({
-          where: {
-            id: tokenId,
+            id: decoded.sub,
           },
           data: {
-            isBlackListed: true,
+            tokens: {
+              update: {
+                where: {
+                  content: `${token}--${tokenId}`,
+                },
+                data: {
+                  expiryInMilliSecs: 0,
+                  isBlackListed: true,
+                },
+              },
+            },
           },
         });
-
-        if (!updatedToken) {
+        if (!foundAndUpdatedUserToken) {
           throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
         }
       });
-      res.cookie('accessToken', token, {
+      res.cookie('accessToken', '', {
         httpOnly: true,
         sameSite: 'lax',
         secure:
           this.appConfig.environment.NODE_ENV === 'production' ? true : false,
         expires: new Date(Date.now()),
       });
-      return res.send({
-        status_code: 200,
-        type: 'success',
-      } as APIResponse<any>);
+      res.cookie('accessTokenId', '', {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure:
+          this.appConfig.environment.NODE_ENV === 'production' ? true : false,
+        expires: new Date(Date.now()),
+      });
+      return res.redirect(302, '/');
+      // return res.send({
+      //   status_code: 200,
+      //   type: 'success',
+      // } as APIResponse<any>);
     } catch (e) {
       this.logger.error(this.messageHelper.UPDATE_ACTION_FAILED, {
         context: `Failed to invalidate token for user ${req.user.sub}`,
@@ -627,8 +668,11 @@ export class AuthenticationService {
    * @param {string} tokenId The id of jwt token
    * @returns {Promise<any>} The payload
    */
-  public async validateToken(token: string, tokenId?: string): Promise<any> {
-    const decoded = await this.jwtService.verifyAsync(token, {
+  public async validateToken(
+    token: string,
+    tokenId?: string,
+  ): Promise<JwtPayload> {
+    const decoded: JwtPayload = await this.jwtService.verifyAsync(token, {
       secret: this.appConfig.authentication.ACCESS_JWT_TOKEN_SECRET_KEY,
       jwtid: tokenId,
     });

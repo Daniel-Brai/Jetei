@@ -3,15 +3,15 @@ import {
   Get,
   Req,
   Res,
-  UseGuards,
   Query,
   Param,
   ParseUUIDPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
-import { AuthenticatedGuard } from '@/domain/api/v1/authentication/guards/authenticated.guard';
 import { RequestUser } from '@/interfaces';
 import { AppService } from './app.service';
+import { AccessTokenGuard } from './domain/api/v1/authentication/guards/access-token.guard';
 
 @Controller()
 export class AppController {
@@ -47,7 +47,7 @@ export class AppController {
     return await this.appService.getSignup(req, res);
   }
 
-  @UseGuards(AuthenticatedGuard)
+  @UseGuards(AccessTokenGuard)
   @Get('/account/logout')
   async getLogout(@Req() req: RequestUser, @Res() res: Response) {
     return await this.appService.getLogout(req, res);
@@ -96,24 +96,38 @@ export class AppController {
     return await this.appService.getResetPasswordConfirmed(req, res);
   }
 
-  // @UseGuards(AuthenticatedGuard)
+  @Get('/settings')
+  async getSettings(
+    @Req() req: RequestUser,
+    @Res() res: Response,
+    @Query('page') page?: 'profile' | 'notifications',
+  ) {
+    return await this.appService.getUserSettingsAndByOptionalQuery(
+      req,
+      res,
+      page,
+    );
+  }
+
+  @UseGuards(AccessTokenGuard)
   @Get('/workspace')
   async getWorkspace(@Req() req: RequestUser, @Res() res: Response) {
     return await this.appService.getWorkspace(req, res);
   }
 
-  // @UseGuards(AuthenticatedGuard)
+  @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs')
   async getWorkspaceHubs(@Req() req: RequestUser, @Res() res: Response) {
     return await this.appService.getWorkspaceHubs(req, res);
   }
 
-  // @UseGuards(AuthenticatedGuard)
+  @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/new')
   async getWorkspaceHubsCreate(@Req() req: RequestUser, @Res() res: Response) {
     return await this.appService.getWorkspaceHubsCreate(req, res);
   }
 
+  @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/add-invitee')
   async getWorkspaceAddHubInvitee(
     @Req() req: RequestUser,
@@ -122,6 +136,7 @@ export class AppController {
     return await this.appService.getWorkspaceHubAddInvitee(req, res);
   }
 
+  @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/:hubId')
   async getWorkspaceHubById(
     @Param('hubId', ParseUUIDPipe) hubId: string,
@@ -131,6 +146,7 @@ export class AppController {
     return await this.appService.getWorkspaceHubById(hubId, req, res);
   }
 
+  @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/:hubId/edit')
   async getWorkspaceHubsEdit(
     @Param('hubId', ParseUUIDPipe) hubId: string,
@@ -140,6 +156,7 @@ export class AppController {
     return await this.appService.getWorkspaceHubsEdit(hubId, req, res);
   }
 
+  @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/:hubId/notes/new')
   async getWorkspaceHubByIdAddNewNote(
     @Param('hubId', ParseUUIDPipe) hubId: string,
@@ -149,6 +166,7 @@ export class AppController {
     return await this.appService.getWorkspaceHubCreateNewNote(hubId, req, res);
   }
 
+  @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/:hubId/notes/:noteId/edit')
   async getWorkspaceHubByIdNoteByIdEdit(
     @Param('hubId', ParseUUIDPipe) hubId: string,
@@ -164,13 +182,16 @@ export class AppController {
     );
   }
 
-  @Get('/workspace/hubs/invitees/:inviteeId/edit')
+  @UseGuards(AccessTokenGuard)
+  @Get('/workspace/hubs/:hubId/invitees/:inviteeId/edit')
   async getWorkspaceHubInviteeEdit(
+    @Param('hubId', ParseUUIDPipe) hubId: string,
     @Param('inviteeId', ParseUUIDPipe) inviteeId: string,
     @Req() req: RequestUser,
     @Res() res: Response,
   ) {
     return await this.appService.getWorkspaceHubInviteeEdit(
+      hubId,
       inviteeId,
       req,
       res,

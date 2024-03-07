@@ -8,6 +8,7 @@ import { UserInterceptor } from '@/common/interceptors/app.interceptors';
 import { AppConfig, SiteConfig } from '@/lib/config/config.provider';
 import { APIV1Module } from '@/domain/api/v1/api-v1.module';
 import { PrismaModule } from '@/infra/gateways/database/prisma/prisma.module';
+import { WebsocketModule } from '@/infra/gateways/websockets/websockets.module';
 import { MailerModule } from '@/lib/mailer/mailer.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -30,6 +31,7 @@ const node_env = AppConfig.environment.NODE_ENV;
     } as Params),
     PrismaModule,
     APIV1Module,
+    WebsocketModule,
     MailerModule,
     TerminusModule,
   ],

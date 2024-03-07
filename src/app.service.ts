@@ -10,6 +10,7 @@ import {
   MessageHelpers,
 } from '@/common/helpers/app.helpers';
 import { RequestUser } from '@/interfaces';
+import { AuthenticationService } from '@/domain/api/v1/authentication/authentication.service';
 import { SiteConfig } from '@/lib/config/config.provider';
 import { PrismaService } from '@/infra/gateways/database/prisma/prisma.service';
 import { Response, Request } from 'express';
@@ -69,16 +70,16 @@ export class AppService {
   private readonly authHelpers = AuthenticationHelpers;
   private readonly siteConfig = SiteConfig;
   private readonly logoutUrl = '/account/logout';
-  private readonly prismaService = new PrismaService();
-
   constructor(
     private readonly healthService: HealthCheckService,
     private readonly dbService: PrismaHealthIndicator,
+    private readonly authService: AuthenticationService,
+    private readonly prisma: PrismaService,
   ) {}
 
   public async healthCheck() {
     const status = await this.healthService.check([
-      () => this.dbService.pingCheck('database', this.prismaService),
+      () => this.dbService.pingCheck('database', this.prisma),
     ]);
     if (status.status === 'ok') {
       return {
@@ -158,8 +159,8 @@ export class AppService {
   }
 
   public async getLogout(req: RequestUser, res: Response) {
-    this.logger.log(`Log out authenticated user`);
-    return res.redirect(302, '/');
+    this.logger.log(`Log out authenticated user: ${req.user.sub}`);
+    await this.authService.invalidateUserToken(req, res);
   }
 
   public async getSignup(req: Request, res: Response): Promise<void> {
@@ -319,7 +320,7 @@ export class AppService {
         ip: req.ip,
         url: req.url,
         nonce: generateNonce(),
-        api_url: `/api/v1/authentication/verify-account/${token}`,
+        api_url: `/api/v1/authentication/verify-account?token=${token}`,
         form_id: 'verify-account-form',
         form_name: 'Verify account',
         redirectUrl: '/account/verification-successful',
@@ -436,6 +437,43 @@ export class AppService {
     }
   }
 
+  public async getUserSettingsAndByOptionalQuery(
+    req: RequestUser,
+    res: Response,
+    page?: 'profile' | 'notifications',
+  ): Promise<void> {
+    this.logger.log(`Get Jetei User Settings page`);
+
+    try {
+      const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
+      const status = await this.healthCheck();
+      const canonicalURL = getCanonicalUrl(req);
+
+      setLocals(req, res);
+
+      return res.render(`views/settings/index`, {
+        canonicalURL: canonicalURL,
+        ogImagePath: `${canonicalURL}/${SiteConfig.ogImagePath}`,
+        title: `Settings | ${SiteConfig.name}`,
+        description: `Settings | ${SiteConfig.name}`,
+        ip: req.ip,
+        url: req.url,
+        page: page,
+        nonce: generateNonce(),
+        logoutUrl: this.logoutUrl,
+        status: status,
+        ...SiteConfig,
+      });
+    } catch (e) {
+      this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
+        error: e,
+      });
+      throw new InternalServerErrorException(
+        this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   public async getInternalServerError(
     req: Request,
     res: Response,
@@ -493,7 +531,7 @@ export class AppService {
         url: req.url,
         nonce: generateNonce(),
         status: status,
-        api_url: `/api/v1/authentication/reset-password/${token}`,
+        api_url: `/api/v1/authentication/reset-password?=token=${token}`,
         form_id: 'reset-password-form',
         form_name: 'Reset password',
         redirectUrl: '/account/reset-confirmed',
@@ -544,7 +582,7 @@ export class AppService {
   }
 
   public async getWorkspace(req: RequestUser, res: Response): Promise<void> {
-    this.logger.log(`Get Jetei Workspace page`);
+    this.logger.log(`Get Jetei Workspace page for user: ${req.user.sub}`);
 
     try {
       const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
@@ -561,8 +599,8 @@ export class AppService {
         user: req.user,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
-        hubs: hubs,
-        chats: chats,
+        hubs: [],
+        chats: [],
         status: status,
         ...this.siteConfig,
       });
@@ -630,7 +668,8 @@ export class AppService {
         title: `Create Hub | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
-        form_id: '/api/v1/hubs',
+        form_id: 'hub-create',
+        api_url: '/api/v1/hubs',
         form_name: 'Hub create',
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
@@ -666,7 +705,8 @@ export class AppService {
         title: `Edit Hub | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
-        form_id: `/api/v1/hubs/${hubId}`,
+        form_id: 'hub-edit',
+        api_url: `/api/v1/hubs/${hubId}`,
         form_name: 'Hub edit',
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
@@ -701,7 +741,8 @@ export class AppService {
         title: `Invite to Hub | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
-        form_id: `/api/v1/hubs/add-invitee`,
+        form_id: `hub-add-invitee`,
+        api_url: `/api/v1/hubs/add-invitee`,
         form_name: 'Hub add invitee',
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
@@ -719,6 +760,7 @@ export class AppService {
   }
 
   public async getWorkspaceHubInviteeEdit(
+    hubId: string,
     inviteeId: string,
     req: Request,
     res: Response,
@@ -738,7 +780,8 @@ export class AppService {
         ip: req.ip,
         url: req.url,
         inviteeId: inviteeId,
-        form_id: `/api/v1/hubs/invitees/${inviteeId}`,
+        form_id: `hub-edit-invitee-${inviteeId}`,
+        api_url: `/api/v1/hubs/${hubId}/invitees/${inviteeId}`,
         form_name: 'Hub edit invitee',
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,

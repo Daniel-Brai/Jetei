@@ -19,12 +19,13 @@ import {
 } from '@/common/helpers/app.helpers';
 import { PrismaService } from '@/infra/gateways/database/prisma/prisma.service';
 import { Operation, OperationType } from '@/interfaces';
-import { Document, Message } from '@/types';
+import { Document, JwtPayload, Message } from '@/types';
 import { Chat, Note } from '@prisma/client';
 import { OperationalTransformationService } from '@/common/services/app.services';
 import { v4 } from 'uuid';
+import { AppConfig } from '@/lib/config/config.provider';
 
-@WebSocketGateway()
+@WebSocketGateway(AppConfig.environment.WS_PORT, { namespace: 'events' })
 export class WebsocketGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
@@ -60,8 +61,9 @@ export class WebsocketGateway
       const parsedCookies = this.authHelpers.parseAccessCookies(cookies);
       const token = parsedCookies.accessToken;
       const tokenId = parsedCookies.accessTokenId;
-      const payload = await this.jwtService.verifyAsync(token, {
+      const payload: JwtPayload = await this.jwtService.verifyAsync(token, {
         jwtid: tokenId,
+        secret: AppConfig.authentication.ACCESS_JWT_TOKEN_SECRET_KEY,
       });
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
@@ -69,6 +71,10 @@ export class WebsocketGateway
           profile: true,
         },
       });
+
+      if (!user) {
+        throw new Error(this.messageHelpers.USER_ACCOUNT_NOT_EXISTING);
+      }
 
       if (!this.userPreference) {
         this.userPreference = { id: user.id, name: user.profile.name };
@@ -271,9 +277,21 @@ export class WebsocketGateway
         );
         note = {
           markdown: otOp.document.getContent(),
-          html: this.siteHelpers.markdownToHtml(otOp.document.getContent());
-          text: this.siteHelpers.stripHtmlPreservingStructure(this.siteHelpers.markdownToHtml(otOp.document.getContent()))
-        }
+          html: this.siteHelpers.markdownToHtml(otOp.document.getContent()),
+          text: this.siteHelpers.stripHtmlPreservingStructure(
+            this.siteHelpers.markdownToHtml(otOp.document.getContent()),
+          ),
+        };
+        await this.prisma.note.update({
+          where: {
+            id: payload.noteId,
+          },
+          data: {
+            markdown: note.markdown,
+            text: note.text,
+            updatedById: socket.data.user.id,
+          },
+        });
       }
       this.server.emit('savedMarkdown', {
         senderId: socket.data.user.id,

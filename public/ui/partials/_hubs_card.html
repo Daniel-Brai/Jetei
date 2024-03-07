@@ -11,13 +11,13 @@
           <div class="font-semibold">{{ item.name }}</div>
         </div>
         <div class="ml-auto text-xs">
-          {{ formatDistanceToNow(item.updated_at) }}
+          {{ formatDistanceToNow(item.updatedAt) }}
         </div>
       </div>
-      <div class="text-xs font-medium">{{ item.subject }}</div>
+      <div class="text-xs font-medium">{{ item.description }}</div>
     </div>
     <div class="line-clamp-2 text-xs text-muted-foreground">
-      {{ subString(item.markdown.text, 300) }}
+      {{ subString(item.notes[0].text, 300) }}
     </div>
   </a>
 </div>

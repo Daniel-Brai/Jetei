@@ -1,41 +1,55 @@
 import {
   MessageHelpers,
   AuthenticationHelpers,
+  SiteHelpers,
 } from '@/common/helpers/app.helpers';
+import { MailerEvent } from '@/common/events/app.events';
 import { PrismaService } from '@/infrastructure/gateways/database/prisma/prisma.service';
 import { AuthenticationService } from '@/domain/api/v1/authentication/authentication.service';
 import { RequestUser } from '@/interfaces';
 import { APIResponse } from '@/types';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   BadRequestException,
   Injectable,
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Hub, Invitee, Prisma } from '@prisma/client';
+import { Hub, Invitee } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { v4 } from 'uuid';
-import { InviteeToHubDto } from './dtos/hubs.dtos';
+import {
+  CreateHubDto,
+  CreateHubNoteDto,
+  InviteeToHubDto,
+  UpdateHubDto,
+  UpdateHubInviteeDto,
+} from './dtos/hubs.dtos';
+import { AppConfig } from '@/lib/config/config.provider';
 
 @Injectable()
 export class HubsService {
   private readonly logger = new Logger(HubsService.name);
+  private readonly appConfig = AppConfig;
+  private readonly siteHelpers = SiteHelpers;
   private readonly messageHelpers = MessageHelpers;
   private readonly authHelpers = AuthenticationHelpers;
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly eventEmitter: EventEmitter2,
     private readonly authService: AuthenticationService,
   ) {}
 
   /**
    * Create a hub for an authenticated user;
    * @param {RequestUser} req The request object
-   * @param {Prisma.HubCreateWithoutInviteeInput} data The data needed to create a hub
+   * @param {CreateHubDto} data The data needed to create a hub
+   * @returns {Promise<Partial<APIResponse<Hub>>>} The returned hub
    */
   public async createHubByUserId(
     req: RequestUser,
-    data: Prisma.HubCreateWithoutInviteeInput,
+    data: CreateHubDto,
   ): Promise<Partial<APIResponse<Hub>>> {
     this.logger.log(`Create hubs for user: ${req.user.sub}`);
 
@@ -74,6 +88,7 @@ export class HubsService {
         return newHub;
       });
       return {
+        type: 'success',
         status_code: 201,
         api_message: `Your Hub ${hub.name} was created successfully`,
         data: {
@@ -164,7 +179,7 @@ export class HubsService {
               create: [
                 {
                   name: tokenName,
-                  content: `${accessToken}-${tokenId}`,
+                  content: `${accessToken}--${tokenId}`,
                   expiryInMilliSecs: 14400000,
                 },
               ],
@@ -177,21 +192,153 @@ export class HubsService {
         if (!updateInviteeWithAuthToken) {
           throw new Error(this.messageHelpers.UPDATE_ACTION_FAILED);
         }
-        return updateInviteeWithAuthToken;
+
+        return {
+          token: accessToken,
+          tokenId: tokenId,
+          hubId: updateInviteeWithAuthToken.hubId,
+          email: updateInviteeWithAuthToken.email,
+        };
       });
+      this.eventEmitter.emit(
+        'user.email',
+        new MailerEvent('base', {
+          subject: 'Jetei Invitation to Hub',
+          to: invitee.email,
+          templatePath: './invitee-to-hub',
+          data: {
+            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/login?type=invitee&token=${invitee.token}&tokenId=${invitee.tokenId}&redirectId=${invitee.hubId}` : `${this.appConfig.environment.NODE_ENV}/login?token=${invitee.token}&tokenId=${invitee.tokenId}&redirectId=${invitee.hubId}`}`,
+          },
+        }),
+      );
       return {
+        type: 'success',
         status_code: 201,
         api_message: `${invitee.email} was invited to your hub successfully`,
-        data: {
-          id: invitee.id,
-          hubId: invitee.hubId,
-          email: invitee.email,
-          role: invitee.role,
-        },
       };
     } catch (e) {
       this.logger.error(this.messageHelpers.CREATE_ACTION_FAILED, {
         context: `Invite user to hub ${data.hubId}`,
+        error: e,
+      });
+      throw new BadRequestException(this.messageHelpers.CREATE_ACTION_FAILED);
+    }
+  }
+
+  /**
+   * Update an invitee to a hub
+   * @param {RequestUser} req The request object
+   * @param {string} hubId The id of the hub
+   * @param {string} inviteeId The id of the invitee
+   * @param {UpdateHubInviteeDto} data The data passed
+   * @returns {Promise<Partial<APIResponse<any>>>}
+   */
+  public async updateAssigneeToHubById(
+    req: RequestUser,
+    hubId: string,
+    inviteeId: string,
+    data: UpdateHubInviteeDto,
+  ): Promise<Partial<APIResponse<Invitee>>> {
+    this.logger.log(`Update a invitee in hub ${data.hubId}`);
+    try {
+      const invitee = await this.prisma.$transaction(async (tx) => {
+        const foundHub = await tx.hub.findUnique({
+          where: { id: hubId, userId: req.user.sub },
+        });
+
+        if (!foundHub) {
+          throw new Error(this.messageHelpers.HUB_NOT_FOUND);
+        }
+
+        const existingInvitee = await tx.invitee.findUnique({
+          where: {
+            id: inviteeId,
+            hubId: hubId,
+          },
+        });
+
+        if (!existingInvitee) {
+          throw new Error('User not in hub');
+        }
+
+        const updatedInvitee = await tx.invitee.update({
+          where: {
+            id: existingInvitee.id,
+          },
+          data: {
+            name: data.name || existingInvitee.name,
+            email: data.email || existingInvitee.email,
+            role: data.role || existingInvitee.role,
+          },
+        });
+
+        return updatedInvitee;
+      });
+      return {
+        type: 'success',
+        status_code: 200,
+        api_message: `${invitee.name} details were updated successfully`,
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelpers.CREATE_ACTION_FAILED, {
+        context: `Update invitee user in hub ${data.hubId}`,
+        error: e,
+      });
+      throw new BadRequestException(this.messageHelpers.CREATE_ACTION_FAILED);
+    }
+  }
+
+  /**
+   * delete an invitee to a hub
+   * @param {RequestUser} req The request object
+   * @param {string} hubId The id of the hub
+   * @param {string} inviteeId The id of the invitee
+   * @param {UpdateHubInviteeDto} data The data passed
+   * @returns {Promise<Partial<APIResponse<any>>>}
+   */
+  public async deleteAssigneeToHubById(
+    req: RequestUser,
+    hubId: string,
+    inviteeId: string,
+  ): Promise<Partial<APIResponse<Invitee>>> {
+    this.logger.log(`Delete an invitee in hub ${hubId}`);
+    try {
+      const invitee = await this.prisma.$transaction(async (tx) => {
+        const foundHub = await tx.hub.findUnique({
+          where: { id: hubId, userId: req.user.sub },
+        });
+
+        if (!foundHub) {
+          throw new Error(this.messageHelpers.HUB_NOT_FOUND);
+        }
+
+        const existingInvitee = await tx.invitee.findUnique({
+          where: {
+            id: inviteeId,
+            hubId: hubId,
+          },
+        });
+
+        if (!existingInvitee) {
+          throw new Error('User not in hub');
+        }
+
+        const deleteInvitee = await tx.invitee.delete({
+          where: {
+            id: existingInvitee.id,
+          },
+        });
+
+        return deleteInvitee;
+      });
+      return {
+        type: 'success',
+        status_code: 200,
+        api_message: `Invitee deleted successfully`,
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelpers.CREATE_ACTION_FAILED, {
+        context: `Delete invitee user in hub ${hubId}`,
         error: e,
       });
       throw new BadRequestException(this.messageHelpers.CREATE_ACTION_FAILED);
@@ -228,6 +375,7 @@ export class HubsService {
         return foundUser.hubs;
       });
       return {
+        type: 'success',
         status_code: 200,
         data: hubs,
       };
@@ -283,6 +431,7 @@ export class HubsService {
         return foundUserHub;
       });
       return {
+        type: 'success',
         status_code: 200,
         data: hub,
       };
@@ -294,6 +443,72 @@ export class HubsService {
       throw new BadRequestException(
         this.messageHelpers.RETRIEVAL_ACTION_FAILED,
       );
+    }
+  }
+
+  /**
+   * Edit a user hub details by id
+   * @param {RequestUser} req The request object
+   * @param {string} hubId The id of the hub
+   * @returns {Promise<Partial<APIResponse<any>>>} The matched hub with its details
+   */
+  public async editUserHubDetailsById(
+    req: RequestUser,
+    hubId: string,
+    data: UpdateHubDto,
+  ): Promise<Partial<APIResponse<any>>> {
+    this.logger.log(
+      `Edit the details of a user hub with userId ${req.user.sub} and hubId ${hubId}`,
+    );
+    try {
+      const hub = await this.prisma.$transaction(async (tx) => {
+        const foundUser = await tx.user.findUnique({
+          where: {
+            id: req.user.sub,
+          },
+        });
+
+        if (!foundUser) {
+          throw new Error(this.messageHelpers.USER_ACCOUNT_NOT_EXISTING);
+        }
+
+        const foundUserHub = await tx.hub.findUnique({
+          where: {
+            userId: foundUser.id,
+            id: hubId,
+          },
+        });
+
+        if (!foundUserHub) {
+          throw new Error(this.messageHelpers.HUB_NOT_FOUND);
+        }
+
+        const updatedUserHub = await tx.hub.update({
+          where: {
+            id: foundUserHub.id,
+          },
+          data: {
+            name: data.name || foundUserHub.name,
+            description: data.description || foundUserHub.description,
+          },
+        });
+
+        if (!updatedUserHub) {
+          throw new Error(this.messageHelpers.HUB_NOT_FOUND);
+        }
+        return updatedUserHub;
+      });
+      return {
+        type: 'success',
+        status_code: 200,
+        api_message: `Your Hub ${hub.name} was successfully updated`,
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelpers.UPDATE_ACTION_FAILED, {
+        context: `Update user hub with id ${hubId}`,
+        error: e,
+      });
+      throw new BadRequestException(this.messageHelpers.UPDATE_ACTION_FAILED);
     }
   }
 
@@ -336,6 +551,7 @@ export class HubsService {
         }
       });
       return {
+        type: 'success',
         status_code: 200,
         api_message: 'Your hub has been deleted successfully',
       };
@@ -345,6 +561,78 @@ export class HubsService {
         error: e,
       });
       throw new BadRequestException(this.messageHelpers.DELETE_ACTION_FAILED);
+    }
+  }
+
+  /**
+   * Edit a user hub details by id
+   * @param {RequestUser} req The request object
+   * @param {string} hubId The id of the hub
+   * @returns {Promise<Partial<APIResponse<any>>>} The matched hub with its details
+   */
+  public async createHubNoteById(
+    req: RequestUser,
+    hubId: string,
+    data: CreateHubNoteDto,
+  ): Promise<Partial<APIResponse<any>>> {
+    this.logger.log(
+      `Create a note for hub with userId ${req.user.sub} and hubId ${hubId}`,
+    );
+    try {
+      const hub = await this.prisma.$transaction(async (tx) => {
+        const foundUser = await tx.user.findUnique({
+          where: {
+            id: req.user.sub,
+          },
+        });
+
+        if (!foundUser) {
+          throw new Error(this.messageHelpers.USER_ACCOUNT_NOT_EXISTING);
+        }
+
+        const foundUserHub = await tx.hub.findUnique({
+          where: {
+            userId: foundUser.id,
+            id: hubId,
+          },
+        });
+
+        if (!foundUserHub) {
+          throw new Error(this.messageHelpers.HUB_NOT_FOUND);
+        }
+
+        const updatedUserHubWithNote = await tx.hub.update({
+          where: {
+            id: foundUserHub.id,
+          },
+          data: {
+            notes: {
+              create: {
+                name: data.name,
+                createdById: foundUser.id,
+              },
+            },
+          },
+        });
+
+        if (!updatedUserHubWithNote) {
+          throw new Error(
+            `${this.messageHelpers.HUB_NOT_FOUND} - unable to create note`,
+          );
+        }
+        return updatedUserHubWithNote;
+      });
+      return {
+        type: 'success',
+        status_code: 200,
+        api_message: `Your Hub ${hub.name} was successfully updated`,
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelpers.CREATE_ACTION_FAILED, {
+        context: `Updated user hub with id ${hubId}`,
+        error: e,
+      });
+      throw new BadRequestException(this.messageHelpers.CREATE_ACTION_FAILED);
     }
   }
 }

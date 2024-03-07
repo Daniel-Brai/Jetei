@@ -19,7 +19,6 @@ model User {
   email           String            @unique @db.VarChar(255)
   password        String            @db.VarChar(255)
   role            UserRole          @default(OWNER)
-  permissions     String?
   isVerified      Boolean           @default(false)
   profile         Profile?
   hubs            Hub[]             @relation("HubOwner")
@@ -76,8 +75,8 @@ model AuthToken {
   inviteeId         String?
   user              User?    @relation(fields: [userId], references: [id])
   invitee           Invitee? @relation(fields: [inviteeId], references: [id])
-  name              String?
-  content           String?
+  name              String? 
+  content           String? @unique
   expiryInMilliSecs Int
   isBlackListed     Boolean  @default(false)
   createdAt         DateTime @default(now())

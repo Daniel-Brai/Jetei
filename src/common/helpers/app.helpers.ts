@@ -98,7 +98,7 @@ export const SiteHelpers = {
    * @returns {string[]} A array of string
    */
   splitAtFirstOccurrenceRegex: (str: string, char: string): string[] => {
-    return str.split(char, 1);
+    return str.split(char);
   },
   /**
    * Get a string length
@@ -304,7 +304,10 @@ export const AuthenticationHelpers = {
    * @returns {boolean} A true or false value
    */
   isAuthenticated: (req: Request): boolean => {
-    return req.user === null;
+    if (!req.user) {
+      return false;
+    }
+    return true;
   },
   /**
    * Hashes a credential
@@ -364,8 +367,10 @@ export const AuthenticationHelpers = {
    */
   verifyToken: async (jwtToken: string): Promise<any> => {
     try {
-      const token = jwtToken.split('-')[0];
-      const tokenId = jwtToken.split('-')[1];
+      const [token, tokenId] = SiteHelpers.splitAtFirstOccurrenceRegex(
+        jwtToken,
+        '--',
+      );
       const decoded = await jwt.verify(token, secret_key, { jwtid: tokenId });
       return decoded;
     } catch (e) {

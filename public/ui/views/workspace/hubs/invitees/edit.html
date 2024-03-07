@@ -32,15 +32,14 @@
 
       {% set options = [{ value: "EDITOR", text: "Editor" }, { value: "VIEWER", text: "Viewer" }] %}
       
-      {{ input_required_no_pattern(type="text", id="name", name="name", placeholder="Name", title="Name must be at least 4 characters long") }}
-      {{ input_non_required(type="text", id="description", name="description", placeholder="Description") }} 
-      {{ select(name="role", id="user-roles", options=options) }}
+      {{ input_required_no_pattern(type="text",id="name", name="name", placeholder="Name", title="Name must be at least 4 characters long") }} 
+      {{ input_required_no_pattern(type="email",id="email", name="email", placeholder="Email", title="Email must be a valid email") }} 
+      {{ select(name="role", id="user-roles", base_option="Select invitee permissions", options=options) }}
       <div class="w-full inline-flex items-end justify-end">
       <a href="/workspace/hubs" class="btn-link text-gradient_indigo-purple font-semibold text-[13px] text-right hover:bg-white">Go to hubs</a>
       </div>
       
       {{ button(class="btn-base-variant btn-base-size text-sm rounded-md flex items-center justify-center", text="Save") }}
-      <a class="btn-outline btn-base-size rounded-sm text-sm flex items-center justify-center" href="/workspace/hubs/invitee/{{ inviteeId }}">Delete</a>
 
       <div id="result"></div>
 
@@ -87,6 +86,10 @@
           </div>
         </div>
       </template>
+    </form>
+    
+    <form data-hx-ext="json-enc" data-hx-delete="{{ api_url }}" data-hx-trigger="submit">
+      {{ button(class="-mt-6 btn-outline btn-base-size rounded-sm text-sm flex items-center justify-center w-full", text="Delete") }}
     </form>
   </div>
 </section>

@@ -4,6 +4,9 @@ import { JwtPayload } from 'jsonwebtoken';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AppConfig } from '@/lib/config/config.provider';
 import { MessageHelpers } from '@/common/helpers/app.helpers';
+import { Request } from 'express';
+
+let req: Request;
 
 @Injectable()
 export class AccessTokenJwtStrategy extends PassportStrategy(Strategy) {
@@ -18,6 +21,7 @@ export class AccessTokenJwtStrategy extends PassportStrategy(Strategy) {
           return data;
         },
       ]),
+      jwtid: req?.cookies['accessTokenId'],
       secretOrKey: AppConfig.authentication.ACCESS_JWT_TOKEN_SECRET_KEY,
     });
   }

@@ -12,6 +12,10 @@ export interface IAppConfig {
      */
     PORT: number;
     /**
+     * The websockets port
+     */
+    WS_PORT: number;
+    /**
      * The url of the application deployed
      */
     PROD_URL?: string;

@@ -13,6 +13,7 @@ export const AppConfig: IAppConfig = {
   environment: {
     NODE_ENV: configService.getOrThrow<string>('NODE_ENV'),
     PORT: configService.get<number>('PORT') || 3000,
+    WS_PORT: configService.get<number>('WS_PORT') || 3001,
     PROD_URL: configService.get<string>('PROD_URL'),
   },
   authentication: {
@@ -40,7 +41,8 @@ export const AppConfig: IAppConfig = {
     smtp: {
       SMTP_HOST: configService.getOrThrow<string>('SMTP_HOST'),
       SMTP_PORT: Number(configService.getOrThrow<number>('SMTP_PORT')),
-      SMTP_EMAIL_ADDRESS: configService.getOrThrow<string>('SMTP_EMAIL_ADDRESS'),
+      SMTP_EMAIL_ADDRESS:
+        configService.getOrThrow<string>('SMTP_EMAIL_ADDRESS'),
       SMTP_PASSWORD: configService.getOrThrow<string>('SMTP_PASSWORD'),
     },
   },
