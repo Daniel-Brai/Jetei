@@ -17,6 +17,7 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
+    cors: true,
   });
   const logger = app.get(Logger);
   const reflector = app.get(Reflector);

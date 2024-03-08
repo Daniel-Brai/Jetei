@@ -25,7 +25,13 @@ import { OperationalTransformationService } from '@/common/services/app.services
 import { v4 } from 'uuid';
 import { AppConfig } from '@/lib/config/config.provider';
 
-@WebSocketGateway(AppConfig.environment.WS_PORT, { namespace: 'events' })
+@WebSocketGateway(AppConfig.environment.WS_PORT, {
+  cors: {
+    origin: ['*'],
+    credentials: true,
+  },
+  transports: ['websocket', 'polling'],
+})
 export class WebsocketGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
@@ -85,7 +91,7 @@ export class WebsocketGateway
       this.connectedUsers[user.id] = socket;
       this.server.emit('connectedUser', socket.data.user);
       this.logger.debug(`User: ${socket.data.user.id} connected via WS`);
-      this.logger.debug(`Set user preference: ${socket.data.user.id}`);
+      this.logger.debug(`Setting user preference to: ${socket.data.user.id}`);
       this.logger.debug(
         `Client connected. Total connections: ${Object.keys(this.connectedUsers).length}`,
       );
@@ -118,13 +124,27 @@ export class WebsocketGateway
     }
   }
 
+  @SubscribeMessage('viewMessage')
+  async handleViewMessage(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody()
+    payload: { userId: string; userName: string; message: string },
+  ) {
+    socket.emit('newMessage', {
+      userId: payload.userId,
+      userName: payload.userName,
+      content: payload.message,
+      isRead: false,
+    });
+  }
+
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
     @ConnectedSocket() socket: Socket,
+    @MessageBody()
     payload: { message: string; chatId: string | null; participantId: string },
   ) {
     try {
-      const sender = socket.id;
       const message: Message = await this.prisma.$transaction(async (tx) => {
         let newChat: Chat | null;
         // Check if chat exist between user and participant else create
@@ -168,8 +188,8 @@ export class WebsocketGateway
           ),
         };
       });
-      this.server.emit('newMessage', {
-        senderId: socket.data.user.id,
+      socket.broadcast.emit('sendNewMessage', {
+        sender: socket.data.user.name,
         payload: message,
       });
     } catch (e) {
@@ -184,7 +204,7 @@ export class WebsocketGateway
   @SubscribeMessage('sendMarkdown')
   async handleMarkdown(
     @ConnectedSocket() socket: Socket,
-    payload: { markdown: string },
+    @MessageBody() payload: { markdown: string },
   ) {
     try {
       const document = new Document(payload.markdown);
@@ -192,8 +212,7 @@ export class WebsocketGateway
         document.getContent(),
       );
       this.server.emit('renderedMarkdown', {
-        senderId: socket.data.user.id,
-        payload: renderedHTML,
+        html: renderedHTML,
       });
     } catch (e) {
       this.logger.error(this.messageHelpers.UNEXPECTED_RESULT, {
@@ -207,6 +226,7 @@ export class WebsocketGateway
   @SubscribeMessage('saveMarkdown')
   async handleSaveMarkdown(
     @ConnectedSocket() socket: Socket,
+    @MessageBody()
     payload: {
       noteId: string;
       markdown: string;
@@ -293,7 +313,7 @@ export class WebsocketGateway
           },
         });
       }
-      this.server.emit('savedMarkdown', {
+      socket.broadcast.emit('savedMarkdown', {
         senderId: socket.data.user.id,
         payload: note,
       });

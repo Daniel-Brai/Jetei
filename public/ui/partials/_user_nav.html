@@ -1,9 +1,11 @@
 {% from "macros/icon.html" import avatar_button %}
 
 {% set id = genId() %}
+{% set initials = generateInitials() %}
+{% set name = user.name %}
 
 <div class="relative">
-  {{ avatar_button(id, avatar_class="btn-ghost h-8 w-8 rounded-full cursor-pointer", user_initials="DB", title="Daniel Brai") }}
+  {{ avatar_button(id, avatar_class="btn-ghost h-8 w-8 rounded-full cursor-pointer", user_initials=initials, title=name) }}
   <div
     id="dropdown-box"
     data-state="closed"

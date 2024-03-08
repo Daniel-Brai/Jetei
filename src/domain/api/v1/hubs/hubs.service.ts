@@ -197,6 +197,7 @@ export class HubsService {
           token: accessToken,
           tokenId: tokenId,
           hubId: updateInviteeWithAuthToken.hubId,
+          hubName: foundHub.name,
           email: updateInviteeWithAuthToken.email,
         };
       });
@@ -207,7 +208,8 @@ export class HubsService {
           to: invitee.email,
           templatePath: './invitee-to-hub',
           data: {
-            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/login?type=invitee&token=${invitee.token}&tokenId=${invitee.tokenId}&redirectId=${invitee.hubId}` : `${this.appConfig.environment.NODE_ENV}/login?token=${invitee.token}&tokenId=${invitee.tokenId}&redirectId=${invitee.hubId}`}`,
+            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/login?type=invitee&token=${invitee.token}&tokenId=${invitee.tokenId}&redirectId=${invitee.hubId}` : `${this.appConfig.environment.PROD_URL}/login?type=invitee&token=${invitee.token}&tokenId=${invitee.tokenId}&redirectId=${invitee.hubId}`}`,
+            hub: invitee.hubName,
           },
         }),
       );

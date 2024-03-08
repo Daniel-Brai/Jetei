@@ -116,6 +116,16 @@ export class AppController {
   }
 
   @UseGuards(AccessTokenGuard)
+  @Get('/workspace/chats/:chatId')
+  async getWorkspaceChatsById(
+    @Param('chatId', ParseUUIDPipe) chatId: string,
+    @Req() req: RequestUser,
+    @Res() res: Response,
+  ) {
+    return await this.appService.getWorkspaceChatById(chatId, req, res);
+  }
+
+  @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs')
   async getWorkspaceHubs(@Req() req: RequestUser, @Res() res: Response) {
     return await this.appService.getWorkspaceHubs(req, res);

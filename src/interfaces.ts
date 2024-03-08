@@ -10,9 +10,9 @@ export interface ISiteLocals {
   formatDistanceToNow?: (date: Date | string) => string;
   getFullYear: () => number;
   genId: () => string;
-  baseUrl: () => string;
   isAuthenticated: () => boolean;
   generateProfileName: () => string;
+  generateInitials: () => string;
   subString?: (text: string, end: string | number) => string;
   htmlToText?: (htmlString: string) => string;
   stringLength: (text: string) => number;

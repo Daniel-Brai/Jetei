@@ -49,6 +49,7 @@ export class MailerProcessor {
         context: {
           url: job.data.data.url,
           to: job.data.to,
+          hub: job.data.data.hub,
         },
       });
     } catch (e) {

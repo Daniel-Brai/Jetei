@@ -110,6 +110,7 @@ export class AppService {
         ip: req.ip,
         url: req.url,
         nonce: generateNonce(),
+        user: req.user,
         logoutUrl: this.logoutUrl,
         status: status,
         ...this.siteConfig,
@@ -319,6 +320,7 @@ export class AppService {
         title: `Account Verification | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
+        user: req.user,
         nonce: generateNonce(),
         api_url: `/api/v1/authentication/verify-account?token=${token}`,
         form_id: 'verify-account-form',
@@ -358,6 +360,7 @@ export class AppService {
         title: `Verification successful | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
+        user: req.user,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
         status: status,
@@ -390,6 +393,7 @@ export class AppService {
         description: `503 Error — Access denied for resource | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
+        user: req.user,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
         status: status,
@@ -422,6 +426,7 @@ export class AppService {
         description: `404 Error — this page was not found | ${SiteConfig.name}`,
         ip: req.ip,
         url: req.url,
+        user: req.user,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
         status: status,
@@ -458,6 +463,7 @@ export class AppService {
         description: `Settings | ${SiteConfig.name}`,
         ip: req.ip,
         url: req.url,
+        user: req.user,
         page: page,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
@@ -494,6 +500,7 @@ export class AppService {
         description: `500 Error — something went wrong | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
+        user: req.user,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
         status: status,
@@ -531,6 +538,7 @@ export class AppService {
         url: req.url,
         nonce: generateNonce(),
         status: status,
+        user: req.user,
         api_url: `/api/v1/authentication/reset-password?=token=${token}`,
         form_id: 'reset-password-form',
         form_name: 'Reset password',
@@ -599,6 +607,7 @@ export class AppService {
         user: req.user,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
+        base_chat_url: 'api/v1/workspace/chats',
         hubs: [],
         chats: [],
         status: status,
@@ -632,6 +641,7 @@ export class AppService {
         title: `Your Hubs | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
+        user: req.user,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
         form_id: '/api/v1/hubs',
@@ -668,6 +678,7 @@ export class AppService {
         title: `Create Hub | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
+        user: req.user,
         form_id: 'hub-create',
         api_url: '/api/v1/hubs',
         form_name: 'Hub create',
@@ -705,6 +716,7 @@ export class AppService {
         title: `Edit Hub | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
+        user: req.user,
         form_id: 'hub-edit',
         api_url: `/api/v1/hubs/${hubId}`,
         form_name: 'Hub edit',
@@ -741,6 +753,7 @@ export class AppService {
         title: `Invite to Hub | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
+        user: req.user,
         form_id: `hub-add-invitee`,
         api_url: `/api/v1/hubs/add-invitee`,
         form_name: 'Hub add invitee',
@@ -779,6 +792,7 @@ export class AppService {
         title: `Invite to Hub | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
+        user: req.user,
         inviteeId: inviteeId,
         form_id: `hub-edit-invitee-${inviteeId}`,
         api_url: `/api/v1/hubs/${hubId}/invitees/${inviteeId}`,
@@ -817,6 +831,7 @@ export class AppService {
         title: `Your Hub - ${hubName} | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
+        user: req.user,
         hubId: hubId,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
@@ -856,6 +871,7 @@ export class AppService {
         form_id: `create-note`,
         form_name: 'Create Note',
         hubId: hubId,
+        user: req.user,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
         status: status,
@@ -891,14 +907,53 @@ export class AppService {
         title: `Edit Note - ${hubName}  | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
+        ws_url: 'ws://localhost:3001',
         api_url: `/api/v1/workspace/hubs/${hubId}/notes/${noteId}`,
         note_link_url: `/workspace/hubs/${hubId}/notes/${noteId}/link`,
         form_id: `edit-note`,
         form_name: 'Edit Note',
         hubId: hubId,
+        user: req.user,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
         status: status,
+        ...this.siteConfig,
+      });
+    } catch (e) {
+      this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
+        error: e,
+      });
+      throw new InternalServerErrorException(
+        this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async getWorkspaceChatById(
+    chatId: string,
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    this.logger.log(`Get Jetei Workspace chat page`);
+
+    try {
+      const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
+      const canonicalURL = getCanonicalUrl(req);
+
+      setLocals(req, res);
+
+      return res.render('views/workspace/chats/id', {
+        canonicalURL: canonicalURL,
+        title: `Chat | ${this.siteConfig.name}`,
+        ip: req.ip,
+        url: req.url,
+        nonce: generateNonce(),
+        user: req.user,
+        ws_url: 'ws://localhost:3001',
+        form_id: 'chat-form',
+        chatId: chatId,
+        form_name: 'Chat',
+        logoutUrl: this.logoutUrl,
         ...this.siteConfig,
       });
     } catch (e) {

@@ -1,0 +1,86 @@
+{% extends 'views/layouts/base.html' %}
+
+{% block js %}
+<script nonce="{{ nonce }}" src="/assets/js/socket.io.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<section class="h-full mt-8 py-24">
+    <div class="mb-3 px-8 flex flex-col w-full space-x-3" id="messages"></div>
+    <form id="chat-form" class="absolute bottom-4 w-full px-8">
+        <div class="relative cursor-pointer">
+            <button id="send-msg-btn" class="absolute right-2 top-1.5 text-muted-foreground btn-ghost py-1 px-3 rounded-md" type="submit">
+                <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            </button>
+            <input
+                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-3 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                type="text"
+                id="message-input"
+                name="message"
+                placeholder="Send a message..."
+            />
+        </div>
+    </form>
+</section>
+<script nonce="{{ nonce }}">
+
+    function genInitials(user) {
+        const words = user.name.trim().split(/\s+/);
+
+        const initials = words.map((word) => word.charAt(0).toUpperCase());
+
+        return initials.join('');
+    }
+
+    const socket = io('{{ ws_url }}', {
+        transports: ['websocket', 'polling'],
+    });
+    const user = { id: '{{ user.sub }}', name: '{{ user.name }}' };
+
+    const messages = document.getElementById('messages')
+
+    socket.on('newMessage', (message) => {
+      const messageContainerDiv = document.createElement('div');
+      const messageDetailsDiv = document.createElement('div');
+      
+      if (message.userId === user.id) {
+        messages.classList.add('items-end');
+      } else if (message.userId !== user.id) {
+        messages.classList.add('items-start');
+      }
+
+      messageContainerDiv.className = `mb-2 ${message.userId === user.id ? 'bg-blue-500 text-white rounded-lg p-2 ml-auto max-w-xs text-sm' : 'bg-gray-300 rounded-lg p-2 max-w-xs text-sm'}`;
+      messageContainerDiv.innerHTML = `
+        ${message.content}
+      `;
+      messageDetailsDiv.innerHTML = `
+        <span class="mb-4 text-xs rounded-full btn-secondary h-8 w-8 flex items-center justify-center">
+          ${genInitials(user)}
+        </span>
+      `; 
+      messages.appendChild(messageContainerDiv);
+      messages.appendChild(messageDetailsDiv);
+    });
+
+    document.getElementById('chat-form').addEventListener('submit', (e) => {
+      e.preventDefault()
+      const messageInput = document.getElementById('message-input');
+      const content = messageInput.value.trim();
+      if (content) {
+        socket.emit('viewMessage', { userId: user.id, userName: user.name, message: content });
+        messageInput.value = '';
+      }
+    });
+
+    document.getElementById('messages').addEventListener('scroll', () => {
+      const messagesContainer = document.getElementById('messages');
+      if (messagesContainer.scrollTop === 0) {
+        const unreadMessageIds = Array.from(messagesContainer.querySelectorAll('div:not(.text-green-500)'))
+          .map((div) => div.dataset.messageId);
+        if (unreadMessageIds.length > 0) {
+          socket.emit('readMessages', { userId: currentUserId, messageIds: unreadMessageIds });
+        }
+      }
+    });
+</script>
+{% endblock %}

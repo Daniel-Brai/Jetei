@@ -10,11 +10,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { ISiteLocals, RequestUser } from '@/interfaces';
 import { JwtPayload, JwtOptions } from '@/types';
 import { AppConfig, SiteConfig } from '@/lib/config/config.provider';
-import { Prisma } from '@prisma/client';
 
 const salt = AppConfig.authentication.HASHING_SALT_OR_ROUNDS;
 const secret_key = AppConfig.authentication.ACCESS_JWT_TOKEN_SECRET_KEY;
-const deployed_url = AppConfig.environment.PROD_URL;
 const issuer = SiteConfig.name;
 const md = new markdownit({
   html: true,
@@ -161,56 +159,16 @@ export const SiteHelpers = {
     return finalName;
   },
   /**
-   * Get the text in the markdown
-   * @param {string} markdownText The markdown edit
-   * @returns {string} The string in the markdown
+   * Generate user initials
+   * @param {RequestUser} req The request object
+   * @returns {string} The genrated user initials
    */
-  stripMarkdown: (markdownText: string): string => {
-    markdownText = markdownText.replace(
-      /(\*|_)(.*?)(\*|_)/g,
-      (match, p1, p2, p3) => `${p1}${p2}${p3}`,
-    );
-    markdownText = markdownText.replace(
-      /\[(.*?)\]\((.*?)\)/g,
-      (match, p1, p2) => `${p1} (${p2})`,
-    );
-    markdownText = markdownText.replace(/`(.*?)`/g, (match, p1) => p1);
-    markdownText = markdownText.replace(
-      /`(.*?)`/gs,
-      (match, p1) => `\n${p1}\n`,
-    );
+  genInitials: (req: RequestUser): string => {
+    const words = req.user.name.trim().split(/\s+/);
 
-    markdownText = markdownText.replace(
-      /(?<=^|\n)(#+)(.*?)\n/gm,
-      (match, p1, p2) => `${p2}\n`,
-    );
+    const initials = words.map((word) => word.charAt(0).toUpperCase());
 
-    markdownText = markdownText.replace(
-      /(?<=^|\n)([-*+]\s+)(.*?)\n/gm,
-      (match, p1, p2) => `${p2}\n`,
-    );
-
-    markdownText = markdownText.replace(
-      /(?<=^|\n)>(.*?)\n/gm,
-      (match, p1) => `${p1}\n`,
-    );
-
-    markdownText = markdownText.replace(
-      /(?<=^|\n)(---|\*\*\*|\−{3,})\n/gm,
-      '\n',
-    );
-
-    markdownText = markdownText.replace(
-      /(?<=^|\n)\| (.*?)\|\n(.*?)\|\n/gm,
-      (match, p1, p2) => `${p1}\n${p2}\n`,
-    );
-
-    markdownText = markdownText.replace(
-      /!\[(.*?)\]\((.*?)\)/g,
-      (match, p1, p2) => (p1 ? `${p1}` : ''),
-    );
-
-    return markdownText;
+    return initials.join('');
   },
   /**
    * Coverts markdown string to a santized html
@@ -283,8 +241,8 @@ export const SiteHelpers = {
       generateProfileName: () => SiteHelpers.generateAnonymousProfileName(),
       htmlToText: (htmlString: string) =>
         SiteHelpers.stripHtmlPreservingStructure(htmlString),
-      baseUrl: () => '',
       genId: () => uuidv4(),
+      generateInitials: () => SiteHelpers.genInitials(req as RequestUser),
       isAuthenticated: () => AuthenticationHelpers.isAuthenticated(req),
       subString: (text, end) => SiteHelpers.subString(text, end),
       stringLength: (text) => SiteHelpers.stringLength(text),
@@ -365,13 +323,15 @@ export const AuthenticationHelpers = {
    * @param {string} jwtToken The JWT Token
    * @returns {Promise<any>} The decoded payload
    */
-  verifyToken: async (jwtToken: string): Promise<any> => {
+  verifyToken: async (jwtToken: string): Promise<JwtPayload> => {
     try {
       const [token, tokenId] = SiteHelpers.splitAtFirstOccurrenceRegex(
         jwtToken,
         '--',
       );
-      const decoded = await jwt.verify(token, secret_key, { jwtid: tokenId });
+      const decoded = (await jwt.verify(token, secret_key, {
+        jwtid: tokenId,
+      })) as JwtPayload;
       return decoded;
     } catch (e) {
       throw new Error(e);

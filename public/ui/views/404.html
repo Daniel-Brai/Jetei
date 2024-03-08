@@ -12,7 +12,15 @@
     {% if not isAuthenticated() %}
     <a href="/" rel="noreferrer" class="btn-base-variant btn-base-size rounded-sm text-sm"> Go back home</a>
     {% else %}
-    <button onclick="history.back()" class="btn-base-variant btn-base-size rounded-sm tetx-sm">Go back</button>
+    <div class="mx-auto flex items-center justify-center space-x-5">
+      <button
+        onclick="window.location.href='/workspace'"
+        class="btn-base-variant btn-base-size rounded-sm text-sm"
+      >
+        Go to workspace
+      </button>
+      <button onclick="history.back()" class="btn-base-variant btn-base-size rounded-sm text-sm">Go back</button>
+    </div>
     {% endif %}
 </div>
 {% endblock %}

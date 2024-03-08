@@ -19,6 +19,7 @@ export interface IMailerBody {
   readonly data?: {
     name_or_email?: string;
     url?: string;
+    hub?: string;
   };
 }
 
