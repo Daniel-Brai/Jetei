@@ -15,7 +15,9 @@ export class AllExceptionFilter implements ExceptionFilter {
     const req = ctx.getRequest<Request>();
     const status = exception.getStatus();
 
-    if (status === 403) {
+    if (status === 401) {
+      return res.redirect('/page/unauthorized');
+    } else if (status === 403) {
       return res.redirect('/page/access-denied');
     } else if (status === 404) {
       return res.redirect('/page/not-found');

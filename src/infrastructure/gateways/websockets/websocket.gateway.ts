@@ -95,13 +95,20 @@ export class WebsocketGateway
       this.logger.debug(
         `Client connected. Total connections: ${Object.keys(this.connectedUsers).length}`,
       );
+      socket.emit('userCount', {
+        users: Object.keys(this.connectedUsers),
+        user: { id: user.id, name: user.profile.name, status: 'Active' },
+      });
     } catch (e) {
       this.logger.error(this.messageHelpers.USER_VALIDATION_FAILED, {
         context: 'Failed to get user info via ws',
         error: e,
       });
+      socket.emit('error', {
+        message: this.messageHelpers.USER_VALIDATION_FAILED,
+        authorized: false,
+      });
       socket.disconnect();
-      throw new WsException(this.messageHelpers.USER_VALIDATION_FAILED);
     }
   }
 
@@ -120,7 +127,9 @@ export class WebsocketGateway
         context: 'Failed to disconnect user',
         error: e,
       });
-      throw new WsException(this.messageHelpers.UNEXPECTED_RESULT);
+      socket.emit('error', {
+        message: this.messageHelpers.USER_VALIDATION_FAILED,
+      });
     }
   }
 
@@ -138,11 +147,42 @@ export class WebsocketGateway
     });
   }
 
+  @SubscribeMessage('handleUserInfo')
+  async handleUserInfo(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody()
+    payload: { userId: string },
+  ) {
+    const data = await this.prisma.user.findUnique({
+      where: {
+        id: payload.userId,
+      },
+      include: {
+        profile: true,
+      },
+    });
+    if (data) {
+      socket.emit('receiveUserInfo', {
+        id: data.id,
+        name: data.profile.name,
+      });
+    } else {
+      socket.emit('error', {
+        message: 'Failed to receive client info',
+      });
+    }
+  }
+
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
     @ConnectedSocket() socket: Socket,
     @MessageBody()
-    payload: { message: string; chatId: string | null; participantId: string },
+    payload: {
+      previousMessageId: string | null;
+      message: string;
+      chatId: string | null;
+      participantId: string;
+    },
   ) {
     try {
       const message: Message = await this.prisma.$transaction(async (tx) => {
@@ -197,7 +237,9 @@ export class WebsocketGateway
         context: 'Failed to send message',
         error: e,
       });
-      throw new WsException(this.messageHelpers.UNEXPECTED_RESULT);
+      socket.emit('error', {
+        message: 'Failed to send message',
+      });
     }
   }
 
@@ -211,7 +253,7 @@ export class WebsocketGateway
       const renderedHTML = this.siteHelpers.markdownToHtml(
         document.getContent(),
       );
-      this.server.emit('renderedMarkdown', {
+      socket.emit('renderedMarkdown', {
         html: renderedHTML,
       });
     } catch (e) {
@@ -219,8 +261,28 @@ export class WebsocketGateway
         context: 'Failed to parse markdown',
         error: e,
       });
-      throw new WsException(this.messageHelpers.UNEXPECTED_RESULT);
+      socket.emit('error', {
+        message: 'Note Preview failed',
+      });
     }
+  }
+
+  @SubscribeMessage('downloadFile')
+  handleDownloadMarkdown(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody()
+    payload: {
+      content: string;
+      noteId: string;
+    },
+  ) {
+    const fileName = `note-${payload.noteId}.md`;
+    const fileContent = payload.content;
+
+    socket.emit('receiveFileData', {
+      filename: fileName,
+      filecontent: fileContent,
+    });
   }
 
   @SubscribeMessage('saveMarkdown')
@@ -229,14 +291,14 @@ export class WebsocketGateway
     @MessageBody()
     payload: {
       noteId: string;
-      markdown: string;
+      content: string;
       opType: OperationType | null;
       posInDocument: number | null;
     },
   ) {
     try {
       let note: { markdown: string; text: string; html: string };
-      const document = new Document(payload.markdown);
+      const document = new Document(payload.content);
       if (Object.keys(this.connectedUsers).length === 1) {
         note = await this.prisma.$transaction(async (tx) => {
           const foundNote = await tx.note.findUnique({
@@ -319,10 +381,12 @@ export class WebsocketGateway
       });
     } catch (e) {
       this.logger.error(this.messageHelpers.UNEXPECTED_RESULT, {
-        context: 'Failed to save markdown',
+        context: 'Failed to save note',
         error: e,
       });
-      throw new WsException(this.messageHelpers.UNEXPECTED_RESULT);
+      socket.emit('error', {
+        message: 'Failed to save note',
+      });
     }
   }
 }

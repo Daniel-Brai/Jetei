@@ -2,39 +2,57 @@
 <script nonce="{{ nonce }}" src="/assets/js/json-enc.js"></script>
 <script nonce="{{ nonce }}" src="/assets/js/socket.io.min.js"></script>
 {% endblock %} {% block content %}
-<div id="message-container" class="hidden items-center justify-center btn-outline w-[40%] rounde-md">
-  <p id="message-renderer"></p>
-</div>
 <section
   class="container py-10 min-h-full relative"
   data-hx-ext="client-side-templates"
 >
+  <input class="hidden" id="user-count-tracker" value="" />
+  <div class="hidden" id="download-links"></div>
+  <div id="toast-message-container" data-state="open" data-slide="left" class="absolute -bottom-10 mx-auto ml-2 mb-4 hidden max-w-fit items-center bg-destructive rounded-md px-8 py-3 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2">
+    <div>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-alert"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+    </div>
+    <p class="ml-2 text-sm" id="toast-message-renderer">Daniel Brai lkfkdkfldkfdkdlfkk</p>
+  </div>
+  <div id="message-container" class="ml-2 mb-4 hidden max-w-fit items-start btn-outline rounded-md px-4 py-3">
+    <div class="text-sm" id="message-renderer"></div>
+  </div>
   {% from "macros/form.html" import textarea, input_required_no_pattern, input_non_required %}
 
   <form onsubmit="event.preventDefault()" novalidate>
     {{ textarea(id="edit-note-md", name="markdown") }}
 
-    <div id="link-dialog" class="hidden flex-col space-y-2 w-[300px]">
+    <div id="link-dialog" class="hidden relative flex-col space-y-2 w-[300px]">
+      <button id="link-dialog-closeBtn" class="bg-secondary text-gray-400 rounded-full hover:text-gray-600 absolute -top-4 -right-7">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
       {{ input_required_no_pattern(name="link-url", type="url", id="link-url", placeholder="Enter URL", title="The URL must be a valid url") }}
       {{ input_non_required(name="link-text", id="link-text", placeholder="Enter link text") }}
       <button id="insert-link-btn" type="button" class="btn-base-variant btn-base-size text-sm rounded-md disabled:cursor-not-allowed disabled:opacity-50">Insert Link</button>
     </div>
 
-    <div id="table-dialog" class="hidden flex-col space-y-2 w-[300px]">
+    <div id="table-dialog" class="hidden flex-col space-y-2 w-[300px] relative">
+      <button id="table-dialog-closeBtn" class="bg-secondary text-gray-400 rounded-full hover:text-gray-600 absolute -top-4 -right-7">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
       {{ input_required_no_pattern(name="table-row", type="number", id="table-row", placeholder="Enter number of rows", title="The table rows must be greater than 0") }}
       {{ input_required_no_pattern(name="table-col", type="number", id="table-col", placeholder="Enter number of columns", title="The table columns must be greater than 0") }}
       <button id="table-create-btn" type="button" class="btn-base-variant btn-base-size text-sm rounded-md disabled:cursor-not-allowed disabled:opacity-50">Create table</button>
     </div>
 
     <div
-      class="absolute top-5 z-50 right-6 p-4 mx-auto rounded-xl border bg-card text-card-foreground shadow"
+      class="absolute top-5 z-30 right-6 p-4 mx-auto rounded-xl border bg-card text-card-foreground shadow"
     >
       <div class="flex flex-col items-center space-y-2">
         <div id="save-note" class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md">
           <span id="save-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
           </span>
-          <div class="tooltiptext">Save</div>
+          <div class="tooltiptext select-none">Save</div>
         </div>
          <div 
             id="show-preview" 
@@ -43,7 +61,7 @@
           <span id="preview-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gallery-vertical-end"><path d="M7 2h10"/><path d="M5 6h14"/><rect width="18" height="12" x="3" y="10" rx="2"/></svg>
           </span>
-          <div class="tooltiptext">Preview</div>
+          <div class="tooltiptext select-none">Preview</div>
         </div>
         <div
           class=" tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md"
@@ -65,7 +83,7 @@
             <path d="M15 20a4 4 0 0 0 0-8H6v8Z" />
           </svg>
           </svg>
-          <div class="tooltiptext">Bold</div>
+          <div class="tooltiptext select-none">Bold</div>
         </div>
         <div
           class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md"
@@ -87,7 +105,7 @@
             <line x1="4" x2="20" y1="20" y2="20" />
           </svg>
           </svg>
-          <div class="tooltiptext">Underline</div>
+          <div class="tooltiptext select-none">Underline</div>
         </div>
         <div
           class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md"
@@ -110,7 +128,7 @@
             <line x1="15" x2="9" y1="4" y2="20" />
           </svg>
           </svg>
-          <div class="tooltiptext">Italics</div>
+          <div class="tooltiptext select-none">Italics</div>
         </div>
         <div
           class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md"
@@ -133,7 +151,7 @@
               d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
             />
           </svg>
-          <div class="tooltiptext">Copy</div>
+          <div class="tooltiptext select-none">Copy</div>
         </div>
         <div id="download-note" class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md">
           <svg
@@ -152,7 +170,7 @@
             <polyline points="7 10 12 15 17 10" />
             <line x1="12" x2="12" y1="15" y2="3" />
           </svg>
-          <div class="tooltiptext">Download</div>
+          <div class="tooltiptext select-none">Download</div>
         </div>
         <div id="table-btn" class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md">
           <svg
@@ -172,9 +190,9 @@
             <path d="M21 9H3" />
             <path d="M21 15H3" />
           </svg>
-          <div class="tooltiptext">Insert table</div>
+          <div class="tooltiptext select-none">Insert table</div>
         </div>
-        <div id="link-note" class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md" onclick="window.location.href='{{ note_link_url }}'">
+        <div id="link-note" class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -193,7 +211,7 @@
               d="M4 11V4a2 2 0 0 1 2-2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h7"
             />
           </svg>
-          <div class="tooltiptext">Link note</div>
+          <div class="tooltiptext select-none">Link notes</div>
         </div>
         <div id="linkbtn" class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md">
           <svg
@@ -215,23 +233,49 @@
               d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
             />
           </svg>
-          <div class="tooltiptext">Insert link</div>
+          <div class="tooltiptext select-none">Insert link</div>
         </div>
       </div>
     </div>
 
-    <div id="popover" class="fixed inset-0 z-50 hidden">
-      <div class="absolute inset-0 bg-black opacity-50"></div>
+    <div id="html-preview-popover" class="fixed inset-0 z-50 hidden">
+      <div class="absolute inset-0 bg-popover-foreground opacity-15"></div>
       <div class="absolute inset-x-0 bottom-0 bg-popover p-4 rounded-t-lg shadow-lg" style="height: 60vh;">
         <div class="flex justify-end mb-4">
-          <button id="closeBtn" class="text-gray-500 hover:text-gray-700">
+          <button id="preview-closeBtn" class="text-gray-500 hover:text-gray-700">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
         <div class="h-full overflow-y-auto">
-          <div id="html-previewer" class="px-12"></div>
+          <div id="html-previewer" class="px-12">
+            <div class="flex flex-col space-y-2 text-center">
+              <h1 class="text-2xl font-semibold tracking-tight">Preview</h1>
+            </div>
+            <div class="mt-5" id="html-previewer-body"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="link-notes-popover" class="fixed inset-0 z-50 hidden">
+      <div class="absolute inset-0 bg-popover-foreground opacity-15"></div>
+      <div class="absolute inset-x-0 bottom-0 bg-popover p-4 rounded-t-lg shadow-lg" style="height: 60vh;">
+        <div class="flex justify-end mb-4">
+          <button id="link-note-closeBtn" class="text-gray-500 hover:text-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="h-full overflow-y-auto">
+          <div id="note-linker" class="px-12">
+            <div class="flex flex-col space-y-2 text-center">
+              <h1 class="text-2xl font-semibold tracking-tight">Link your revelant notes</h1>
+            </div>
+            <div id="note-linker-body"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -249,48 +293,11 @@
   const tableBtn = document.getElementById('table-btn')
   const tableDialog = document.getElementById('table-dialog')
   const tableCreateBtn = document.getElementById('table-create-btn')
-  const message = document.getElementById('message-renderer')
-  const messageContainer = document.getElementById('message-container')
-  const saveNoteBtn = document.getElementById('save-note')
-  const downloadNoteBtn = document.getElementById('download-note')
+  const tableClosebtn = document.getElementById('table-dialog-closeBtn');
+  const linkClosebtn = document.getElementById('link-dialog-closeBtn');
 
   let isLinkActive = false;
   let isTableDialogActive = false;
-
-  async function saveNote() {
-    const value = markdownInput.value
-    let res = await fetch("{{ api_url }}", {
-      method: "POST"
-    })
-    res = await res.json()
-    if (res['status_code'] === 200) {
-      messageContainer.classList.remove('hidden')
-      messageContainer.classList.add('flex')
-      message.textContent = "Note saved successfully!"
-      setTimeout(() => {
-        messageContainer.classList.add('hidden')
-        messageContainer.classList.remove('flex')
-      }, 3500)
-    } else {
-      messageContainer.classList.remove('hidden')
-      messageContainer.classList.add('flex')
-      message.textContent = "Something went wrong!"
-      setTimeout(() => {
-        messageContainer.classList.add('hidden')
-        messageContainer.classList.remove('flex')
-      }, 3500)
-    }
-  }
-
-  async function downloadNote() {
-    await saveNote();
-    await fetch('{{ api_url }}/download', {
-      method: "POST"
-    })
-  }
-
-  saveNoteBtn.addEventListener('click', async () => await saveNote() )
-  downloadNoteBtn.addEventListener('click', async () => await downloadNote() )
 
   function bold() {
     const selectionStart = markdownInput.selectionStart;
@@ -383,6 +390,12 @@
     linkDialog.classList.add('flex')
   })
 
+  linkClosebtn.addEventListener('click', () => {
+    isLinkActive = false;
+    linkDialog.classList.remove('flex')
+    linkDialog.classList.add('hidden')
+  })
+
   insertLinkBtn.addEventListener('click', () => {
     isLinkActive = false;
       const url = linkUrlInput.value;
@@ -436,6 +449,12 @@
       alert("Please enter valid numbers of rows and columns (both must be greater than 0).");
     }
   })
+  
+  tableClosebtn.addEventListener('click', () => {
+    isTableDialogActive = false;
+    tableDialog.classList.remove('flex')
+    tableDialog.classList.add('hidden')
+  })
 
   function debounce(func, delay) {
     let timeout;
@@ -444,32 +463,141 @@
       timeout = setTimeout(() => func(...args), delay);
     };
   }
-
-  markdownInput.addEventListener('input', () => {
-    const prevHeight = markdownInput.offsetHeight;
-
-    markdownInput.style.height = 'auto';
-    const contentHeight = markdownInput.scrollHeight;
-
-    if (contentHeight !== prevHeight) {
-      markdownInput.style.height = `${contentHeight}px`;
-    }
-  });
 </script>
 <script nonce="{{ nonce }}">
-  const popover = document.getElementById('popover');
-  const closePreviewerBtn = document.getElementById('closeBtn');
-  const htmlPreviewer = document.getElementById('html-previewer');
+  let userCount;
+  let prevMdValue = '';
+  let isPreviewerActive = false;
+  let isLinkerActive = false;
+  let operations = [];
+  const toastContainer = document.getElementById('toast-message-container')
+  const toastRenderer = document.getElementById('toast-message-renderer')
+  const messageRenderer = document.getElementById('message-renderer')
+  const messageContainer = document.getElementById('message-container')
+  const popover = document.getElementById('html-preview-popover');
+  const closePreviewerBtn = document.getElementById('preview-closeBtn');
+  const htmlPreviewer = document.getElementById('html-previewer-body');
+  const linkNotesPopover = document.getElementById('link-notes-popover');
+  const closeNoteLinkerBtn = document.getElementById('link-note-closeBtn');
+  const noteLinker = document.getElementById('note-linker-body');
   const htmlPreviewerBtn = document.getElementById('show-preview');
+  const noteLinkerBtn = document.getElementById('link-note');
+  const saveNoteBtn = document.getElementById('save-note')
+  const downloadNoteBtn = document.getElementById('download-note')
+  const userCountTracker = document.getElementById('user-count-tracker')
+
   const socket = io('{{ ws_url }}', {
       transports: ['websocket', 'polling'],
   });
   const user = { id: '{{ user.sub }}', name: '{{ user.name }}' };
-  let isPreviewerActive = false;
+  const noteId = "{{ noteId }}"
+
+  function createImagesForBlankLinks(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.error(`Container with ID "${containerId}" not found.`);
+      return;
+    }
+
+    const links = container.querySelectorAll('a[target="_blank"]');
+
+    links.forEach((link) => {
+      const img = document.createElement('img');
+      img.src = link.href;
+
+      if (link.nextSibling) {
+        link.parentNode.insertBefore(img, link.nextSibling);
+      } else {
+        link.parentNode.appendChild(img);
+      }
+    });
+  }
 
   socket.on('renderedMarkdown', (message) => {
+    console.log(message.html)
     htmlPreviewer.innerHTML = message.html;
+    createImagesForBlankLinks('html-previewer-body');
   });
+
+
+  function genInitials(name) {
+    const words = name.trim().split(/\s+/);
+
+    const initials = words.map((word) => word.charAt(0).toUpperCase());
+
+    return initials.join('');
+  }
+
+  socket.on('userCount', (message) => {
+    userCount = message.users.length;
+    userCountTracker.setAttribute("value", userCount);
+    console.log(`We have ${userCount} ${userCount > 1 ? 'users': 'user'} currently editing this note`)
+
+    const otherUser = message.users.filter((id) => id !== user.id)
+    
+    const avatarContainer = document.createElement('div')
+    const avatarCircle = document.createElement('div')
+    const avatarInitials = document.createElement('div')
+    const avatarStatus = document.createElement('span')
+
+    if (otherUser[0]) {
+      socket.emit('handleUserInfo', { userId: otherUser[0] })
+
+      socket.on('receiveUserInfo', (user) => {
+        const userStatus = message.users.includes(user.id) ? "Active" : "Disconnected" 
+        avatarContainer.classList.add('flex', '-space-x-2', 'rtl:space-x-reverse')
+        avatarCircle.classList.add("relative", "cursor-pointer", "inline-flex", "items-center", "justify-center", "w-10", "h-10", "bg-gray-100", "rounded-full", "dark:bg-gray-600")
+        avatarInitials.classList.add("font-medium", "text-gray-600", "dark:text-gray-300")
+        avatarStatus.classList.add("top-0", "left-7", "absolute", "z-50",  "w-3.5", "h-3.5", `${ userStatus === "Active" ? 'bg-jetei': 'bg-destructive' }`, "border-2", "border-white", "dark:border-gray-800", "rounded-full")
+        avatarCircle.setAttribute('title', user.name)
+        avatarStatus.setAttribute('title', userStatus)
+        avatarCircle.appendChild(avatarInitials)
+        avatarCircle.appendChild(avatarStatus)
+
+        const checkAvatarExistence = document.querySelector(`[data-ouid=${user.id}]`)
+
+        if (!checkAvatarExistence) {
+          avatarCircle.setAttribute('data-ouid', user.id)
+          avatarContainer.appendChild(avatarCircle)
+          avatarInitials.textContent = `${genInitials(user.name)}`
+          messageContainer.classList.remove('hidden')
+          messageContainer.classList.add('flex')
+          messageRenderer.appendChild(avatarContainer);
+        }
+      })
+    }
+  })
+
+  socket.on('error', (data) => {
+    const message = data.message;
+    toastContainer.classList.remove('hidden')
+    toastContainer.classList.add('flex')
+    toastContainer.setAttribute('data-state', 'open')
+    toastContainer.setAttribute('data-slide', 'left')
+    toastRenderer.textContent = message;
+
+
+    setTimeout(() => {
+      toastContainer.classList.remove('flex')
+      toastContainer.classList.add('hidden')
+      toastContainer.setAttribute('data-state', 'closed')
+      toastContainer.setAttribute('data-slide', '')
+      toastRenderer.textContent = '';
+    }, 2500)
+  })
+
+  socket.on('receiveFileData', (message) => {
+    const { filename, filecontent } = message;
+    const blob = new Blob([filecontent], { type: 'text/markdown; charset=UTF-8; variant=CommonMark' });
+    const url = window.URL.createObjectURL(blob);
+    const downloadLinksDiv = document.getElementById('download-links')
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    downloadLinksDiv.appendChild(link)
+    link.click()
+    window.URL.revokeObjectURL(url);
+  })
 
   closePreviewerBtn.addEventListener('click', () => {
     isPreviewerActive = false;
@@ -478,14 +606,93 @@
 
 
   htmlPreviewerBtn.addEventListener('click', (e) => {
-    const content = markdownInput.value.trim();
     isPreviewerActive = true;
-    if (e.target !== popover) {
+      const content = document.getElementById('edit-note-md').value;
       popover.classList.remove('hidden');
-    }
-    if (content) {
-      socket.emit('sendMarkdown', { markdown: content });
+      
+      if (content) {
+        console.log("Sent notes")
+        socket.emit('sendMarkdown', { markdown: content });
+      }
+  })
+
+  closeNoteLinkerBtn.addEventListener('click', () => {
+    isLinkerActive = false;
+    linkNotesPopover.classList.add('hidden');
+  });
+
+
+  saveNoteBtn.addEventListener('click', () => {
+    const userCount = Number(userCountTracker.value)
+    const content = document.getElementById('edit-note-md').value;
+
+    if (userCount === 1) {
+      socket.emit('saveMarkdown', { noteId: noteId, content: content })
+    } else {
+      console.log("Saved")
     }
   })
+
+  downloadNoteBtn.addEventListener('click', () => {
+    const content = document.getElementById('edit-note-md').value;
+    socket.emit('downloadFile', { noteId: noteId, content: content })
+  })
+
+  noteLinkerBtn.addEventListener('click', (e) => {
+    isLinkerActive = true;
+    if (e.target !== linkNotesPopover) {
+      linkNotesPopover.classList.remove('hidden');
+    }
+  });
+
+  markdownInput.addEventListener('input', (e) => {
+    const prevHeight = markdownInput.offsetHeight;
+    const currentMdValue = e.target.value;
+
+    markdownInput.style.height = 'auto';
+    const contentHeight = markdownInput.scrollHeight;
+
+    if (contentHeight !== prevHeight) {
+      markdownInput.style.height = `${contentHeight}px`;
+    }
+
+    for (let i = 0; i < Math.min(prevMdValue.length, currentMdValue.length); i++) {
+      if (prevMdValue[i] !== currentMdValue[i]) {
+        const operation = {
+          type: prevMdValue[i] === undefined ? 'insert' : 'delete',
+          userId: user.id,
+          noteId: "{{ noteId }}",
+          posInDocument: i,
+          content: currentMdValue,
+        };
+        operations.push(operation);
+      }
+    }
+
+    if (prevMdValue.length < currentMdValue.length) {
+      for (let i = prevMdValue.length; i < currentMdValue.length; i++) {
+        operations.push({
+          type: 'insert',
+          userId: user.id,
+          noteId: "{{ noteId }}",
+          posInDocument: i,
+          content: currentMdValue
+        });
+      }
+    } else if (prevMdValue.length > currentMdValue.length) {
+      for (let i = currentMdValue.length; i < prevMdValue.length; i++) {
+        operations.push({
+          type: 'delete',
+          userId: user.id,
+          noteId: "{{ noteId }}",
+          posInDocument: i,
+          content: currentMdValue
+        });
+      }
+    }
+
+    prevMdValue = currentMdValue;
+    console.log(operations)
+  });
 </script>
 {% endblock %}

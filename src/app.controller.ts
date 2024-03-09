@@ -22,6 +22,11 @@ export class AppController {
     return await this.appService.getIndex(req, res);
   }
 
+  @Get('/page/unauthorized')
+  async get401(@Req() req: Request, @Res() res: Response) {
+    return await this.appService.getUnauthorized(req, res);
+  }
+
   @Get('/page/access-denied')
   async get403(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getForbidden(req, res);

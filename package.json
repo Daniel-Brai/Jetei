@@ -59,6 +59,8 @@
     "jsonwebtoken": "^9.0.2",
     "linkify-it": "^5.0.0",
     "markdown-it": "^14.0.0",
+    "markdown-it-image-figures": "^2.1.1",
+    "markdown-it-linkify-images": "^4.0.0",
     "markdown-it-table": "^4.1.1",
     "nestjs-i18n": "^10.4.5",
     "nestjs-pino": "^4.0.0",

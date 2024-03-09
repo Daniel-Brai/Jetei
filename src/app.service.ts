@@ -11,7 +11,7 @@ import {
 } from '@/common/helpers/app.helpers';
 import { RequestUser } from '@/interfaces';
 import { AuthenticationService } from '@/domain/api/v1/authentication/authentication.service';
-import { SiteConfig } from '@/lib/config/config.provider';
+import { AppConfig, SiteConfig } from '@/lib/config/config.provider';
 import { PrismaService } from '@/infra/gateways/database/prisma/prisma.service';
 import { Response, Request } from 'express';
 
@@ -390,7 +390,40 @@ export class AppService {
         canonicalURL: canonicalURL,
         ogImagePath: `${canonicalURL}/${this.siteConfig.ogImagePath}`,
         title: `403 - Access denied | ${this.siteConfig.name}`,
-        description: `503 Error — Access denied for resource | ${this.siteConfig.name}`,
+        description: `403 Error — Access denied for resource | ${this.siteConfig.name}`,
+        ip: req.ip,
+        url: req.url,
+        user: req.user,
+        nonce: generateNonce(),
+        logoutUrl: this.logoutUrl,
+        status: status,
+        ...this.siteConfig,
+      });
+    } catch (e) {
+      this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
+        error: e,
+      });
+      throw new InternalServerErrorException(
+        this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async getUnauthorized(req: Request, res: Response): Promise<void> {
+    this.logger.log(`Get Jetei 401 page`);
+
+    try {
+      const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
+      const status = await this.healthCheck();
+      const canonicalURL = getCanonicalUrl(req);
+
+      setLocals(req, res);
+
+      return res.render('views/401', {
+        canonicalURL: canonicalURL,
+        ogImagePath: `${canonicalURL}/${this.siteConfig.ogImagePath}`,
+        title: `401 - unathorized | ${this.siteConfig.name}`,
+        description: `401 Error - Unauthorized | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
         user: req.user,
@@ -898,21 +931,21 @@ export class AppService {
       const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
       const status = await this.healthCheck();
       const canonicalURL = getCanonicalUrl(req);
-      const hubName = '';
 
       setLocals(req, res);
 
       return res.render('views/workspace/hubs/notes/edit', {
         canonicalURL: canonicalURL,
-        title: `Edit Note - ${hubName}  | ${this.siteConfig.name}`,
+        title: `Edit Note | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
-        ws_url: 'ws://localhost:3001',
+        ws_url: `${AppConfig.environment.NODE_ENV === 'development' ? `ws://localhost:${AppConfig.environment.WS_PORT}` : `wss://${req.hostname}:${AppConfig.environment.WS_PORT}`}`,
         api_url: `/api/v1/workspace/hubs/${hubId}/notes/${noteId}`,
         note_link_url: `/workspace/hubs/${hubId}/notes/${noteId}/link`,
         form_id: `edit-note`,
         form_name: 'Edit Note',
         hubId: hubId,
+        noteId: noteId,
         user: req.user,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
@@ -949,7 +982,7 @@ export class AppService {
         url: req.url,
         nonce: generateNonce(),
         user: req.user,
-        ws_url: 'ws://localhost:3001',
+        ws_url: `${AppConfig.environment.NODE_ENV === 'development' ? `ws://localhost:${AppConfig.environment.WS_PORT}` : `wss://${req.hostname}`}`,
         form_id: 'chat-form',
         chatId: chatId,
         form_name: 'Chat',

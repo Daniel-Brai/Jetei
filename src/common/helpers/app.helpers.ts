@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import * as markdownit from 'markdown-it';
 import { markdownItTable } from 'markdown-it-table';
+import * as milli from 'markdown-it-linkify-images';
 import * as sanitizeHtml from 'sanitize-html';
 import { v4 as uuidv4 } from 'uuid';
 import { ISiteLocals, RequestUser } from '@/interfaces';
@@ -18,6 +19,11 @@ const md = new markdownit({
   html: true,
   linkify: true,
   breaks: true,
+});
+md.use(milli, {
+  target: '_blank',
+  linkClass: 'preview-link-for-img',
+  imgClass: 'preview-image',
 });
 md.use(markdownItTable, {});
 
@@ -321,16 +327,13 @@ export const AuthenticationHelpers = {
   /**
    * Verify a jwt token signature
    * @param {string} jwtToken The JWT Token
+   * @param {string} jwtId The JWT Token id
    * @returns {Promise<any>} The decoded payload
    */
-  verifyToken: async (jwtToken: string): Promise<JwtPayload> => {
+  verifyToken: async (jwtToken: string, jwtId: string): Promise<JwtPayload> => {
     try {
-      const [token, tokenId] = SiteHelpers.splitAtFirstOccurrenceRegex(
-        jwtToken,
-        '--',
-      );
-      const decoded = (await jwt.verify(token, secret_key, {
-        jwtid: tokenId,
+      const decoded = (await jwt.verify(jwtToken, secret_key, {
+        jwtid: jwtId,
       })) as JwtPayload;
       return decoded;
     } catch (e) {

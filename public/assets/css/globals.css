@@ -178,10 +178,85 @@
   }
 }
 
+.bg-jetei {
+  background: linear-gradient(90deg, #6366f1 0%, #a855f7e6 100%);
+}
+
 .text-gradient_indigo-purple {
   background: linear-gradient(90deg, #6366f1 0%, #a855f7e6 100%);
   /* background: linear-gradient(83.21deg,#3245ff 0%,#bc52ee 100%); */
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Headings */
+#html-previewer-body h1 {
+  @apply text-3xl font-bold mb-4;
+}
+
+#html-previewer-body h2 {
+  @apply text-2xl font-bold mb-3;
+}
+
+#html-previewer-body h3 {
+  @apply text-xl font-bold mb-2;
+}
+
+#html-previewer-body h4 {
+  @apply text-lg font-bold mb-2;
+}
+
+/* Paragraphs */
+#html-previewer-body p {
+  @apply mb-4;
+}
+
+/* Lists */
+#html-previewer-body ul,
+#html-previewer-body ol {
+  @apply list-disc pl-5 mb-4;
+}
+
+/* Code Blocks */
+#html-previewer-body pre {
+  @apply bg-gray-800 text-white p-4 rounded mb-4 overflow-auto;
+}
+
+/* Links */
+#html-previewer-body a {
+  @apply text-blue-600 underline;
+}
+
+#html-previewer-body a:hover {
+  @apply text-blue-800;
+}
+
+/* Images */
+#html-previewer-body img {
+  @apply max-w-full h-auto;
+}
+
+/* Blockquotes */
+#html-previewer-body blockquote {
+  @apply border-l-4 border-gray-300 pl-4 mb-4;
+}
+
+/* Horizontal Rules */
+#html-previewer-body hr {
+  @apply my-6 border-gray-300;
+}
+
+/* Tables */
+#html-previewer-body table {
+  @apply w-full border-collapse mb-4;
+}
+
+#html-previewer-body th,
+#html-previewer-body td {
+  @apply border p-2;
+}
+
+#html-previewer-body th {
+  @apply bg-gray-200;
 }

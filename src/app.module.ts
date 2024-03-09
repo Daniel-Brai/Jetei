@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { TerminusModule } from '@nestjs/terminus';
 import { LoggerModule, Params } from 'nestjs-pino';
+import { AppMiddleware } from '@/common/middlewares/app.middlewares';
 import { UserInterceptor } from '@/common/interceptors/app.interceptors';
 import { AppConfig, SiteConfig } from '@/lib/config/config.provider';
 import { APIV1Module } from '@/domain/api/v1/api-v1.module';
@@ -45,4 +46,17 @@ const node_env = AppConfig.environment.NODE_ENV;
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(AppMiddleware)
+      .forRoutes(
+        { path: '/login', method: RequestMethod.GET },
+        { path: '/signup', method: RequestMethod.GET },
+        { path: '/account/verification', method: RequestMethod.GET },
+        { path: '/account/forget-password', method: RequestMethod.GET },
+        { path: '/account/forget-password/started', method: RequestMethod.GET },
+        { path: '/workspace', method: RequestMethod.GET },
+      );
+  }
+}
