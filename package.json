@@ -8,7 +8,6 @@
   "scripts": {
     "build": "npx tailwindcss -i ./public/assets/css/globals.css -o ./public/assets/css/globals.min.css --minify && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "db:named-migrate": "npx prisma migrate dev --name",
     "watch:css": "npx tailwindcss -i ./public/assets/css/globals.css -o ./public/assets/css/globals.min.css --minify --watch",
     "start": "nest start",
     "start:dev": "concurrently \"npm run watch:css\" \"npm run start:app-dev\"",
@@ -17,6 +16,9 @@
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
+    "prisma:deploy": "npx prisma migrate deploy",
+    "prisma:generate": "npx prisma generate",
+    "prima:migrate": "npx prisma migrate dev --name",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",

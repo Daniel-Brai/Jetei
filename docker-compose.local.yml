@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      dockerfile: Dockerfile.local
+      context: .
+      args:
+        NODE_ENV: development
+    env_file:
+      - .env.local
+    environment:
+      PORT: ${PORT}
+      PG_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+    ports:
+      - '3000:3000'
+    command: npm run prisma:deploy && npm run start:dev
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+  postgres:
+    image: postgres:16.2-alpine3.18
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - '5432:5432'
+    volumes:
+      - jetei-postgres:/var/lib/postgresql/data
+  redis:
+    image: redis:7.2-alpine3.19
+    ports:
+      - '6379:6379'
+    volumes:
+      - jetei-redis:/data
+volumes:
+  jetei-postgres:
+  jetei-redis:
