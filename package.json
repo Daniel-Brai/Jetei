@@ -6,7 +6,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "build": "npx tailwindcss -i ./public/assets/css/globals.css -o ./public/assets/css/globals.min.css --minify && nest build",
+    "build:css": "npx tailwindcss -i ./public/assets/css/globals.css -o ./public/assets/css/globals.min.css --minify && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "watch:css": "npx tailwindcss -i ./public/assets/css/globals.css -o ./public/assets/css/globals.min.css --minify --watch",
     "start": "nest start",
