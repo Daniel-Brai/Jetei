@@ -17,6 +17,7 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "prisma:deploy": "npx prisma migrate deploy",
+    "prisma:db-push": "npx prisma db push",
     "prisma:generate": "npx prisma generate",
     "prima:migrate": "npx prisma migrate dev --name",
     "test:watch": "jest --watch",
