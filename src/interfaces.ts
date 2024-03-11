@@ -44,11 +44,11 @@ export enum OperationType {
  * The OT Operation
  */
 export interface Operation {
-  readonly id: string;
+  readonly bnoteId: string;
   type: OperationType;
   userId: string;
   preferredUserId: string;
-  document: Document;
+  content: string;
   position: number;
   replaceLength?: number;
 }

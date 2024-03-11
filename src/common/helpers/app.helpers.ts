@@ -165,6 +165,18 @@ export const SiteHelpers = {
     return finalName;
   },
   /**
+   * Generate a random colour
+   * @returns {string} The generated colour
+   */
+  randomColor(): string {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  },
+  /**
    * Generate user initials
    * @param {RequestUser} req The request object
    * @returns {string} The genrated user initials

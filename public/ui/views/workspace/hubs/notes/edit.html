@@ -21,6 +21,7 @@
 
   <form onsubmit="event.preventDefault()" novalidate>
     {{ textarea(id="edit-note-md", name="markdown") }}
+    <div id="cursors-container" class="relative"></div>
 
     <div id="link-dialog" class="hidden relative flex-col space-y-2 w-[300px]">
       <button id="link-dialog-closeBtn" class="bg-secondary text-gray-400 rounded-full hover:text-gray-600 absolute -top-4 -right-7">
@@ -485,12 +486,60 @@
   const saveNoteBtn = document.getElementById('save-note')
   const downloadNoteBtn = document.getElementById('download-note')
   const userCountTracker = document.getElementById('user-count-tracker')
+  const cursorsContainer = document.getElementById('cursors-container');
+  let cursors = {};
 
   const socket = io('{{ ws_url }}', {
       transports: ['websocket', 'polling'],
   });
   const user = { id: '{{ user.sub }}', name: '{{ user.name }}' };
   const noteId = "{{ noteId }}"
+
+
+  function handleKeyDown(event) {
+    updateCursorPosition(event);
+  }
+
+  function handleMouseDown(event) {
+    updateCursorPosition(event);
+  }
+
+  function handleSelectionChange(event) {
+    updateCursorPosition(event);
+  }
+
+  function generateRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  }
+
+  function updateCursorPosition(event) {
+    const cursorElement = document.querySelector(`.cursor[data-socket-id="${socket.id}"]`);
+    if (cursorElement) {
+      const cursorPosition = getCursorPosition(markdownInput);
+      cursorElement.style.left = `${cursorPosition.left}px`;
+      cursorElement.style.top = `${cursorPosition.top}px`;
+    }
+  }
+
+  function getCursorPosition(textareaElement) {
+    const { selectionStart, selectionEnd } = textareaElement;
+    const { value } = textareaElement;
+    const textBeforeCursor = value.slice(0, selectionStart);
+    const lineBreaks = textBeforeCursor.split('\n');
+    const numLineBreaks = lineBreaks.length - 1;
+    const lastLineBreakIndex = textBeforeCursor.lastIndexOf('\n');
+    const lineHeight = 20;
+    const rect = textareaElement.getBoundingClientRect();
+    const top = rect.top + numLineBreaks * lineHeight;
+    const left = rect.left + (lastLineBreakIndex > -1 ? textareaElement.value.slice(lastLineBreakIndex + 1, selectionStart).length * 8 : textBeforeCursor.length * 8); // Assuming a monospace font with a character width of 8px
+
+    return { top, left };
+  }
 
   function createImagesForBlankLinks(containerId) {
     const container = document.getElementById(containerId);
@@ -513,23 +562,53 @@
     });
   }
 
+  function genInitials(name) {
+    const words = name.trim().split(/\s+/);
+    const initials = words.map((word) => word.charAt(0).toUpperCase());
+    return initials.join('');
+  }
+
+  socket.on('error', (data) => {
+    const message = data.message;
+    toastContainer.classList.remove('hidden')
+    toastContainer.classList.add('flex')
+    toastContainer.setAttribute('data-state', 'open')
+    toastContainer.setAttribute('data-slide', 'left')
+    toastRenderer.textContent = message;
+
+
+    setTimeout(() => {
+      toastContainer.classList.remove('flex')
+      toastContainer.classList.add('hidden')
+      toastContainer.setAttribute('data-state', 'closed')
+      toastContainer.setAttribute('data-slide', '')
+      toastRenderer.textContent = '';
+    }, 2500)
+  })
+
+  socket.on('userConnected', (data) => {
+    const { socketId } = data;
+    cursors[socketId] = { socketId };
+
+    cursorsContainer.innerHTML = '';
+
+    for (const [socketId, user] of Object.entries(cursors)) {
+      const cursorElement = document.createElement('div');
+      cursorElement.classList.add('cursor');
+      cursorElement.dataset.socketId = socketId;
+      cursorsContainer.appendChild(cursorElement);
+    }
+  })
+
   socket.on('renderedMarkdown', (message) => {
     console.log(message.html)
     htmlPreviewer.innerHTML = message.html;
     createImagesForBlankLinks('html-previewer-body');
   });
 
-
-  function genInitials(name) {
-    const words = name.trim().split(/\s+/);
-
-    const initials = words.map((word) => word.charAt(0).toUpperCase());
-
-    return initials.join('');
-  }
-
   socket.on('userCount', (message) => {
     userCount = message.users.length;
+    const randomColor = generateRandomColor()
     userCountTracker.setAttribute("value", userCount);
     console.log(`We have ${userCount} ${userCount > 1 ? 'users': 'user'} currently editing this note`)
 
@@ -541,7 +620,7 @@
     const avatarStatus = document.createElement('span')
 
     if (otherUser[0]) {
-      socket.emit('handleUserInfo', { userId: otherUser[0] })
+      socket.emit('handleUserInfo', { userId: otherUser[0], color: randomColor })
 
       socket.on('receiveUserInfo', (user) => {
         const userStatus = message.users.includes(user.id) ? "Active" : "Disconnected" 
@@ -568,24 +647,6 @@
     }
   })
 
-  socket.on('error', (data) => {
-    const message = data.message;
-    toastContainer.classList.remove('hidden')
-    toastContainer.classList.add('flex')
-    toastContainer.setAttribute('data-state', 'open')
-    toastContainer.setAttribute('data-slide', 'left')
-    toastRenderer.textContent = message;
-
-
-    setTimeout(() => {
-      toastContainer.classList.remove('flex')
-      toastContainer.classList.add('hidden')
-      toastContainer.setAttribute('data-state', 'closed')
-      toastContainer.setAttribute('data-slide', '')
-      toastRenderer.textContent = '';
-    }, 2500)
-  })
-
   socket.on('receiveFileData', (message) => {
     const { filename, filecontent } = message;
     const blob = new Blob([filecontent], { type: 'text/markdown; charset=UTF-8; variant=CommonMark' });
@@ -597,6 +658,12 @@
     downloadLinksDiv.appendChild(link)
     link.click()
     window.URL.revokeObjectURL(url);
+  })
+
+  socket.on('newResolvedOp', (message) => {
+    if (message.ots[0]?.content) {
+      markdownInput.value = message.ots[0]?.content
+    }
   })
 
   closePreviewerBtn.addEventListener('click', () => {
@@ -611,7 +678,6 @@
       popover.classList.remove('hidden');
       
       if (content) {
-        console.log("Sent notes")
         socket.emit('sendMarkdown', { markdown: content });
       }
   })
@@ -623,14 +689,9 @@
 
 
   saveNoteBtn.addEventListener('click', () => {
-    const userCount = Number(userCountTracker.value)
     const content = document.getElementById('edit-note-md').value;
 
-    if (userCount === 1) {
-      socket.emit('saveMarkdown', { noteId: noteId, content: content })
-    } else {
-      console.log("Saved")
-    }
+    socket.emit('saveMarkdown', { noteId: noteId, content: content })
   })
 
   downloadNoteBtn.addEventListener('click', () => {
@@ -659,40 +720,49 @@
     for (let i = 0; i < Math.min(prevMdValue.length, currentMdValue.length); i++) {
       if (prevMdValue[i] !== currentMdValue[i]) {
         const operation = {
+          noteId: "{{ noteId }}",
           type: prevMdValue[i] === undefined ? 'insert' : 'delete',
           userId: user.id,
-          noteId: "{{ noteId }}",
-          posInDocument: i,
+          position: i,
           content: currentMdValue,
         };
         operations.push(operation);
+        socket.emit('resolveOp', { op: operation });
       }
     }
 
     if (prevMdValue.length < currentMdValue.length) {
       for (let i = prevMdValue.length; i < currentMdValue.length; i++) {
-        operations.push({
+        let operation = {
+          noteId: "{{ noteId }}",
           type: 'insert',
           userId: user.id,
-          noteId: "{{ noteId }}",
-          posInDocument: i,
+          position: i,
           content: currentMdValue
-        });
+        }
+        operations.push(operation);
+        socket.emit('resolveOp', { op: operation });
       }
     } else if (prevMdValue.length > currentMdValue.length) {
       for (let i = currentMdValue.length; i < prevMdValue.length; i++) {
-        operations.push({
+        let operation = {
+          noteId: "{{ noteId }}",
           type: 'delete',
           userId: user.id,
-          noteId: "{{ noteId }}",
-          posInDocument: i,
+          position: i,
           content: currentMdValue
-        });
+        }
+        operations.push(operation);
+        socket.emit('resolveOp', { op: operation });
       }
     }
 
     prevMdValue = currentMdValue;
-    console.log(operations)
   });
+
+  markdownInput.addEventListener('keydown', (e) => handleKeyDown(e));
+  markdownInput.addEventListener('mousedown', (e) => handleMouseDown(e));
+  markdownInput.addEventListener('selectionchange', (e) => handleSelectionChange(e));
+
 </script>
 {% endblock %}
