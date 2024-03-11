@@ -25,7 +25,7 @@ services:
     image: postgres:16.2-alpine3.18
     restart: always
     env_file:
-      - .env
+      - .env.local
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}

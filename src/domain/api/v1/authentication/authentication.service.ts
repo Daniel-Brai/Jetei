@@ -595,10 +595,6 @@ export class AuthenticationService {
         expires: new Date(Date.now()),
       });
       return res.redirect(302, '/');
-      // return res.send({
-      //   status_code: 200,
-      //   type: 'success',
-      // } as APIResponse<any>);
     } catch (e) {
       this.logger.error(this.messageHelper.UPDATE_ACTION_FAILED, {
         context: `Failed to invalidate token for user ${req.user.sub}`,
