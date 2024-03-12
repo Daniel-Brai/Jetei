@@ -14,6 +14,7 @@ import { AuthenticationService } from '@/domain/api/v1/authentication/authentica
 import { AppConfig, SiteConfig } from '@/lib/config/config.provider';
 import { PrismaService } from '@/infra/gateways/database/prisma/prisma.service';
 import { Response, Request } from 'express';
+import { v4 } from 'uuid';
 
 export const hubs = [
   {
@@ -65,6 +66,7 @@ export const chats = [
 @Injectable()
 export class AppService {
   private readonly logger = new Logger(AppService.name);
+  private readonly appConfig = AppConfig;
   private readonly siteHelpers = SiteHelpers;
   private readonly messageHelpers = MessageHelpers;
   private readonly authHelpers = AuthenticationHelpers;
@@ -149,6 +151,66 @@ export class AppService {
         status: status,
         ...this.siteConfig,
       });
+    } catch (e) {
+      this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
+        error: e,
+      });
+      throw new InternalServerErrorException(
+        this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async githubAuthCallback(req: RequestUser, res: Response) {
+    this.logger.log(`Github callback for user: ${req.user.sub}`);
+    try {
+      const tokenId = v4();
+
+      const accessToken = await this.authService.createToken(
+        {
+          sub: req.user.sub,
+          name: req.user.name,
+          email: req.user.email,
+          role: req.user.role,
+        },
+        tokenId,
+        36000,
+      );
+
+      if (!accessToken) {
+        throw new Error(`${this.messageHelpers.CREATE_ACTION_FAILED} - Token`);
+      }
+
+      const newUserToken = await this.prisma.authToken.create({
+        data: {
+          name: `access_token:${req.user.sub}`,
+          content: `${accessToken}--${tokenId}`,
+          userId: req.user.sub,
+          expiryInMilliSecs: 36000000,
+        },
+      });
+
+      if (!newUserToken) {
+        throw new Error(
+          `${this.messageHelpers.CREATE_ACTION_FAILED} - AuthToken`,
+        );
+      }
+
+      res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure:
+          this.appConfig.environment.NODE_ENV === 'production' ? true : false,
+        expires: new Date(Date.now() + 36000000),
+        sameSite: 'lax',
+      });
+      res.cookie('accessTokenId', tokenId, {
+        httpOnly: true,
+        secure:
+          this.appConfig.environment.NODE_ENV === 'production' ? true : false,
+        expires: new Date(Date.now() + 36000000),
+        sameSite: 'lax',
+      });
+      return res.redirect(302, '/workspace');
     } catch (e) {
       this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
         error: e,

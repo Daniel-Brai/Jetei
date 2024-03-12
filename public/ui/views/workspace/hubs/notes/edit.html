@@ -601,7 +601,6 @@
   })
 
   socket.on('renderedMarkdown', (message) => {
-    console.log(message.html)
     htmlPreviewer.innerHTML = message.html;
     createImagesForBlankLinks('html-previewer-body');
   });

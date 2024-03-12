@@ -15,6 +15,7 @@ import { AccessTokenGuard } from './domain/api/v1/authentication/guards/access-t
 import { Roles } from './domain/api/v1/authentication/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { RolesGuard } from './domain/api/v1/authentication/guards/roles.guard';
+import { GithubAuthGuard } from './domain/api/v1/authentication/guards/github.guard';
 
 @Controller()
 export class AppController {
@@ -23,6 +24,19 @@ export class AppController {
   @Get()
   async getIndex(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getIndex(req, res);
+  }
+
+  @UseGuards(GithubAuthGuard)
+  @Get('/auth/github')
+  public githubAuth() {}
+
+  @UseGuards(GithubAuthGuard)
+  @Get('/auth/github/callback')
+  public async githubAuthCallback(
+    @Req() req: RequestUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.appService.githubAuthCallback(req, res);
   }
 
   @Get('/page/unauthorized')

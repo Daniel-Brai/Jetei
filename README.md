@@ -32,7 +32,7 @@ To run Jetei locally on your machine, follow these steps:
    git clone https://github.com/Daniel-Brai/Jetei.git
    ```
 
-3. **Configure credentials**: Navigate to the base directory of the Jetei project, configure your email client to be `sendwave` or `smtp` in the `.env.example` file.
+3. **Configure credentials**: Navigate to the base directory of the Jetei project, configure your email client to be `sendwave` or `smtp` in the `.env.local` file.
 
 4. **Run the application**: Start up Docker on your local machine and navigate to the base directory of the Jetei. Use the following command to start the application:
 

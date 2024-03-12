@@ -29,6 +29,18 @@ export interface IAppConfig {
      * The access token secret key
      */
     ACCESS_JWT_TOKEN_SECRET_KEY: string;
+    /**
+     * The github cleint id
+     */
+    GITHUB_CLIENT_ID: string;
+    /**
+     * The Github Client secret;
+     */
+    GITHUB_CLIENT_SECRET: string;
+    /**
+     * The github callaback url;
+     */
+    GITHUB_CALLBACK_URL: string;
   };
   database: {
     pg: {

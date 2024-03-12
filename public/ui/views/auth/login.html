@@ -1,12 +1,8 @@
-{% extends "views/layouts/base.html" %} 
-
-{% block js %}
+{% extends "views/layouts/base.html" %} {% block js %}
 <script nonce="{{ nonce }}" src="/assets/js/json-enc.js"></script>
 <script nonce="{{ nonce }}" src="/assets/js/client-side-templates.js"></script>
 <script nonce="{{ nonce }}" src="/assets/js/nunjucks.min.js"></script>
-{% endblock %} 
-
-{% block content %}
+{% endblock %} {% block content %}
 <section class="container mt-8 py-20" data-hx-ext="client-side-templates">
   <div class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-96">
     <div class="flex flex-col space-y-2 text-center">
@@ -16,39 +12,116 @@
       </p>
     </div>
 
-    <form id="{{ form_id }}" class="my-6 flex flex-col space-y-4 px-0" data-hx-post="{{ api_url }}" data-hx-ext="json-enc" data-hx-trigger="submit" data-hx-swap="innerHTML" data-hx-target="#result" nunjucks-template="toast">
+    <form
+      id="{{ form_id }}"
+      class="my-3 flex flex-col space-y-4 px-0"
+      data-hx-post="{{ api_url }}"
+      data-hx-ext="json-enc"
+      data-hx-trigger="submit"
+      data-hx-swap="innerHTML"
+      data-hx-target="#result"
+      nunjucks-template="toast"
+    >
+      {% from "macros/form.html" import input_required_no_pattern, button %} {{
+      input_required_no_pattern(type="email", id="email", name="email",
+      placeholder="Your email", title="Email must be a valid email") }} {{
+      input_required_no_pattern(type="password", id="password", name="password",
+      placeholder="Password", minlength="8", title="Password must contain at
+      least 8 characters, including 1 lowercase letter, 1 uppercase letter, 1
+      digit, and 1 special symbol.") }}
 
-      {% from "macros/form.html" import input_required_no_pattern, button %}
-      {{ input_required_no_pattern(type="email", id="email", name="email", placeholder="Your email", title="Email must be a valid email") }}
-      {{ input_required_no_pattern(type="password", id="password", name="password", placeholder="Password", minlength="8", title="Password must contain at least 8 characters, including 1 lowercase letter, 1 uppercase letter, 1 digit, and 1 special symbol.") }}
-
-      <div class="w-full inline-flex items-end justify-end" data-hx-ext="preload">
-        <a class="btn-link text-gradient_indigo-purple font-medium text-[13px] text-right" href="/account/forgot-password" preload="mouseover">Forgot password<span class="ml-[1px]">?</span></a>
+      <div
+        class="w-full inline-flex items-end justify-end"
+        data-hx-ext="preload"
+      >
+        <a
+          class="btn-link text-gradient_indigo-purple font-medium text-[13px] text-right"
+          href="/account/forgot-password"
+          preload="mouseover"
+          >Forgot password<span class="ml-[1px]">?</span></a
+        >
       </div>
       {{ button(class="btn-base-variant btn-base-size text-sm rounded-md flex items-center justify-center", text="Sign In") }}
 
       <div id="result"></div>
 
       <template id="toast">
-        <div id="toast-renderer-{{ genId() }}" class="fixed top-0 z-[100] hidden sm:flex max-h-screen w-full flex-col-reverse p-4 sm:right-4 sm:top-16 sm:flex-col md:max-w-[420px]">
+        <div
+          id="toast-renderer-{{ genId() }}"
+          class="fixed top-0 z-[100] hidden sm:flex max-h-screen w-full flex-col-reverse p-4 sm:right-4 sm:top-16 sm:flex-col md:max-w-[420px]"
+        >
           <div
             id="toast-provider"
             class="group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full {% if type == 'success' %}toast-default{% elif type == 'error' %}toast-error{% endif %}"
           >
-            <div id="toast-close" class="cursor-pointer absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600">
-                <div class="mx-auto">
-                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                </div>
+            <div
+              id="toast-close"
+              class="cursor-pointer absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600"
+            >
+              <div class="mx-auto">
+                <svg
+                  class="size-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-x"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </div>
             </div>
             <div class="grid gap-1">
-              <p id="toast-title" class="text-sm font-semibold">{% raw %}{{api_message}}{% endraw %}</p> 
-              <p id="toast-description" class="text-sm opacity-90">{% raw %}{{api_description}}{% endraw %}</p> 
+              <p id="toast-title" class="text-sm font-semibold">
+                {% raw %}{{api_message}}{% endraw %}
+              </p>
+              <p id="toast-description" class="text-sm opacity-90">
+                {% raw %}{{api_description}}{% endraw %}
+              </p>
             </div>
           </div>
-        </div>  
+        </div>
       </template>
+    </form>
+
+    <form class="flex flex-col items-center justify-center" hx-get="/api/v1/authentication/github" hx-trigger="submit">
+      <div
+        class="mx-auto mb-4 flex items-center justify-center w-full"
+      >
+        <hr class="shrink-0 bg-border h-full w-full" />
+        <div class="text-xs text-muted-foreground bg-inherit px-3 flex items-center justify-center w-1/2">
+          OR
+        </div>
+        <hr class="shrink-0 h-full w-full bg-border" />
+      </div>
+      <button
+        type="submit"
+        class="btn-outline flex items-center justify-center space-x-3 py-3 px-3 rounded-md w-full"
+      >
+        <svg
+          class="ml-1 size-5"
+          aria-hidden="true"
+          focusable="false"
+          data-prefix="fab"
+          data-icon="github"
+          role="img"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 496 512"
+        >
+          <path
+            fill="currentColor"
+            d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3 .3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5 .3-6.2 2.3zm44.2-1.7c-2.9 .7-4.9 2.6-4.6 4.9 .3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3 .7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3 .3 2.9 2.3 3.9 1.6 1 3.6 .7 4.3-.7 .7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3 .7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3 .7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"
+          ></path>
+        </svg>
+        <span class="text-sm ml-3 font-medium">Github</span>
+      </a>
     </form>
   </div>
 </section>
-{% include 'partials/_form_handler.html' %}
-{% endblock %}
+{% include 'partials/_form_handler.html' %} {% endblock %}
