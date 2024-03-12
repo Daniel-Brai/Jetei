@@ -4,11 +4,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { HealthCheckService, PrismaHealthIndicator } from '@nestjs/terminus';
-import {
-  SiteHelpers,
-  AuthenticationHelpers,
-  MessageHelpers,
-} from '@/common/helpers/app.helpers';
+import { SiteHelpers, MessageHelpers } from '@/common/helpers/app.helpers';
 import { RequestUser } from '@/interfaces';
 import { AuthenticationService } from '@/domain/api/v1/authentication/authentication.service';
 import { AppConfig, SiteConfig } from '@/lib/config/config.provider';
@@ -69,7 +65,6 @@ export class AppService {
   private readonly appConfig = AppConfig;
   private readonly siteHelpers = SiteHelpers;
   private readonly messageHelpers = MessageHelpers;
-  private readonly authHelpers = AuthenticationHelpers;
   private readonly siteConfig = SiteConfig;
   private readonly logoutUrl = '/account/logout';
   constructor(
@@ -161,8 +156,11 @@ export class AppService {
     }
   }
 
-  public async githubAuthCallback(req: RequestUser, res: Response) {
-    this.logger.log(`Github callback for user: ${req.user.sub}`);
+  public async githubAuthCallback(
+    req: RequestUser,
+    res: Response,
+  ): Promise<void> {
+    this.logger.log(`Github callback for user: ${req.user}`);
     try {
       const tokenId = v4();
 
@@ -210,7 +208,7 @@ export class AppService {
         expires: new Date(Date.now() + 36000000),
         sameSite: 'lax',
       });
-      return res.redirect(302, '/workspace');
+      return;
     } catch (e) {
       this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
         error: e,

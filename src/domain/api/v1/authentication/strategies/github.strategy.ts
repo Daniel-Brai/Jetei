@@ -1,69 +1,53 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { AppConfig } from '@/lib/config/config.provider';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, Profile } from 'passport-github';
-import { PrismaService } from '@/infrastructure/gateways/database/prisma/prisma.service';
-import { JwtPayload } from '@/types';
+import {
+  Strategy,
+  Profile,
+  StrategyOptionsWithRequest,
+} from 'passport-github2';
+import { AuthenticationService } from '../authentication.service';
+import { Request } from 'express';
+
+type VerifyCallback = (error: any, user?: any, info?: any) => void;
+
+const githubOptions: StrategyOptionsWithRequest = {
+  clientID: AppConfig.authentication.GITHUB_CLIENT_ID,
+  clientSecret: AppConfig.authentication.GITHUB_CLIENT_SECRET,
+  callbackURL: AppConfig.authentication.GITHUB_CALLBACK_URL,
+  passReqToCallback: true,
+  scope: ['user:email'],
+};
 
 @Injectable()
 export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
-  private readonly prisma = new PrismaService();
-  constructor() {
-    super({
-      clientID: AppConfig.authentication.GITHUB_CLIENT_ID,
-      clientSecret: AppConfig.authentication.GITHUB_CLIENT_SECRET,
-      callbackURL: AppConfig.authentication.GITHUB_CALLBACK_URL,
-      scope: ['public_profile'],
-    });
+  private readonly logger = new Logger(GithubStrategy.name);
+  constructor(private readonly authService: AuthenticationService) {
+    super(githubOptions);
   }
 
   async validate(
+    req: Request,
     accessToken: string,
     _refreshToken: string,
     profile: Profile,
-  ): Promise<JwtPayload> {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        email: profile.emails[0].value || profile.emails[1].value,
-      },
-      include: {
-        profile: true,
-      },
-    });
-
-    if (!user) {
-      const newUser = await this.prisma.user.create({
-        data: {
-          id: profile.id,
-          email: profile.emails[0].value || profile.emails[1].value,
-          isVerified: true,
-          isSocialAuth: true,
-          profile: {
-            create: {
-              name: profile.displayName,
-            },
-          },
-        },
-        include: {
-          profile: true,
-        },
+    done: VerifyCallback,
+  ): Promise<any> {
+    try {
+      console.log('GitHub Profile:', profile);
+      const user = await this.authService.validateGithubUser(profile);
+      console.log('User object from AuthService:', user);
+      if (!user) {
+        console.log('No user found');
+        return done(null, false);
+      }
+      console.log('User object passed to done callback:', user);
+      return user;
+    } catch (err) {
+      this.logger.error('Failed to validate github authentication', {
+        error: err,
       });
-
-      return {
-        sub: newUser.id,
-        email: newUser.email,
-        name: newUser.profile.name,
-        role: newUser.role,
-      };
-    }
-
-    if (user) {
-      return {
-        sub: user.id,
-        email: user.email,
-        name: user.profile.name,
-        role: user.role,
-      };
+      throw new Error(err);
     }
   }
 }

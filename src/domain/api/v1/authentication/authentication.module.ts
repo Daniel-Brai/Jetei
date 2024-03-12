@@ -12,7 +12,10 @@ import { GithubStrategy } from './strategies/github.strategy';
 @Global()
 @Module({
   imports: [
-    PassportModule.register({ defaultStrategy: 'jwt', session: false }),
+    PassportModule.register({
+      defaultStrategy: ['jwt', 'github'],
+      session: false,
+    }),
     JwtModule.register({}),
     EventEmitterModule.forRoot(),
   ],

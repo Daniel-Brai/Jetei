@@ -16,27 +16,20 @@ import { Roles } from './domain/api/v1/authentication/decorators/roles.decorator
 import { UserRole } from '@prisma/client';
 import { RolesGuard } from './domain/api/v1/authentication/guards/roles.guard';
 import { GithubAuthGuard } from './domain/api/v1/authentication/guards/github.guard';
+import { AuthenticationService } from './domain/api/v1/authentication/authentication.service';
+import { AppConfig } from './lib/config/config.provider';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  private readonly appConfig = AppConfig;
+  constructor(
+    private readonly appService: AppService,
+    private readonly authService: AuthenticationService,
+  ) {}
 
   @Get()
   async getIndex(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getIndex(req, res);
-  }
-
-  @UseGuards(GithubAuthGuard)
-  @Get('/auth/github')
-  public githubAuth() {}
-
-  @UseGuards(GithubAuthGuard)
-  @Get('/auth/github/callback')
-  public async githubAuthCallback(
-    @Req() req: RequestUser,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    await this.appService.githubAuthCallback(req, res);
   }
 
   @Get('/page/unauthorized')
@@ -67,6 +60,21 @@ export class AppController {
   @Get('/signup')
   async getSignup(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getSignup(req, res);
+  }
+
+  @UseGuards(GithubAuthGuard)
+  @Get('/auth/github')
+  public githubAuth() {}
+
+  @UseGuards(GithubAuthGuard)
+  @Get('/auth/github/callback')
+  public async githubAuthCallback(@Req() req: Request) {
+    const user = req.user;
+    console.log('User object in controller:', user);
+    if (!user) {
+      return { message: 'Authentication failed' };
+    }
+    return { message: 'Authentication successful', user: user };
   }
 
   @UseGuards(AccessTokenGuard)

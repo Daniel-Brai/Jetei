@@ -20,6 +20,8 @@ import {
 import { Response } from 'express';
 import { v4 } from 'uuid';
 import { MailerEvent } from '@/common/events/app.events';
+import { UserRole } from '@prisma/client';
+import { Profile } from 'passport-github2';
 
 @Injectable()
 export class AuthenticationService {
@@ -601,6 +603,64 @@ export class AuthenticationService {
         error: e,
       });
       throw new Error(e);
+    }
+  }
+
+  public async validateGithubUser(profile: Profile): Promise<JwtPayload> {
+    const { id, username, emails, photos } = profile;
+    const payload = {
+      sub: id,
+      name: username,
+      email: emails.shift().value,
+      photo: photos.shift().value,
+    };
+    if (payload.email) {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          email: payload.email,
+        },
+        include: {
+          profile: true,
+        },
+      });
+
+      if (user) {
+        const data = {
+          sub: user.id,
+          email: user.email,
+          name: user.profile.name,
+          role: user.role,
+        };
+        console.log('Data was found: ', data);
+        return data;
+      } else {
+        const newUser = await this.prisma.user.create({
+          data: {
+            email: payload.email,
+            role: UserRole.OWNER,
+            isSocialAuth: true,
+            isVerified: true,
+            profile: {
+              create: {
+                name: payload.name,
+                avatar: '',
+              },
+            },
+          },
+          include: {
+            profile: true,
+          },
+        });
+
+        const data = {
+          sub: newUser.id,
+          email: newUser.email,
+          role: newUser.role,
+          name: newUser.profile.name,
+        };
+        console.log('Data created: ', data);
+        return data;
+      }
     }
   }
 
