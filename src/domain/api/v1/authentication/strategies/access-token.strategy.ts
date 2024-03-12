@@ -23,12 +23,14 @@ export class AccessTokenJwtStrategy extends PassportStrategy(Strategy) {
       ]),
       jwtid: req?.cookies['accessTokenId'],
       secretOrKey: AppConfig.authentication.ACCESS_JWT_TOKEN_SECRET_KEY,
+      passReqToCallback: true,
     });
   }
-  async validate(payload: JwtPayload) {
+  async validate(req: Request, payload: JwtPayload) {
     if (!payload) {
       throw new UnauthorizedException(MessageHelpers.HTTP_UNAUTHORIZED);
     }
+    req.user = payload;
     return payload;
   }
 }

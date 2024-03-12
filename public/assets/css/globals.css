@@ -112,12 +112,12 @@
   }
 
   .tooltip-container {
-   position: relative;
+    position: relative;
     display: inline-block;
   }
 
   .tooltiptext {
-    @apply bg-secondary text-secondary-foreground px-6 w-fit text-center py-2 text-[10px] ;
+    @apply bg-secondary text-secondary-foreground px-6 w-fit text-center py-2 text-[10px];
     visibility: hidden;
     position: absolute;
     z-index: 1;
@@ -129,6 +129,14 @@
 
   .tooltip-container:hover .tooltiptext {
     visibility: visible;
+  }
+
+  .cursor {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    pointer-events: none;
   }
 
   [data-loading] {

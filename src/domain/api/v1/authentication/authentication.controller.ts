@@ -7,9 +7,8 @@ import {
   UseGuards,
   Query,
   Res,
+  Get,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { RequestUser } from '@/interfaces';
 import { PrefixedController } from '@/common/decorators/app.decorators';
 import { AuthenticationService } from './authentication.service';
 import {
@@ -19,7 +18,6 @@ import {
   UserSignUpDto,
   UserVerifyAccountDto,
 } from './dtos/authentication.dtos';
-import { LocalGuard } from './guards/local.guard';
 import { Response } from 'express';
 
 @PrefixedController('authentication')
@@ -32,7 +30,6 @@ export class AuthenticationController {
     return await this.authService.signup(body);
   }
 
-  @UseGuards(LocalGuard)
   @HttpCode(HttpStatus.OK)
   @Post('/login')
   public async login(

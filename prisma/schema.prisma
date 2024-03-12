@@ -6,7 +6,7 @@
 
 generator client {
   provider        = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl"]
+  binaryTargets   = ["native", "linux-musl"]
   previewFeatures = ["relationJoins"]
 }
 
@@ -18,9 +18,10 @@ datasource db {
 model User {
   id              String            @id @default(uuid())
   email           String            @unique @db.VarChar(255)
-  password        String            @db.VarChar(255)
+  password        String?           @db.VarChar(255)
   role            UserRole          @default(OWNER)
   isVerified      Boolean           @default(false)
+  isSocialAuth    Boolean           @default(false)
   profile         Profile?
   hubs            Hub[]             @relation("HubOwner")
   note            Note[]
@@ -76,8 +77,8 @@ model AuthToken {
   inviteeId         String?
   user              User?    @relation(fields: [userId], references: [id])
   invitee           Invitee? @relation(fields: [inviteeId], references: [id])
-  name              String? 
-  content           String? @unique
+  name              String?
+  content           String?  @unique
   expiryInMilliSecs Int
   isBlackListed     Boolean  @default(false)
   createdAt         DateTime @default(now())

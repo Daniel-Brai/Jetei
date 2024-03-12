@@ -7,6 +7,7 @@ import { AuthenticationService } from './authentication.service';
 import { LocalStrategy } from './strategies/local.strategy';
 import { AccessTokenJwtStrategy } from './strategies/access-token.strategy';
 import { AppEventHandler } from '@/common/events/app.events';
+import { GithubStrategy } from './strategies/github.strategy';
 
 @Global()
 @Module({
@@ -20,6 +21,7 @@ import { AppEventHandler } from '@/common/events/app.events';
     AuthenticationService,
     LocalStrategy,
     AccessTokenJwtStrategy,
+    GithubStrategy,
     AppEventHandler,
   ],
   exports: [AuthenticationService],
