@@ -12,8 +12,8 @@ const configService = new ConfigService();
 export const AppConfig: IAppConfig = {
   environment: {
     NODE_ENV: configService.getOrThrow<string>('NODE_ENV'),
-    PORT: configService.get<number>('PORT') || 3000,
-    WS_PORT: configService.get<number>('WS_PORT') || 3001,
+    PORT: Number(configService.get<number>('PORT') || 3000),
+    WS_PORT: Number(configService.get<number>('WS_PORT') || 3001),
     PROD_URL: configService.get<string>('PROD_URL'),
   },
   authentication: {
@@ -27,7 +27,9 @@ export const AppConfig: IAppConfig = {
     GITHUB_CLIENT_SECRET: configService.getOrThrow<string>(
       'GITHUB_CLIENT_SECRET',
     ),
-    GITHUB_CALLBACK_URL: configService.getOrThrow<string>('GITHUB_CALLBACK_URL'),
+    GITHUB_CALLBACK_URL: configService.getOrThrow<string>(
+      'GITHUB_CALLBACK_URL',
+    ),
   },
   database: {
     pg: {
@@ -35,7 +37,7 @@ export const AppConfig: IAppConfig = {
     },
     redis: {
       REDIS_HOST: configService.get<string>('REDIS_HOST') || 'localhost',
-      REDIS_PORT: configService.get<number>('REDIS_PORT') || 6379,
+      REDIS_PORT: Number(configService.get<number>('REDIS_PORT') || 6379),
       REDIS_PASSWORD: configService.get<string>('REDIS_PASSWORD'),
     },
   },
@@ -49,6 +51,15 @@ export const AppConfig: IAppConfig = {
       SMTP_EMAIL_ADDRESS:
         configService.getOrThrow<string>('SMTP_EMAIL_ADDRESS'),
       SMTP_PASSWORD: configService.getOrThrow<string>('SMTP_PASSWORD'),
+    },
+    cloudinary: {
+      CLOUD_API_KEY: configService.getOrThrow<string>('CLOUDINARY_API_KEY'),
+      CLOUD_BUCKET_NAME: configService.getOrThrow<string>(
+        'CLOUDINARY_BUCKET_NAME',
+      ),
+      CLOUD_SECRET_KEY: configService.getOrThrow<string>(
+        'CLOUDINARY_SECRET_KEY',
+      ),
     },
   },
 };

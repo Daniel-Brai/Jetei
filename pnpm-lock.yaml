@@ -77,6 +77,9 @@ dependencies:
   class-validator:
     specifier: ^0.14.1
     version: 0.14.1
+  cloudinary:
+    specifier: ^2.0.3
+    version: 2.0.3
   compression:
     specifier: ^1.7.4
     version: 1.7.4
@@ -3323,6 +3326,14 @@ packages:
     resolution: {integrity: sha512-JQHZ2QMW6l3aH/j6xCqQThY/9OH4D/9ls34cgkUBiEeocRTU04tHfKPBsUK1PqZCUQM7GiA0IIXJSuXHI64Kbg==}
     engines: {node: '>=0.8'}
     dev: true
+
+  /cloudinary@2.0.3:
+    resolution: {integrity: sha512-2JPxAUuV4iHwiW4ATSOZvii6+BhhKI9+9KscgUkxJPKa6V6wOnZJHlYyovBGrrIbIgEdmGSZgqEsLfD0wWBhBg==}
+    engines: {node: '>=9'}
+    dependencies:
+      lodash: 4.17.21
+      q: 1.5.1
+    dev: false
 
   /cluster-key-slot@1.1.2:
     resolution: {integrity: sha512-RMr0FhtfXemyinomL4hrWcYJxmX6deFdCxpJzhDttxgO1+bcCnkk+9drydLVDmAMG7NE6aN/fl4F7ucU/90gAA==}
@@ -7857,6 +7868,11 @@ packages:
   /pure-rand@6.0.4:
     resolution: {integrity: sha512-LA0Y9kxMYv47GIPJy6MI84fqTd2HmYZI83W/kM/SkKfDlajnZYfmXFTxkbY+xSBPkLJxltMa9hIkmdc29eguMA==}
     dev: true
+
+  /q@1.5.1:
+    resolution: {integrity: sha512-kV/CThkXo6xyFEZUugw/+pIOywXcDbFYgSct5cT3gqlbkBE1SJdwy6UQoZvodiWF/ckQLZyDE/Bu1M6gVu5lVw==}
+    engines: {node: '>=0.6.0', teleport: '>=0.2.0'}
+    dev: false
 
   /qs@6.11.0:
     resolution: {integrity: sha512-MvjoMCJwEarSbUYk5O+nmoSzSutSsTwF85zcHPQ9OrlFoZOYIjaqBAJIqIXjptyD5vThxGq52Xu/MaJzRkIk4Q==}

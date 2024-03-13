@@ -1,4 +1,13 @@
-{% extends "views/layouts/base.html" %} {% block content %}
+{% extends "views/layouts/base.html" %} 
+
+
+{% block js %}
+<script nonce="{{ nonce }}" src="/assets/js/json-enc.js"></script>
+<script nonce="{{ nonce }}" src="/assets/js/workspace.template.js"></script>
+<script nonce="{{ nonce }}" src="/assets/js/nunjucks.min.js"></script>
+{% endblock %}
+
+{% block content %}
 
 {% from "macros/icon.html" import folder_button, bookmark_button, draft_button %}
 
@@ -26,6 +35,17 @@
     </div>
   </div>
 
+   <div 
+      id="{{ form_id }}" 
+      data-hx-ext="json-enc"
+      data-hx-get="{{ api_url }}"
+      data-hx-swap="innerHTML"
+      data-hx-target="#hubs-{{ hubId }}-container"
+      nunjucks-template="hubs-{{ hubId }}"
+  ></div>
+
+  <div id="workspace-container"></div>
+
   <div class="flex flex-col justify-around md:flex-row md:space-x-8">
     <div
       class="relative py-10 -mb-8 md:mt-6 flex flex-col md:py-10 text-white rounded-md"
@@ -39,7 +59,7 @@
         <div
           class="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
         >
-          <a href="{{ url }}/hubs/new">
+          <a href="/workspace/hubs/new">
             <div
               class="relative btn-outline rounded-md flex items-center px-3 py-2 space-x-2 cursor-pointer"
             >
@@ -69,7 +89,9 @@
       </div>
 
       <div class="relative z-20 my-6 w-full">
-        {% for item in hubs %} {% include "partials/_hubs_card.html" %} {% else %}
+        {% for item in hubs %} 
+          {% include "partials/_hubs_card.html" %} 
+        {% else %}
         <div
           class="mt-4 mb-10 flex flex-col items-center justify-center space-y-4"
         >
@@ -82,37 +104,7 @@
             Whoa! Looks like you don't have any hubs!
           </p>
         </div>
-        {% endfor %} {% if arrayLengthInString(hubs) > '2' %}
-        <div
-          class="w-32 mx-auto bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-        >
-          <form>
-            <div
-              class="relative btn-outline rounded-md flex items-center px-3 py-2 mx-auto space-x-2 cursor-pointer"
-            >
-              <div class="text-muted-foreground">
-                <svg
-                  class="size-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="lucide lucide-eye"
-                >
-                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </div>
-              <p class="text-sm">See more</p>
-            </div>
-          </form>
-        </div>
-        {% endif %}
+        {% endfor %}
       </div>
     </div>
 

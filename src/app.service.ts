@@ -700,7 +700,7 @@ export class AppService {
         user: req.user,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
-        base_chat_url: 'api/v1/workspace/chats',
+        api_url: `/api/v1/users/${req.user.sub}`,
         hubs: [],
         chats: [],
         status: status,
@@ -737,7 +737,8 @@ export class AppService {
         user: req.user,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
-        form_id: '/api/v1/hubs',
+        form_id: 'get-hub',
+        api_url: '/api/v1/hubs',
         form_name: 'Hub get',
         hubs: hubs,
         status: status,
@@ -847,6 +848,7 @@ export class AppService {
         ip: req.ip,
         url: req.url,
         user: req.user,
+        ws_url: `${AppConfig.environment.NODE_ENV === 'development' ? `ws://localhost:${AppConfig.environment.WS_PORT}` : `wss://${req.hostname}:${AppConfig.environment.WS_PORT}`}`,
         form_id: `hub-add-invitee`,
         api_url: `/api/v1/hubs/add-invitee`,
         form_name: 'Hub add invitee',
@@ -915,16 +917,17 @@ export class AppService {
       const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
       const status = await this.healthCheck();
       const canonicalURL = getCanonicalUrl(req);
-      const hubName = '';
 
       setLocals(req, res);
 
       return res.render('views/workspace/hubs/id', {
         canonicalURL: canonicalURL,
-        title: `Your Hub - ${hubName} | ${this.siteConfig.name}`,
+        title: `Your Hub  | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
         user: req.user,
+        form_id: `get-hub-${hubId}`,
+        api_url: `/api/v1/hubs/${hubId}`,
         hubId: hubId,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
@@ -951,16 +954,15 @@ export class AppService {
       const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
       const status = await this.healthCheck();
       const canonicalURL = getCanonicalUrl(req);
-      const hubName = '';
 
       setLocals(req, res);
 
       return res.render('views/workspace/hubs/notes/new', {
         canonicalURL: canonicalURL,
-        title: `Create a Note - ${hubName}  | ${this.siteConfig.name}`,
+        title: `Create a Note | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
-        api_url: `/api/v1/workspace/hubs/${hubId}/notes/new`,
+        api_url: `/api/v1/hubs/${hubId}/notes`,
         form_id: `create-note`,
         form_name: 'Create Note',
         hubId: hubId,

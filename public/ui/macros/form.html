@@ -27,7 +27,7 @@
 
 {% macro input_non_required(name, id, extra_class="", type='text', placeholder='', pattern='', title='', minlength="1") %}
 <input
-  class="flex h-10 w-full {{ extra_class }} rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+  class="flex h-10 w-full {{ extra_class }} rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:text-white file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
   type="{{ type }}"
   id="{{ id }}"
   name="{{ name }}"
@@ -53,9 +53,10 @@
 <select
   name="{{ name }}"
   id="{{ id }}"
-  class="{{ extra_class }}rounded-md border border-input bg-background pl-2 pr-4 py-3 mb-3 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+  class="{{ extra_class }} rounded-md border border-input bg-background pl-2 pr-4 py-3 mb-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+  required
 >
-  <option value="">{{ base_option }}</option>
+  <option value="" disabled selected>{{ base_option }}</option>
   {% for option in options %}
   <option value="{{ option.value }}">{{ option.text }}</option>
   {% endfor %}

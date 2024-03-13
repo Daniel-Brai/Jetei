@@ -15,7 +15,7 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Hub, Invitee } from '@prisma/client';
+import { Hub, Invitee, Note } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { v4 } from 'uuid';
 import {
@@ -90,7 +90,7 @@ export class HubsService {
       return {
         type: 'success',
         status_code: 201,
-        api_message: `Your Hub ${hub.name} was created successfully`,
+        api_message: `Hub was created successfully`,
         data: {
           id: hub.id,
           name: hub.name,
@@ -216,7 +216,7 @@ export class HubsService {
       return {
         type: 'success',
         status_code: 201,
-        api_message: `${invitee.email} was invited to your hub successfully`,
+        api_message: `${invitee.email} was invited successfully`,
       };
     } catch (e) {
       this.logger.error(this.messageHelpers.CREATE_ACTION_FAILED, {
@@ -305,7 +305,7 @@ export class HubsService {
   ): Promise<Partial<APIResponse<Invitee>>> {
     this.logger.log(`Delete an invitee in hub ${hubId}`);
     try {
-      const invitee = await this.prisma.$transaction(async (tx) => {
+      await this.prisma.$transaction(async (tx) => {
         const foundHub = await tx.hub.findUnique({
           where: { id: hubId, userId: req.user.sub },
         });
@@ -331,7 +331,9 @@ export class HubsService {
           },
         });
 
-        return deleteInvitee;
+        if (!deleteInvitee) {
+          throw new Error('Failed to delete invitee');
+        }
       });
       return {
         type: 'success',
@@ -424,6 +426,7 @@ export class HubsService {
           },
           include: {
             invitee: true,
+            notes: true,
           },
         });
 
@@ -436,6 +439,9 @@ export class HubsService {
         type: 'success',
         status_code: 200,
         data: hub,
+        details: {
+          path: req.url.split('/api/v1')[1],
+        },
       };
     } catch (e) {
       this.logger.error(this.messageHelpers.RETRIEVAL_ACTION_FAILED, {
@@ -576,12 +582,12 @@ export class HubsService {
     req: RequestUser,
     hubId: string,
     data: CreateHubNoteDto,
-  ): Promise<Partial<APIResponse<any>>> {
+  ): Promise<Partial<APIResponse<Note>>> {
     this.logger.log(
       `Create a note for hub with userId ${req.user.sub} and hubId ${hubId}`,
     );
     try {
-      const hub = await this.prisma.$transaction(async (tx) => {
+      const note = await this.prisma.$transaction(async (tx) => {
         const foundUser = await tx.user.findUnique({
           where: {
             id: req.user.sub,
@@ -612,6 +618,7 @@ export class HubsService {
               create: {
                 name: data.name,
                 createdById: foundUser.id,
+                updatedById: foundUser.id,
               },
             },
           },
@@ -622,12 +629,28 @@ export class HubsService {
             `${this.messageHelpers.HUB_NOT_FOUND} - unable to create note`,
           );
         }
-        return updatedUserHubWithNote;
+
+        const newHubNote = await tx.note.findMany({
+          where: {
+            hubId: foundUserHub.id,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+        });
+
+        if (!newHubNote) {
+          throw new Error(this.messageHelpers.RETRIEVAL_ACTION_FAILED);
+        }
+
+        return newHubNote;
       });
       return {
         type: 'success',
         status_code: 200,
-        api_message: `Your Hub ${hub.name} was successfully updated`,
+        api_message: `Your note was successfully created`,
+        data: note,
       };
     } catch (e) {
       this.logger.error(this.messageHelpers.CREATE_ACTION_FAILED, {
