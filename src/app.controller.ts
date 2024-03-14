@@ -197,6 +197,10 @@ export class AppController {
   }
 
   @UseGuards(AccessTokenGuard)
+  @Get('/workspace/search')
+  async searchWorkspaceByRevelance() {}
+
+  @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/:hubId/notes/new')
   async getWorkspaceHubByIdAddNewNote(
     @Param('hubId', ParseUUIDPipe) hubId: string,

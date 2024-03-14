@@ -9,7 +9,6 @@ import {
   ConnectedSocket,
   WebSocketGateway,
   WebSocketServer,
-  WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import {
@@ -20,9 +19,7 @@ import {
 import { PrismaService } from '@/infra/gateways/database/prisma/prisma.service';
 import { Operation, OperationType } from '@/interfaces';
 import { Document, JwtPayload, Message } from '@/types';
-import { Chat, Note } from '@prisma/client';
 import { OperationalTransformationService } from '@/common/services/app.services';
-import { v4 } from 'uuid';
 import { AppConfig } from '@/lib/config/config.provider';
 
 @WebSocketGateway(AppConfig.environment.WS_PORT, {
@@ -181,16 +178,37 @@ export class WebsocketGateway
     }
   }
 
+  @SubscribeMessage('readMessage')
+  async handleReadMessage(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody()
+    payload: { chatId: string; messageId: string },
+  ) {
+    try {
+    } catch (e) {
+      await this.prisma.$transaction(async (tx) => {
+        const updateMessage = await tx.message.update({
+          where: {
+            id: payload.messageId,
+            chatId: payload.messageId,
+          },
+          data: {
+            readAt: new Date(Date.now()),
+            isRead: true,
+          },
+        });
+      });
+    }
+  }
+
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
     @ConnectedSocket() socket: Socket,
     @MessageBody()
-    payload: { chatId: string; content: string },
+    payload: { userId: string; chatId: string; content: string },
   ) {
     try {
-      const userId = socket.data.user.id as string;
-
-      if (userId) {
+      if (payload.userId) {
         throw new Error('Invalid user');
       }
 
@@ -199,7 +217,7 @@ export class WebsocketGateway
           data: {
             content: payload.content,
             chatId: payload.chatId,
-            senderId: userId,
+            senderId: payload.userId,
           },
         });
 
@@ -329,6 +347,25 @@ export class WebsocketGateway
     });
   }
 
+  @SubscribeMessage('getNoteContent')
+  async handleGetNoteContent(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody()
+    payload: {
+      noteId: string;
+    },
+  ) {
+    const note = await this.prisma.note.findUnique({
+      where: {
+        id: payload.noteId,
+      },
+    });
+
+    if (note) {
+      socket.emit('foundNoteContent', { markdown: note.markdown });
+    }
+  }
+
   @SubscribeMessage('saveMarkdown')
   async handleSaveMarkdown(
     @ConnectedSocket() socket: Socket,
@@ -340,7 +377,7 @@ export class WebsocketGateway
   ) {
     try {
       const note = await this.prisma.$transaction(async (tx) => {
-        const document = new Document(payload.content);
+        const content = payload.content;
         const foundNote = await tx.note.findUnique({
           where: {
             id: payload.noteId,
@@ -352,7 +389,7 @@ export class WebsocketGateway
         }
 
         const text = this.siteHelpers.stripHtmlPreservingStructure(
-          this.siteHelpers.markdownToHtml(document.getContent()),
+          this.siteHelpers.markdownToHtml(content),
         );
 
         if (!text) {
@@ -361,10 +398,10 @@ export class WebsocketGateway
 
         const updatedNote = await tx.note.update({
           where: {
-            id: payload.noteId,
+            id: foundNote.id,
           },
           data: {
-            markdown: document.getContent(),
+            markdown: content,
             text: text,
             updatedById: socket.data.user.id,
           },
@@ -375,14 +412,15 @@ export class WebsocketGateway
         }
 
         return {
-          markdown: document.getContent(),
+          markdown: updatedNote.markdown,
           text: updatedNote.text,
-          html: this.siteHelpers.markdownToHtml(document.getContent()),
+          html: this.siteHelpers.markdownToHtml(updatedNote.markdown),
         };
       });
-      socket.broadcast.emit('savedMarkdown', {
+      socket.emit('savedMarkdown', {
         senderId: socket.data.user.id,
         markdown: note.markdown,
+        message: 'Note saved',
       });
     } catch (e) {
       this.logger.error(this.messageHelpers.UNEXPECTED_RESULT, {

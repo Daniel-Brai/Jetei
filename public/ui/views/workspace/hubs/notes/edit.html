@@ -8,11 +8,10 @@
 >
   <input class="hidden" id="user-count-tracker" value="" />
   <div class="hidden" id="download-links"></div>
-  <div id="toast-message-container" data-state="open" data-slide="left" class="absolute -bottom-10 mx-auto ml-2 mb-4 hidden max-w-fit items-center bg-destructive rounded-md px-8 py-3 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2">
-    <div>
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-alert"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+  <div id="toast-message-container" data-state="open" data-slide="left" class="absolute -bottom-10 mx-auto ml-2 mb-4 hidden max-w-fit items-center rounded-md px-8 py-3 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2">
+    <div id="toast-message-icon">
     </div>
-    <p class="ml-2 text-sm" id="toast-message-renderer">Daniel Brai lkfkdkfldkfdkdlfkk</p>
+    <p class="ml-2 text-sm" id="toast-message-renderer"></p>
   </div>
   <div id="message-container" class="ml-2 mb-4 hidden max-w-fit items-start btn-outline rounded-md px-4 py-3">
     <div class="text-sm" id="message-renderer"></div>
@@ -193,7 +192,17 @@
           </svg>
           <div class="tooltiptext select-none">Insert table</div>
         </div>
-        <div id="link-note" class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md">
+        <div 
+        
+          id="link-note" 
+          class="tooltip-container cursor-pointer btn-ghost py-2 px-2 rounded-md"
+          data-hx-ext="json-enc"
+          data-hx-get="{{ note_link_url }}"
+          data-hx-trigger="click"
+          data-hx-swap="innerHTML"
+          data-hx-target="#note-linker-container"
+          nunjucks-template="note-links"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -472,6 +481,7 @@
   let isLinkerActive = false;
   let operations = [];
   const toastContainer = document.getElementById('toast-message-container')
+  const toastIcon = document.getElementById('toast-message-icon')
   const toastRenderer = document.getElementById('toast-message-renderer')
   const messageRenderer = document.getElementById('message-renderer')
   const messageContainer = document.getElementById('message-container')
@@ -568,17 +578,26 @@
     return initials.join('');
   }
 
+  function saveNote() {
+    const content = markdownInput.value
+    socket.emit('saveMarkdown', { noteId: noteId, content: content })
+  }
+
+  setInterval(saveNote, 15000)
+
   socket.on('error', (data) => {
     const message = data.message;
+    toastIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-alert"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`
     toastContainer.classList.remove('hidden')
-    toastContainer.classList.add('flex')
+    toastContainer.classList.add('bg-destructive', 'flex')
     toastContainer.setAttribute('data-state', 'open')
     toastContainer.setAttribute('data-slide', 'left')
     toastRenderer.textContent = message;
 
 
     setTimeout(() => {
-      toastContainer.classList.remove('flex')
+      toastIcon.innerHTML = '';
+      toastContainer.classList.remove('bg-destructive', 'flex')
       toastContainer.classList.add('hidden')
       toastContainer.setAttribute('data-state', 'closed')
       toastContainer.setAttribute('data-slide', '')
@@ -587,6 +606,12 @@
   })
 
   socket.on('userConnected', (data) => {
+    socket.emit('getNoteContent', { noteId: noteId })
+
+    socket.on('foundNoteContent', (message) => {
+      markdownInput.value = message.markdown
+    })
+
     const { socketId } = data;
     cursors[socketId] = { socketId };
 
@@ -646,6 +671,26 @@
     }
   })
 
+  socket.on('savedMarkdown', (data) => {
+    const message = data.message;
+    toastIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-check"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="m9 13 2 2 4-4"/></svg>`
+    toastContainer.classList.remove('hidden')
+    toastContainer.classList.add('btn-outline', 'flex')
+    toastContainer.setAttribute('data-state', 'open')
+    toastContainer.setAttribute('data-slide', 'left')
+    toastRenderer.textContent = message;
+
+
+    setTimeout(() => {
+      toastIcon.innerHTML = '';
+      toastContainer.classList.remove('flex')
+      toastContainer.classList.add('hidden')
+      toastContainer.setAttribute('data-state', 'closed')
+      toastContainer.setAttribute('data-slide', '')
+      toastRenderer.textContent = '';
+    }, 2500)
+  })
+
   socket.on('receiveFileData', (message) => {
     const { filename, filecontent } = message;
     const blob = new Blob([filecontent], { type: 'text/markdown; charset=UTF-8; variant=CommonMark' });
@@ -689,8 +734,10 @@
 
   saveNoteBtn.addEventListener('click', () => {
     const content = document.getElementById('edit-note-md').value;
+    console.log(content)
 
     socket.emit('saveMarkdown', { noteId: noteId, content: content })
+    console.log("saved note")
   })
 
   downloadNoteBtn.addEventListener('click', () => {

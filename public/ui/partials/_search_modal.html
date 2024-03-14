@@ -1,11 +1,13 @@
-<div class="relative right-6">
-  <div class="absolute left-2 top-2.5">
+<div class="relative right-6 cursor-pointer">
+  <div class="absolute left-2 top-2">
     <span class="">
       <svg
-        class="size-0 sm:size-5"
+        class=""
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
         fill="none"
+        width="24"
+        height="24"
         stroke="currentColor"
         stroke-width="2"
         stroke-linecap="round"
@@ -16,17 +18,22 @@
       </svg>
     </span>
   </div>
-  <input
-    class="hidden sm:flex h-10 w-full pl-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-    type="search"
-    id="search-workspace"
-    name="search-workspace"
-    title="Search workspace"
-    placeholder="Search...."
-    hx-trigger="keyup delay:500ms"
-    hx-target="#searchModal"
-    hx-swap="outerHTML"
-    required
-  />
+  <div
+    class="flex h-10 pl-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground"
+  >
+    Search...
+  </div>
 </div>
-<script nonce="{{ nonce }}"></script>
+<script nonce="{{ nonce }}">
+  document.body.addEventListener('htmx:beforeSwap', function (event) {
+    if (event.target.getAttribute('hx-get') === '/workspace/search') {
+      document.getElementById('search-modal').classList.remove('hidden');
+    }
+  });
+
+  document.body.addEventListener('htmx:afterSwap', function (event) {
+    if (event.target.getAttribute('hx-get') === '/workspace/search/clear') {
+      document.getElementById('search-modal').classList.add('hidden');
+    }
+  });
+</script>

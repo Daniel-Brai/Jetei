@@ -7,7 +7,7 @@
 generator client {
   provider        = "prisma-client-js"
   binaryTargets   = ["native", "linux-musl"]
-  previewFeatures = ["relationJoins"]
+  previewFeatures = ["fullTextSearch", "relationJoins"]
 }
 
 datasource db {
@@ -130,7 +130,7 @@ model ChatParticipant {
   inviteeId String?   @unique
   invitee   Invitee?  @relation(fields: [inviteeId], references: [id])
   chats     Chat[]    @relation("ParticipantChats")
-  Message   Message[]
+  message   Message[]
 
   @@unique([userId, inviteeId])
 }
@@ -144,14 +144,15 @@ model Chat {
 }
 
 model Message {
-  id       String          @id @default(uuid())
-  content  String
-  sentAt   DateTime        @default(now())
-  readAt   DateTime?
-  senderId String
-  sender   ChatParticipant @relation(fields: [senderId], references: [id])
-  chatId   String
-  chat     Chat            @relation(fields: [chatId], references: [id])
+  id        String          @id @default(uuid())
+  content   String
+  sentAt    DateTime        @default(now())
+  readAt    DateTime?
+  senderId  String
+  isRead    Boolean         @default(false)
+  sender    ChatParticipant @relation(fields: [senderId], references: [id])
+  chatId    String
+  chat      Chat            @relation(fields: [chatId], references: [id])
 }
 
 enum UserRole {

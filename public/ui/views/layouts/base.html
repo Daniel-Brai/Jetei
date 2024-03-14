@@ -46,15 +46,22 @@
     <script nonce="{{ nonce }}" src="/assets/js/htmx.min.js"></script>
     {% block js %}{% endblock %}
   </head>
-  <body class="min-h-screen bg-background font-sans antialiased" hx-ext="loading-states">
+  <body
+    class="min-h-screen bg-background font-sans antialiased"
+    hx-ext="loading-states"
+  >
     <div class="relative flex min-h-screen flex-col">
       {% include "partials/_header.html" %}
       <main class="flex-auto">
-        {% block content %}{% endblock %}
+      {% block content %}{% endblock %}
       </main>
       {% block footer %} {% endblock %}
     </div>
     <script defer nonce="{{ nonce }}" src="/assets/js/preload.js"></script>
-    <script defer nonce="{{ nonce }}" src="/assets/js/loading-states.js"></script>
+    <script
+      defer
+      nonce="{{ nonce }}"
+      src="/assets/js/loading-states.js"
+    ></script>
   </body>
 </html>

@@ -586,13 +586,21 @@ export class HubsService {
     try {
       const data = await this.prisma.$transaction(async (tx) => {
         const userId = req.user.sub;
-        const foundUserNotes = await tx.note.findMany({
+        const foundUserNotes = await tx.hub.findMany({
           distinct: ['id'],
-          where: { createdById: userId },
-          orderBy: { updatedAt: 'desc' },
           take: 2,
+          orderBy: {
+            notes: {
+              _count: 'desc',
+            },
+          },
           include: {
-            hub: true,
+            notes: {
+              take: 1,
+              orderBy: {
+                updatedAt: 'desc',
+              },
+            },
           },
         });
 
@@ -610,6 +618,7 @@ export class HubsService {
                           select: {
                             id: true,
                             email: true,
+                            profile: true,
                           },
                         },
                         invitee: {
@@ -625,12 +634,13 @@ export class HubsService {
               select: {
                 id: true,
                 email: true,
+                profile: true,
               },
             },
             invitee: { select: { id: true, email: true, name: true } },
           },
         });
-        return { notes: foundUserNotes, chats: chatsWithMessages };
+        return { hubs: foundUserNotes, chats: chatsWithMessages };
       });
       return {
         type: 'success',

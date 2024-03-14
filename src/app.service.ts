@@ -12,53 +12,6 @@ import { PrismaService } from '@/infra/gateways/database/prisma/prisma.service';
 import { Response, Request } from 'express';
 import { v4 } from 'uuid';
 
-export const hubs = [
-  {
-    id: '6c84fb90-12c4-11e1-840d-7b25c5ee775a',
-    name: 'My Zig Hub',
-    subject:
-      'Everything I know, love and plan to do with the Zig Programming Language',
-    markdown: {
-      text: "At its core, Zig is designed for speed and system-level interaction. Inspired by C, it embraces manual memory management, offering fine-grained control over your code's efficiency. This makes it ideal for performance-critical applications like embedded systems, game engines, and networking tools.",
-    },
-    updated_at: '2023-06-09T09:00:00',
-  },
-  {
-    id: '110e8400-e29b-11d4-a716-446655440000',
-    name: 'The Alchemists',
-    subject: 'For the love of Elixir, OTP and Pheonix',
-    markdown: {
-      text: "The Alchemists are a passionate team driven by a love for the Elixir programming language. We're not just programmers, but alchemists in our crafts, transmuting complex concepts into elegant solutions and clear documentation for the future.",
-    },
-    updated_at: '2023-10-22T10:30:00',
-  },
-];
-
-export const chats = [
-  {
-    id: '6c84fb90-12c4-11e1-840d-7b25c5ee775a',
-    name: 'Gerard Brai',
-    workspace: 'Explorers',
-    subject: 'Meeting Tomorrow',
-    markdown: {
-      text: "Hi Daniel, let's have a meeting tomorrow to discuss the project. I've been reviewing the project details and have some ideas I'd like to share. It's crucial that we align on our next steps to ensure the project's success.\n\nPlease come prepared with any questions or insights you may have. Looking forward to our meeting!\n\nBest regards, William",
-    },
-    date: '2024-02-22T09:00:00',
-    read: false,
-  },
-  {
-    id: '110e8400-e29b-11d4-a716-446655440000',
-    name: 'Promise Okafor',
-    workspace: 'Frontend Gurus',
-    subject: 'Re: Project Update',
-    markdown: {
-      text: "Thank you for the project update. It looks great! I've gone through the report, and the progress is impressive. The team has done a fantastic job, and I appreciate the hard work everyone has put in.\n\nI have a few minor suggestions that I'll include in the attached document.\n\nLet's discuss these during our next meeting. Keep up the excellent work!\n\nBest regards, Alice",
-    },
-    date: '2024-02-16T10:30:00',
-    read: true,
-  },
-];
-
 @Injectable()
 export class AppService {
   private readonly logger = new Logger(AppService.name);
@@ -741,7 +694,6 @@ export class AppService {
         form_id: 'get-hub',
         api_url: '/api/v1/hubs',
         form_name: 'Hub get',
-        hubs: hubs,
         status: status,
         ...this.siteConfig,
       });
@@ -1004,7 +956,7 @@ export class AppService {
         url: req.url,
         ws_url: `${AppConfig.environment.NODE_ENV === 'development' ? `ws://localhost:${AppConfig.environment.WS_PORT}` : `wss://${req.hostname}:${AppConfig.environment.WS_PORT}`}`,
         api_url: `/api/v1/workspace/hubs/${hubId}/notes/${noteId}`,
-        note_link_url: `/workspace/hubs/${hubId}/notes/${noteId}/link`,
+        note_link_url: `/api/v1/hubs/${hubId}/notes/${noteId}/link`,
         form_id: `edit-note`,
         form_name: 'Edit Note',
         hubId: hubId,

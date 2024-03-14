@@ -36,20 +36,22 @@
         transports: ['websocket', 'polling'],
     });
     const user = { id: '{{ user.sub }}', name: '{{ user.name }}' };
+    const chatId = "{{ chatId }}"
 
     const messages = document.getElementById('messages')
 
-    socket.on('newMessage', (message) => {
+    socket.on('recieveMessage', (message) => {
       const messageContainerDiv = document.createElement('div');
       const messageDetailsDiv = document.createElement('div');
       
-      if (message.userId === user.id) {
+      if (message.senderId === user.id) {
         messages.classList.add('items-end');
-      } else if (message.userId !== user.id) {
+
+      } else if (message.senderId !== user.id) {
         messages.classList.add('items-start');
       }
 
-      messageContainerDiv.className = `mb-2 ${message.userId === user.id ? 'bg-blue-500 text-white rounded-lg p-2 ml-auto max-w-xs text-sm' : 'bg-gray-300 rounded-lg p-2 max-w-xs text-sm'}`;
+      messageContainerDiv.className = `mb-2 ${message.senderId === user.id ? 'bg-blue-500 text-white rounded-lg p-2 ml-auto max-w-xs text-sm' : 'bg-gray-300 rounded-lg p-2 max-w-xs text-sm'}`;
       messageContainerDiv.innerHTML = `
         ${message.content}
       `;
@@ -60,14 +62,26 @@
       `; 
       messages.appendChild(messageContainerDiv);
       messages.appendChild(messageDetailsDiv);
+
+      socket.on('userCount', (data) => {
+        let userCount = data.users.length;
+        const otherUser = data.users.filter((id) => id !== user.id)
+
+        if (otherUser) {
+          socket.emit('readMessage', { chatId: chatId, messageId: message.id })
+        }
+      })
     });
+
+
+
 
     document.getElementById('chat-form').addEventListener('submit', (e) => {
       e.preventDefault()
       const messageInput = document.getElementById('message-input');
       const content = messageInput.value.trim();
       if (content) {
-        socket.emit('viewMessage', { userId: user.id, userName: user.name, message: content });
+        socket.emit('sendMessage', { userId: user.id, chatId: chatId, content: content });
         messageInput.value = '';
       }
     });
