@@ -13,6 +13,13 @@ function formatDate(dateString) {
     return date.toLocaleString('en-US', options);
 }
 
+function subString(text, end) {
+    if (typeof end === 'string') {
+      end = parseInt(end);
+    }
+    return text.substring(0, end);
+}
+
 htmx.defineExtension('load-templates', {
     transformResponse: function (text, xhr, elt) {
         var nunjucksTemplate = htmx.closest(elt, '[nunjucks-template]');
@@ -69,7 +76,7 @@ htmx.defineExtension('load-templates', {
                     <div class="space-y-8">
                         {% for note in data.notes %}
                             <a class="cursor-pointer" href="/workspace{{ details.path }}/notes/{{ note.id }}/edit" preload="mouseover">
-                                <div class="flex items-center btn-ghost py-3 px-3 rounded-md">
+                                <div class="flex items-center btn-ghost py-3 px-3 rounded-md overflow-hidden">
                                     <div class="mr-3">
                                         <svg class="size-7" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M16 2v20"/></svg>
                                     </div>
@@ -78,10 +85,10 @@ htmx.defineExtension('load-templates', {
                                         {% if note.name %}
                                         {{ note.name }}
                                         {% else %}
-                                        No name yet!
+                                        No name yet
                                         {% endif %}
                                     </p>
-                                    <p class="text-sm text-muted-foreground">
+                                    <p class="note-text text-sm text-muted-foreground">
                                         {% if note.text %}
                                         {{ note.text }}
                                         {% else %}
@@ -109,6 +116,13 @@ htmx.defineExtension('load-templates', {
 
 setTimeout(() => {
     const dates = document.querySelectorAll('.updated-at')
+    const note_texts = document.querySelectorAll('.note-text')
+    note_texts.forEach((n) => {
+        if (n.textContent.length > 300) {
+            n.textContent = `${subString(n.textContent, 300)}...`
+        }
+        n.textContent = `${subString(n.textContent, 300)}`
+    })
     dates.forEach((d) => {
         d.classList.remove('hidden')
         d.textContent = `Edited ${formatDate(d.textContent)}`

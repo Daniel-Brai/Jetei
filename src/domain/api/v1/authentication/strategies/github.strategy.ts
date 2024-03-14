@@ -9,8 +9,6 @@ import {
 import { AuthenticationService } from '../authentication.service';
 import { Request } from 'express';
 
-type VerifyCallback = (error: any, user?: any, info?: any) => void;
-
 const githubOptions: StrategyOptionsWithRequest = {
   clientID: AppConfig.authentication.GITHUB_CLIENT_ID,
   clientSecret: AppConfig.authentication.GITHUB_CLIENT_SECRET,
@@ -31,7 +29,6 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
     accessToken: string,
     _refreshToken: string,
     profile: Profile,
-    done: VerifyCallback,
   ): Promise<any> {
     try {
       console.log('GitHub Profile:', profile);
@@ -39,7 +36,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
       console.log('User object from AuthService:', user);
       if (!user) {
         console.log('No user found');
-        return done(null, false);
+        return null;
       }
       console.log('User object passed to done callback:', user);
       return user;

@@ -573,6 +573,83 @@ export class HubsService {
   }
 
   /**
+   * GEt the latest chats and notes
+   * @param req The request object
+   * @returns {Promise<APIResponse<{notes: any[], chats: any[]}>>} The latest two notes and chats
+   */
+  public async getUserLatestNotesAndChats(
+    req: RequestUser,
+  ): Promise<APIResponse<{ notes: any[]; chats: any[] }>> {
+    this.logger.log(
+      `Get the latest two notes and chats for user: ${req.user.sub}`,
+    );
+    try {
+      const data = await this.prisma.$transaction(async (tx) => {
+        const userId = req.user.sub;
+        const foundUserNotes = await tx.note.findMany({
+          distinct: ['id'],
+          where: { createdById: userId },
+          orderBy: { updatedAt: 'desc' },
+          take: 2,
+          include: {
+            hub: true,
+          },
+        });
+
+        const chatsWithMessages = await tx.chatParticipant.findMany({
+          distinct: ['id'],
+          where: { userId: userId },
+          include: {
+            chats: {
+              include: {
+                messages: {
+                  include: {
+                    sender: {
+                      include: {
+                        user: {
+                          select: {
+                            id: true,
+                            email: true,
+                          },
+                        },
+                        invitee: {
+                          select: { id: true, email: true, name: true },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            user: {
+              select: {
+                id: true,
+                email: true,
+              },
+            },
+            invitee: { select: { id: true, email: true, name: true } },
+          },
+        });
+        return { notes: foundUserNotes, chats: chatsWithMessages };
+      });
+      return {
+        type: 'success',
+        status_code: 200,
+        data: data,
+      };
+    } catch (e) {
+      console.log('Error: ', e);
+      this.logger.error(this.messageHelpers.RETRIEVAL_ACTION_FAILED, {
+        context: `Get latest notes and chat for user: ${req.user.sub}`,
+        error: e,
+      });
+      throw new BadRequestException(
+        this.messageHelpers.RETRIEVAL_ACTION_FAILED,
+      );
+    }
+  }
+
+  /**
    * Edit a user hub details by id
    * @param {RequestUser} req The request object
    * @param {string} hubId The id of the hub
