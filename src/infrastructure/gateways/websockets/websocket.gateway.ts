@@ -185,60 +185,52 @@ export class WebsocketGateway
   async handleSendMessage(
     @ConnectedSocket() socket: Socket,
     @MessageBody()
-    payload: {
-      previousMessageId: string | null;
-      message: string;
-      chatId: string | null;
-      participantId: string;
-    },
+    payload: { chatId: string; content: string },
   ) {
     try {
-      const message: Message = await this.prisma.$transaction(async (tx) => {
-        let newChat: Chat | null;
-        // Check if chat exist between user and participant else create
-        const existingChat = await tx.chat.findFirst({
-          where: {
-            userId: socket.data.user.id,
-            chatParticipant: {
-              some: {
-                participantId: payload.participantId,
-                chatId: payload.chatId,
-              },
-            },
-          },
-        });
+      const userId = socket.data.user.id as string;
 
-        if (!existingChat) {
-          newChat = await tx.chat.create({
-            data: {
-              userId: socket.data.user.id,
-              chatParticipant: {
-                create: {
-                  participantId: payload.participantId,
-                },
-              },
-            },
-          });
-        }
+      if (userId) {
+        throw new Error('Invalid user');
+      }
 
+      await this.prisma.$transaction(async (tx) => {
         const newMessage = await tx.message.create({
           data: {
-            content: payload.message,
-            chatId: existingChat.id || newChat.id,
-            senderId: socket.data.user.id,
+            content: payload.content,
+            chatId: payload.chatId,
+            senderId: userId,
           },
         });
 
-        return {
-          content: newMessage.content,
-          sent: this.siteHelpers.formatDateTimeWithTimezone(
-            newMessage.createdAt,
-          ),
-        };
-      });
-      socket.broadcast.emit('sendNewMessage', {
-        sender: socket.data.user.name,
-        payload: message,
+        if (newMessage) {
+          throw new Error('Failed to create message');
+        }
+
+        const chat = await tx.chat.findUnique({
+          where: { id: payload.chatId },
+          include: {
+            participants: {
+              include: {
+                user: true,
+                invitee: true,
+              },
+            },
+          },
+        });
+
+        if (chat) {
+          const participantIds = chat.participants.map((participant) => {
+            return participant.userId || participant.invitee?.id;
+          });
+
+          participantIds.forEach((participantId) => {
+            const socketId = this.connectedUsers[participantId].id;
+            if (socketId && socketId !== socket.id) {
+              this.server.to(socketId).emit('receiveMessage', newMessage);
+            }
+          });
+        }
       });
     } catch (e) {
       this.logger.error(this.messageHelpers.UNEXPECTED_RESULT, {
@@ -246,7 +238,7 @@ export class WebsocketGateway
         error: e,
       });
       socket.emit('error', {
-        message: 'Failed to send message',
+        message: e?.message,
       });
     }
   }
@@ -309,7 +301,7 @@ export class WebsocketGateway
   }
 
   @SubscribeMessage('downloadFile')
-  handleDownloadMarkdown(
+  async handleDownloadMarkdown(
     @ConnectedSocket() socket: Socket,
     @MessageBody()
     payload: {
@@ -317,7 +309,18 @@ export class WebsocketGateway
       noteId: string;
     },
   ) {
-    const fileName = `note-${payload.noteId}.md`;
+    const note = await this.prisma.note.findUnique({
+      where: {
+        id: payload.noteId,
+      },
+    });
+
+    if (!note) {
+      socket.emit('error', {
+        message: 'Unable to find note',
+      });
+    }
+    const fileName = `${note.name}.md`;
     const fileContent = payload.content;
 
     socket.emit('receiveFileData', {

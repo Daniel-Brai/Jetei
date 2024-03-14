@@ -66,13 +66,42 @@ export interface IAppConfig {
   };
   services: {
     sendwave: {
+      /**
+       * The Sendwave API Key
+       */
       SENDWAVE_API_KEY?: string;
     };
     smtp: {
+      /**
+       * The SMTP Host
+       */
       SMTP_HOST: string;
+      /**
+       * The SMTP PORT
+       */
       SMTP_PORT: number;
+      /**
+       * The SMTP Password
+       */
       SMTP_PASSWORD: string;
+      /**
+       * The SMTP user email address
+       */
       SMTP_EMAIL_ADDRESS: string;
+    };
+    cloudinary: {
+      /**
+       * The cloudinary bucket name
+       */
+      CLOUD_BUCKET_NAME: string;
+      /**
+       * The cloudinary API key
+       */
+      CLOUD_API_KEY: string;
+      /**
+       * The cloudinary secret key
+       */
+      CLOUD_SECRET_KEY;
     };
   };
 }

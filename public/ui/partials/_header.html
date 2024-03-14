@@ -29,7 +29,7 @@
       </a>
     </div>
     <div class="flex flex-1 items-center justify-end space-x-4">
-      <nav class="flex items-center space-x-1"  hx-ext="preload">
+      <nav class="flex items-center"  hx-ext="preload">
         {% if not isAuthenticated() and url == "/login" %}
           <a
             href="/signup"
@@ -47,7 +47,10 @@
             Login
           </a>
         {% elif isAuthenticated() %}
-          {% include "partials/_user_nav.html" %}
+          <div class="flex items-center space-x-16">
+            {% include "partials/_search_modal.html" %}
+            {% include "partials/_user_nav.html" %}
+          </div>
         {% else %}
           <a
             href="/login"

@@ -25,14 +25,56 @@
       data-hx-target="#result"
       nunjucks-template="toast"
     >
-      {% from "macros/form.html" import input_required_no_pattern, input_non_required, button %}
-      {{ input_required_no_pattern(type="text", id="name", name="name", placeholder="Name", title="Name must be at least 4 characters long") }}
-      {{ input_non_required(type="text", id="description", name="description", placeholder="Description") }} 
-      <div class="w-full inline-flex items-end justify-end" data-hx-ext="preload">
-        <a class="btn-link text-gradient_indigo-purple font-semibold text-[13px] text-right" href="/workspace/hubs/add-invitee" preload="mouseover">Add Invitee</a>
+      {% from "macros/form.html" import input_required_no_pattern,
+      input_non_required, button %} {{ input_required_no_pattern(type="text",
+      id="name", name="name", placeholder="Name", title="Name must be at least 4
+      characters long") }} {{ input_required_no_pattern(type="text",
+      id="description", name="description", placeholder="Description") }}
+      <div
+        class="flex items-center space-x-3 cursor-pointer h-10 w-full rounded-md border border-input bg-background px-3 py-2"
+        onclick="document.getElementById('photo').click()"
+      >
+        <div>
+          <svg
+            class="size-5"
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"
+            />
+            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+          </svg>
+        </div>
+        <div class="text-sm text-muted-foreground ml-4">Choose photo</div>
       </div>
-      
-      {{ button(class="btn-base-variant btn-base-size text-sm rounded-md flex items-center justify-center", text="Save") }}
+      <div class="hidden">
+        {{ input_non_required(type="file", id="photo",
+        extra_class="cursor-pointer", name="photo") }}
+        <input type="hidden" value="" />
+      </div>
+
+      <div
+        class="w-full inline-flex items-end justify-end"
+        data-hx-ext="preload"
+      >
+        <a
+          class="btn-link text-gradient_indigo-purple font-semibold text-[13px] text-right"
+          href="/workspace/hubs/add-invitee"
+          preload="mouseover"
+          >Add Invitee</a
+        >
+      </div>
+
+      {{ button(class="btn-base-variant btn-base-size text-sm rounded-md flex
+      items-center justify-center", text="Save") }}
 
       <div id="result"></div>
 
@@ -82,10 +124,5 @@
     </form>
   </div>
 </section>
-{% include 'partials/_form_handler.html' %}
-{% endblock %}
-
-
-{% block footer %}
-    {% include "partials/_footer_alt.html" %}
-{% endblock %}
+{% include 'partials/_form_handler.html' %} {% endblock %} {% block footer %} {%
+include "partials/_footer_alt.html" %} {% endblock %}

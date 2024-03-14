@@ -28,6 +28,23 @@ export class HubsController {
   constructor(private readonly hubsService: HubsService) {}
 
   @UseGuards(AccessTokenGuard)
+  @HttpCode(HttpStatus.CREATED)
+  @Post('/add-invitee')
+  public async addInviteeToHubByHubId(
+    @Req() req: RequestUser,
+    @Body() body: InviteeToHubDto,
+  ) {
+    return await this.hubsService.inviteToHubByIdAssignees(req, body);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('/latest-notes-and-chats')
+  public async getLatestNotesAndChats(@Req() req: RequestUser) {
+    return await this.hubsService.getUserLatestNotesAndChats(req);
+  }
+
+  @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.OK)
   @Get()
   public async getUserHubs(@Req() req: RequestUser) {
@@ -46,7 +63,7 @@ export class HubsController {
 
   @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.OK)
-  @Get(':hubId')
+  @Get('/:hubId')
   public async getUserHubById(
     @Req() req: RequestUser,
     @Param('hubId', ParseUUIDPipe) hubId: string,
@@ -56,7 +73,7 @@ export class HubsController {
 
   @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.OK)
-  @Patch(':hubId')
+  @Patch('/:hubId')
   public async editUserHubById(
     @Req() req: RequestUser,
     @Param('hubId', ParseUUIDPipe) hubId: string,
@@ -67,7 +84,7 @@ export class HubsController {
 
   @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.OK)
-  @Delete(':hubId')
+  @Delete('/:hubId')
   public async deleteHubById(
     @Req() req: RequestUser,
     @Param('hubId', ParseUUIDPipe) hubId: string,
@@ -77,7 +94,7 @@ export class HubsController {
 
   @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.CREATED)
-  @Post(':hubId/notes')
+  @Post('/:hubId/notes')
   public async createHubNoteByHubId(
     @Req() req: RequestUser,
     @Param('hubId', ParseUUIDPipe) hubId: string,
@@ -87,7 +104,7 @@ export class HubsController {
   }
 
   @UseGuards(AccessTokenGuard)
-  @Patch(':hubId/invitees/:inviteeId')
+  @Patch('/:hubId/invitees/:inviteeId')
   @HttpCode(HttpStatus.OK)
   public async editHubInviteeByHubId(
     @Req() req: RequestUser,
@@ -104,7 +121,7 @@ export class HubsController {
   }
 
   @UseGuards(AccessTokenGuard)
-  @Delete(':hubId/invitees/:inviteeId')
+  @Delete('/:hubId/invitees/:inviteeId')
   @HttpCode(HttpStatus.OK)
   public async deleteHubInviteeByHubId(
     @Req() req: RequestUser,
@@ -116,15 +133,5 @@ export class HubsController {
       hubId,
       inviteeId,
     );
-  }
-
-  @UseGuards(AccessTokenGuard)
-  @HttpCode(HttpStatus.CREATED)
-  @Post('/add-invitee')
-  public async addInviteeToHubByHubId(
-    @Req() req: RequestUser,
-    @Body() body: InviteeToHubDto,
-  ) {
-    return await this.hubsService.inviteToHubByIdAssignees(req, body);
   }
 }

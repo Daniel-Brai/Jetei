@@ -2,12 +2,36 @@
 
 {% block js %}
 <script nonce="{{ nonce }}" src="/assets/js/json-enc.js"></script>
-<script nonce="{{ nonce }}" src="/assets/js/client-side-templates.js"></script>
+<script nonce="{{ nonce }}" src="/assets/js/hubs.template.js"></script>
 <script nonce="{{ nonce }}" src="/assets/js/nunjucks.min.js"></script>
 {% endblock %}
 
 {% block content %}
 
+<section class="container mt-8 py-20" data-hx-ext="load-templates">
+  <div class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-96 md:w-1/2">
+    <div class="flex flex-col space-y-2 text-center">
+      <h1 class="text-2xl font-semibold tracking-tight">Your Hubs</h1>
+      <p class="text-sm text-muted-foreground">
+        Your knowledge hub awaits! Connect and share knowledge seamlessly.
+      </p>
+    </div>
+
+    <div 
+        id="{{ form_id }}" 
+        data-hx-ext="json-enc"
+        data-hx-get="{{ api_url }}"
+        data-hx-trigger="load"
+        data-hx-swap="innerHTML"
+        data-hx-target="#hubs-container"
+        nunjucks-array-template="hubs"
+    ></div>
+
+    <div id="hubs-container" class="flex flex-col space-y-10" data-hx-ext="preload"></div>
+    <template id="hubs">
+    </template>
+  </div> 
+</section>
 {% endblock %}
 
 

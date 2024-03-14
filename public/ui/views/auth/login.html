@@ -90,7 +90,6 @@
       </template>
     </form>
 
-    <form class="flex flex-col items-center justify-center" hx-get="/api/v1/authentication/github" hx-trigger="submit">
       <div
         class="mx-auto mb-4 flex items-center justify-center w-full"
       >
@@ -100,8 +99,13 @@
         </div>
         <hr class="shrink-0 h-full w-full bg-border" />
       </div>
+<<<<<<< HEAD
       <button
         type="submit"
+=======
+      <a
+        href="/auth/github"
+>>>>>>> 3-feat-add-social-authentication
         class="btn-outline flex items-center justify-center space-x-3 py-3 px-3 rounded-md w-full"
       >
         <svg
@@ -121,7 +125,10 @@
         </svg>
         <span class="text-sm ml-3 font-medium">Github</span>
       </a>
+<<<<<<< HEAD
     </form>
+=======
+>>>>>>> 3-feat-add-social-authentication
   </div>
 </section>
 {% include 'partials/_form_handler.html' %} {% endblock %}
