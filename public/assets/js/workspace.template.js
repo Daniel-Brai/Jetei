@@ -118,7 +118,7 @@ htmx.defineExtension('load-templates', {
                     <div class="flex items-center gap-2">
                     <div class="font-semibold">{{ item.name }}</div>
                     </div>
-                    <div class="updated-at ml-auto text-xs">
+                    <div class="updated-at hidden ml-auto text-xs">
                     {{ item.updatedAt }}
                     </div>
                 </div>
@@ -136,17 +136,13 @@ htmx.defineExtension('load-templates', {
         </div>
 
         {% if results.hubs|length == 0 %}
-        <div
-          class="mt-4 mb-10 flex flex-col items-center justify-center space-y-4"
-        >
-          <img
-            class="w-36 h-48"
-            src="/assets/images/no-hubs.png"
-            alt="Empty Hub"
-          />
-          <p class="text-sm font-medium text-center">
-            Whoa! Looks like you don't have any hubs!
-          </p>
+        <div class="py-3 mt-4 btn-outline rounded-md">
+          <div class="flex items-center justify-center space-x-4 py-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-library"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M7 7v10"></path><path d="M11 7v10"></path><path d="m15 7 2 10"></path></svg>
+            <p class="text-sm font-medium text-center">
+              Whoa! Looks like you don't have any hubs!
+            </p>
+          </div>
         </div>
         {% endif %}
       </div>
@@ -202,15 +198,13 @@ htmx.defineExtension('load-templates', {
             </a>
           </div>
         {% else %}
-        <div class="mt-4 flex flex-col items-center justify-center space-y-4">
-          <img
-            class="w-32 h-48"
-            src="/assets/images/empty-mailbox.png"
-            alt="Empty Chats"
-          />
-          <p class="text-sm font-medium text-center">
-            You don't have any message yet!
-          </p>
+        <div class="py-3 mt-4 btn-outline rounded-md">
+          <div class="flex items-center justify-center space-x-4 py-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <p class="text-sm font-medium text-center">
+              You don't have any message yet!
+            </p>
+          </div>
         </div>
         {% endfor %}
       </div>
@@ -251,4 +245,4 @@ setTimeout(() => {
           m.textContent = `${subString(m.textContent, 300)}`;
       })
     }
-}, 1500);
+}, 200);

@@ -47,8 +47,8 @@
             Login
           </a>
         {% elif isAuthenticated() %}
-          <div class="flex items-center space-x-16">
-            {% include "partials/_search_modal.html" %}
+          <div class="flex items-center space-x-4">
+            {% include "partials/_search_input.html" %}
             {% include "partials/_user_nav.html" %}
           </div>
         {% else %}

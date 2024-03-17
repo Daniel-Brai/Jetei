@@ -19,7 +19,7 @@
   {% from "macros/form.html" import textarea, input_required_no_pattern, input_non_required %}
 
   <form onsubmit="event.preventDefault()" novalidate>
-    {{ textarea(id="edit-note-md", name="markdown") }}
+    {{ textarea(id="edit-note-md", name="markdown", placholder="Start taking notes") }}
     <div id="cursors-container" class="relative"></div>
 
     <div id="link-dialog" class="hidden relative flex-col space-y-2 w-[300px]">

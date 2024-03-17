@@ -60,7 +60,7 @@ htmx.defineExtension('load-templates', {
 
             <div class="mt-40">
                 <div class="flex flex-col space-y-3 mb-10">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between mb-4">
                         <p class="text-xl font-semibold md:text-[30px] tracking-tight">Your Recent notes</p>
                         <div
                             class="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
@@ -93,15 +93,15 @@ htmx.defineExtension('load-templates', {
                             </a>
                         </div>
                     </div>
-                    <div class="space-y-8">
-                        {% for note in data.notes | reverse %}
+                    <div class="space-y-8 mb-4">
+                        {% for note in data.notes %}
                             <a class="cursor-pointer" href="/workspace{{ details.path }}/notes/{{ note.id }}/edit" preload="mouseover">
                                 <div class="flex items-center space-x-2 btn-ghost py-3 px-3 rounded-md overflow-hidden">
                                     <div class="mr-3">
                                         <svg class="size-7" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M16 2v20"/></svg>
                                     </div>
-                                    <div class="space-y-1">
-                                        <div class="flex items-center justify-between text-sm font-medium leading-none">
+                                    <div class="space-y-1 w-full">
+                                        <div class="w-full flex items-center justify-between text-sm font-medium leading-none">
                                             {% if note.name %}
                                             <div>{{ note.name }}</div>
                                             {% else %}

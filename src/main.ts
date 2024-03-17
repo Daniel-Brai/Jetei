@@ -13,8 +13,6 @@ import helmet from 'helmet';
 import { join } from 'path';
 import { cwd } from 'process';
 import { AppModule } from './app.module';
-import * as passport from 'passport';
-import * as session from 'express-session';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -72,24 +70,15 @@ async function bootstrap() {
   app.set('trust proxy', 1);
 
   // middlewares
+  app.use(compression({ level: 7, compression: 512 }));
   app.use(
     helmet({
       contentSecurityPolicy: false,
     }),
   );
-  // app.use(
-  //   session({
-  //     secret: 'your-secret-key', // Replace with a secure secret key
-  //     resave: false,
-  //     saveUninitialized: false,
-  //   }),
-  // );
-  // app.use(passport.initialize());
-  // app.use(passport.session());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
-  app.use(compression({ level: 5, compression: 512 }));
 
   await app.listen(port, async () => {
     logger.log(

@@ -62,6 +62,17 @@ export class AppController {
     return await this.appService.getSignup(req, res);
   }
 
+  @Get('/privacy')
+  async getPrivacy(@Req() req: Request, @Res() res: Response) {
+    return await this.appService.getPrivacy(req, res);
+  }
+
+  @Get('/terms')
+  async getTerms(@Req() req: Request, @Res() res: Response) {
+    return await this.appService.getTerms(req, res);
+  }
+
+
   @UseGuards(GithubAuthGuard)
   @Get('/auth/github')
   public githubAuth() {}
@@ -146,6 +157,19 @@ export class AppController {
   }
 
   @UseGuards(AccessTokenGuard)
+  @Get('/workspace/bookmarks')
+  async searchWorkspaceBookmarkmarks(
+    @Req() req: RequestUser,
+    @Res() res: Response,
+  ) {
+    return await this.appService.getWorkspaceBookmarks(req, res);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Get('/workspace/search')
+  async searchWorkspaceByRevelance() {}
+
+  @UseGuards(AccessTokenGuard)
   @Get('/workspace/chats/:chatId')
   async getWorkspaceChatsById(
     @Param('chatId', ParseUUIDPipe) chatId: string,
@@ -195,10 +219,6 @@ export class AppController {
   ) {
     return await this.appService.getWorkspaceHubsEdit(hubId, req, res);
   }
-
-  @UseGuards(AccessTokenGuard)
-  @Get('/workspace/search')
-  async searchWorkspaceByRevelance() {}
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/:hubId/notes/new')

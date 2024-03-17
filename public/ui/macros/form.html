@@ -38,6 +38,18 @@
 />
 {% endmacro %} 
 
+{% macro input_non_required_no_pattern(name, id, extra_class="", type='text', placeholder='', title='', minlength="1") %}
+<input
+  class="flex h-10 w-full {{ extra_class }} rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:text-white file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+  type="{{ type }}"
+  id="{{ id }}"
+  name="{{ name }}"
+  minlength="{{ minlength | int }}"
+  title="{{ title | e }}"
+  placeholder="{{ placeholder | e }}"
+/>
+{% endmacro %} 
+
 {% macro input_disabled(name, id, extra_class="", type='text', value) %}
 <input
   class="flex h-10 w-full {{ extra_class | e }}rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -75,13 +87,13 @@
 {% endmacro %}
 
 
-{% macro textarea(id, name, extra_class="") %}
+{% macro textarea(id, name, extra_class="", placeholder='') %}
 <textarea
   id="{{ id }}"
   name="{{ name }}"
   style="resize: none; overflow: hidden;"
   class="{{ extra_class }} flex transition-all w-[90%] rounded-md bg-transparent px-3 py-6 text-[15.5px] shadow-sm placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-  placeholder="Start taking notes"
+  placeholder="{{ placeholder }}"
   autofocus
 >
 </textarea>

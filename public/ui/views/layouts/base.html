@@ -53,6 +53,7 @@
     <div class="relative flex min-h-screen flex-col">
       {% include "partials/_header.html" %}
       <main class="flex-auto">
+      {% include 'partials/_search_modal.html' %}
       {% block content %}{% endblock %}
       </main>
       {% block footer %} {% endblock %}

@@ -1,0 +1,17 @@
+{% extends "views/layouts/base.html" %} 
+
+{% block js %}
+<script nonce="{{ nonce }}" src="/assets/js/json-enc.js"></script>
+<script nonce="{{ nonce }}" src="/assets/js/client-side-templates.js"></script>
+<script nonce="{{ nonce }}" src="/assets/js/nunjucks.min.js"></script>
+{% endblock %} 
+
+{% block content %}
+<section class="container mt-8 py-20" data-hx-ext="client-side-templates">
+
+</section>
+{% endblock %}
+
+{% block footer %}
+    {% include "partials/_footer_alt.html" %}
+{% endblock %}

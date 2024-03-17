@@ -426,7 +426,11 @@ export class HubsService {
           },
           include: {
             invitee: true,
-            notes: true,
+            notes: {
+              orderBy: {
+                updatedAt: 'desc',
+              },
+            },
           },
         });
 

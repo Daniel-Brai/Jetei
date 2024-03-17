@@ -1,39 +1,102 @@
-<div class="relative right-6 cursor-pointer">
-  <div class="absolute left-2 top-2">
-    <span class="">
-      <svg
-        class=""
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        width="24"
-        height="24"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+<div
+  id="search-modal"
+  class="relative z-[70] hidden"
+  aria-labelledby="modal-title"
+  role="dialog"
+  aria-modal="true"
+>
+  <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+  {% from 'macros/form.html' import input_non_required_no_pattern %}
+
+  <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+    <div
+      class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0"
+    >
+      <div
+        class="relative transform overflow-hidden rounded-lg bg-card bg-opacity-95 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg"
       >
-        <circle cx="11" cy="11" r="8" />
-        <path d="m21 21-4.3-4.3" />
-      </svg>
-    </span>
-  </div>
-  <div
-    class="flex h-10 pl-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground"
-  >
-    Search...
+        <button
+          id="search-modal-close-btn"
+          class="bg-secondary text-gray-400 rounded-full hover:text-gray-600 absolute top-2 right-2"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+        <div class="px-4 pb-4 pt-5 sm:p-6 sm:pb-4 mb-10">
+          <div class="sm:flex item-center justify-center">
+            <div
+              class="text-center sm:ml-4 sm:mt-0 sm:text-left px-2 py-7"
+            >
+              <div>
+                <div
+                  class="hidden sm:block relative right-6 cursor-pointer"
+                >
+                  <div class="absolute left-2 top-2">
+                    <span class="">
+                      <svg
+                        class=""
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        width="24"
+                        height="24"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                      </svg>
+                    </span>
+                  </div>
+                  {{ input_non_required_no_pattern(id="search-workspace-input", name="search-workspace-input", extra_class="flex h-10 pl-10 rounded-md border border-input bg-background px-24 py-2 text-sm text-muted-foreground", placeholder="Search...") }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 <script nonce="{{ nonce }}">
-  document.body.addEventListener('htmx:beforeSwap', function (event) {
-    if (event.target.getAttribute('hx-get') === '/workspace/search') {
-      document.getElementById('search-modal').classList.remove('hidden');
-    }
+  const searchModal = document.getElementById('search-modal');
+  const searchInput = document.getElementById('search-input');
+  const searchModalClose = document.getElementById('search-modal-close-btn');
+
+  searchInput.addEventListener('click', () => {
+    searchModal.classList.remove('hidden');
   });
 
-  document.body.addEventListener('htmx:afterSwap', function (event) {
-    if (event.target.getAttribute('hx-get') === '/workspace/search/clear') {
-      document.getElementById('search-modal').classList.add('hidden');
+  searchModalClose.addEventListener('click', () => {
+    searchModal.classList.add('hidden');
+  })
+
+  searchModal.addEventListener('click', (event) => {
+    const modalRect = searchModal.getBoundingClientRect();
+    const isOutsideModal = (
+      event.clientX < modalRect.left ||
+      event.clientX > modalRect.right ||
+      event.clientY < modalRect.top ||
+      event.clientY > modalRect.bottom
+    );
+
+    if (isOutsideModal) {
+      searchModalClose.click();
     }
-  });
+  })
 </script>
