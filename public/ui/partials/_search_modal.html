@@ -5,11 +5,17 @@
   role="dialog"
   aria-modal="true"
 >
-  <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+  <div
+    id="search-blur"
+    class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+  ></div>
 
   {% from 'macros/form.html' import input_non_required_no_pattern %}
 
-  <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+  <div
+    class="fixed inset-0 z-10 w-screen overflow-y-auto search-content"
+    id="search-modal-content"
+  >
     <div
       class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0"
     >
@@ -37,13 +43,9 @@
         </button>
         <div class="px-4 pb-4 pt-5 sm:p-6 sm:pb-4 mb-10">
           <div class="sm:flex item-center justify-center">
-            <div
-              class="text-center sm:ml-4 sm:mt-0 sm:text-left px-2 py-7"
-            >
+            <div class="text-center sm:ml-4 sm:mt-0 sm:text-left px-2 py-7">
               <div>
-                <div
-                  class="hidden sm:block relative right-6 cursor-pointer"
-                >
+                <div class="hidden sm:block relative right-6 cursor-pointer">
                   <div class="absolute left-2 top-2">
                     <span class="">
                       <svg
@@ -63,7 +65,11 @@
                       </svg>
                     </span>
                   </div>
-                  {{ input_non_required_no_pattern(id="search-workspace-input", name="search-workspace-input", extra_class="flex h-10 pl-10 rounded-md border border-input bg-background px-24 py-2 text-sm text-muted-foreground", placeholder="Search...") }}
+                  {{ input_non_required_no_pattern(id="search-workspace-input",
+                  type="search", name="search-workspace-input",
+                  extra_class="select-none h-10 pl-10 rounded-md border
+                  border-input bg-background px-24 py-2 text-sm
+                  text-muted-foreground", placeholder="Search...") }}
                 </div>
               </div>
             </div>
@@ -75,28 +81,25 @@
 </div>
 <script nonce="{{ nonce }}">
   const searchModal = document.getElementById('search-modal');
+  const searchModalContent = document.getElementById('search-modal-content');
   const searchInput = document.getElementById('search-input');
+  const searchModalBlur = document.getElementById('search-blur');
   const searchModalClose = document.getElementById('search-modal-close-btn');
+  let url = '{{ url }}';
 
-  searchInput.addEventListener('click', () => {
-    searchModal.classList.remove('hidden');
-  });
+  if (
+    !url ||
+    !url.includes('workspace') ||
+    !url.includes('settings') ||
+    !url.includes('privacy') ||
+    !url.includes('terms')
+  ) {
+    searchInput.addEventListener('click', () => {
+      searchModal.classList.remove('hidden');
+    });
 
-  searchModalClose.addEventListener('click', () => {
-    searchModal.classList.add('hidden');
-  })
-
-  searchModal.addEventListener('click', (event) => {
-    const modalRect = searchModal.getBoundingClientRect();
-    const isOutsideModal = (
-      event.clientX < modalRect.left ||
-      event.clientX > modalRect.right ||
-      event.clientY < modalRect.top ||
-      event.clientY > modalRect.bottom
-    );
-
-    if (isOutsideModal) {
-      searchModalClose.click();
-    }
-  })
+    searchModalClose.addEventListener('click', () => {
+      searchModal.classList.add('hidden');
+    });
+  }
 </script>

@@ -61,3 +61,14 @@ export type Message = {
   content: string;
   sent: string;
 };
+
+/**
+ * Describes the mimetype
+ */
+export type AllowedMimeTypes =
+  | 'image/png'
+  | 'image/jpeg'
+  | 'image/webp'
+  | 'application/pdf'
+  | 'text/markdown'
+  | 'text/plain';

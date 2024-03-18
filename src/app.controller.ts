@@ -72,7 +72,6 @@ export class AppController {
     return await this.appService.getTerms(req, res);
   }
 
-
   @UseGuards(GithubAuthGuard)
   @Get('/auth/github')
   public githubAuth() {}
@@ -138,16 +137,8 @@ export class AppController {
   }
 
   @Get('/settings')
-  async getSettings(
-    @Req() req: RequestUser,
-    @Res() res: Response,
-    @Query('page') page?: 'profile' | 'notifications',
-  ) {
-    return await this.appService.getUserSettingsAndByOptionalQuery(
-      req,
-      res,
-      page,
-    );
+  async getSettings(@Req() req: RequestUser, @Res() res: Response) {
+    return await this.appService.getUserSettings(req, res);
   }
 
   @UseGuards(AccessTokenGuard)

@@ -554,11 +554,7 @@ export class AppService {
     }
   }
 
-  public async getUserSettingsAndByOptionalQuery(
-    req: RequestUser,
-    res: Response,
-    page?: 'profile' | 'notifications',
-  ): Promise<void> {
+  public async getUserSettings(req: RequestUser, res: Response): Promise<void> {
     this.logger.log(`Get Jetei User Settings page`);
 
     try {
@@ -576,7 +572,6 @@ export class AppService {
         ip: req.ip,
         url: req.url,
         user: req.user,
-        page: page,
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
         status: status,
