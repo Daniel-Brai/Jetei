@@ -125,7 +125,7 @@ export class HubsController {
 
   @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.OK)
-  @Delete('/:hubId/delete-file')
+  @Delete('/:hubId/file/:fileId')
   public async deleteFileFromHub(
     @Req() req: RequestUser,
     @Param('hubId', ParseUUIDPipe) hubId: string,

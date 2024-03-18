@@ -1,114 +1,26 @@
-{% extends "views/layouts/base.html" %}
-
-{% block js %}
+{% extends "views/layouts/base.html" %} {% block js %}
 <script nonce="{{ nonce }}" src="/assets/js/json-enc.js"></script>
 <script nonce="{{ nonce }}" src="/assets/js/hub.template.js"></script>
 <script nonce="{{ nonce }}" src="/assets/js/nunjucks.min.js"></script>
-{% endblock %}
+{% endblock %} {% block content %}
+<section class="container mt-12" hx-ext="load-templates">
+  <div
+    id="{{ form_id }}"
+    data-hx-ext="json-enc"
+    data-hx-get="{{ api_url }}"
+    data-hx-trigger="load"
+    data-hx-swap="innerHTML"
+    data-hx-target="#hubs-{{ hubId }}-container"
+    nunjucks-template="hubs-{{ hubId }}"
+  ></div>
 
-{% block content %}
-<section class="container mt-12 flex flex-col items-center space-y-2 lg:flex-row lg:space-x-7" hx-ext="load-templates">
+  <div
+    id="hubs-{{ hubId }}-container"
+    class="flex flex-col items-center space-y-2 lg:flex-row lg:space-x-7"
+    data-hx-ext="preload"
+  ></div>
 
-    <div 
-        id="{{ form_id }}" 
-        data-hx-ext="json-enc"
-        data-hx-get="{{ api_url }}"
-        data-hx-trigger="load"
-        data-hx-swap="innerHTML"
-        data-hx-target="#hubs-{{ hubId }}-container"
-        nunjucks-template="hubs-{{ hubId }}"
-    ></div>
-
-    <div id="hubs-{{ hubId }}-container" class="flex flex-col space-y-14" data-hx-ext="preload"></div>
-
-    <div class="w-full h-full px-5">
-        <div class="flex flex-col space-y-2 text-left">
-            <div class="flex items-center justify-between mb-4">
-            <p class="text-xl font-semibold md:text-[30px] tracking-tight">Your Documents</p>
-            <div
-                class="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-                >
-                <div>
-                    <div
-                    >
-                    <form id="upload-documents-form" onsubmit="event.preventDefault()">
-                        <label
-                            for="file"
-                            class="relative btn-outline rounded-md flex items-center px-3 py-2 space-x-2 cursor-pointer"
-                        >
-                            <div class="text-muted-foreground">
-                                <svg
-                                class="size-5"
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="lucide lucide-plus-circle"
-                                >
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M8 12h8" />
-                                <path d="M12 8v8" />
-                                </svg>
-                            </div>
-                            <span class="text-sm">Upload a document</span>
-                            <input
-                            id="file"
-                            name="file"
-                            type="file"
-                            class="file-input sr-only"
-                            />
-                        </label>
-                        <button id="upload-document-submit" class="hidden" type="submit" onclick="uploadFile()">Upload</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-    <template id="hubs-{{ hubId }}">
-    </template>
+  <template id="hubs-{{ hubId }}"> </template>
 </section>
-<script nonce="{{ nonce }}">
-    const fileInput = document.getElementById('file');
-    const submitButton = document.getElementById('upload-document-submit');
-    const hubId = "{{ hubId }}"
-
-    fileInput.addEventListener('change', () => {
-        if (fileInput.files.length > 0) {
-            console.log(fileInput.files[0])
-            submitButton.click();
-        }
-    });
-
-    async function uploadFile() {
-        const file = fileInput.files[0];
-
-        if (!file) {
-            alert('Please select a file to upload');
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        try {
-            const res = await fetch(`/api/v1/hubs/${hubId}/upload-file?to=documents`, {
-                method: 'POST',
-                body: formData,
-            })
-           const data = await res.json(); 
-           console.log(data.url)
-        } catch (e) {
-            console.log(e)
-        }
-    }
-</script>
-{% endblock %}
-
-{% block footer %}
-    {% include "partials/_footer_alt.html" %}
-{% endblock %}
+{% endblock %} {% block footer %} {% include "partials/_footer_alt.html" %} {%
+endblock %}
