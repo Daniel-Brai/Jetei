@@ -10,6 +10,12 @@ import {
   Req,
   UseGuards,
   Patch,
+  UploadedFile,
+  FileTypeValidator,
+  MaxFileSizeValidator,
+  ParseFilePipe,
+  Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import { PrefixedController } from '@/common/decorators/app.decorators';
 import { RequestUser } from '@/interfaces';
@@ -22,6 +28,7 @@ import {
   UpdateHubInviteeDto,
 } from './dtos/hubs.dtos';
 import { AccessTokenGuard } from '../authentication/guards/access-token.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @PrefixedController('hubs')
 export class HubsController {
@@ -90,6 +97,42 @@ export class HubsController {
     @Param('hubId', ParseUUIDPipe) hubId: string,
   ) {
     return await this.hubsService.deleteUserHubById(req, hubId);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  @HttpCode(HttpStatus.OK)
+  @Post('/:hubId/upload-file')
+  public async uploadFileToHub(
+    @Req() req: RequestUser,
+    @Param('hubId', ParseUUIDPipe) hubId: string,
+    @UploadedFile(
+      'file',
+      new ParseFilePipe({
+        validators: [
+          new FileTypeValidator({
+            fileType:
+              /^(image\/(jpeg|png|webp))|(text\/(markdown|plain))|(application\/pdf)$/,
+          }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @Query('to') to?: string,
+  ) {
+    return await this.hubsService.userHubUploadFile(req, hubId, file, to);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @HttpCode(HttpStatus.OK)
+  @Delete('/:hubId/delete-file')
+  public async deleteFileFromHub(
+    @Req() req: RequestUser,
+    @Param('hubId', ParseUUIDPipe) hubId: string,
+    @Param('fileId') fileId: string,
+    @Query('from') from: string,
+  ) {
+    return await this.hubsService.deleteFileFromHub(req, hubId, fileId, from);
   }
 
   @UseGuards(AccessTokenGuard)

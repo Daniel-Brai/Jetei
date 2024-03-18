@@ -4,9 +4,15 @@ import { AuthenticationModule } from '@/domain/api/v1/authentication/authenticat
 import { HubsController } from './hubs.controller';
 import { HubsService } from './hubs.service';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { CloudinaryModule } from '@/lib/cloudinary/cloudinary.module';
 
 @Module({
-  imports: [JwtModule, AuthenticationModule, EventEmitterModule.forRoot()],
+  imports: [
+    JwtModule,
+    AuthenticationModule,
+    EventEmitterModule.forRoot(),
+    CloudinaryModule,
+  ],
   controllers: [HubsController],
   providers: [HubsService],
   exports: [HubsService],

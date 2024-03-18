@@ -26,6 +26,7 @@ import {
   UpdateHubInviteeDto,
 } from './dtos/hubs.dtos';
 import { AppConfig } from '@/lib/config/config.provider';
+import { CloudinaryService } from '@/lib/cloudinary/cloudinary.service';
 
 @Injectable()
 export class HubsService {
@@ -39,6 +40,7 @@ export class HubsService {
     private readonly jwtService: JwtService,
     private readonly eventEmitter: EventEmitter2,
     private readonly authService: AuthenticationService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   /**
@@ -391,6 +393,174 @@ export class HubsService {
       throw new BadRequestException(
         this.messageHelpers.RETRIEVAL_ACTION_FAILED,
       );
+    }
+  }
+
+  /**
+   * Upload file from user
+   * @param {RequestUser} req The request object
+   * @param {string} hubId The id of the hub
+   * @param {Express.Multer.File} file The file to uploaded
+   * @returns {string} The url of the uploaded file
+   */
+  public async userHubUploadFile(
+    req: RequestUser,
+    hubId: string,
+    file: Express.Multer.File,
+    to?: string,
+  ): Promise<{ url: string }> {
+    this.logger.log(
+      `Uploading file: ${file.originalname} from user ${req.user.sub}`,
+    );
+
+    try {
+      let uploadedFileUrl: { url: string };
+
+      if (file.size > 25 * 1024 * 1024) {
+        throw new Error('File size exceeds 25MB');
+      }
+
+      if (to !== null && to === 'documents') {
+        const foundUserHub = await this.prisma.hub.findUnique({
+          where: {
+            id: hubId,
+          },
+        });
+
+        if (!foundUserHub) {
+          throw new Error(this.messageHelpers.HUB_NOT_FOUND);
+        }
+
+        const uploadedFile =
+          await this.cloudinaryService.uploadFileByContentType(
+            req.user.sub,
+            [
+              'image/jpeg',
+              'image/png',
+              'image/webp',
+              'application/pdf',
+              'text/markdown',
+              'text/plain',
+            ],
+            file,
+          );
+
+        const documentsInFoundHub =
+          foundUserHub.documents.length === 0 ? [] : foundUserHub.documents;
+
+        const newDocuments = documentsInFoundHub.concat(uploadedFile);
+
+        const updatedHubDocuments = await this.prisma.hub.update({
+          where: {
+            id: foundUserHub.id,
+          },
+          data: {
+            documents: newDocuments,
+          },
+        });
+
+        if (!updatedHubDocuments) {
+          throw new Error(this.messageHelpers.UNEXPECTED_RESULT);
+        }
+
+        uploadedFileUrl = { url: uploadedFile };
+      } else {
+        const uploadedFile =
+          await this.cloudinaryService.uploadFileByContentType(
+            req.user.sub,
+            [
+              'image/jpeg',
+              'image/png',
+              'image/webp',
+              'application/pdf',
+              'text/markdown',
+              'text/plain',
+            ],
+            file,
+          );
+        uploadedFileUrl = { url: uploadedFile };
+      }
+      return uploadedFileUrl;
+    } catch (e) {
+      this.logger.error('Failed to upload file', {
+        error: e,
+      });
+      throw new BadRequestException(e?.message);
+    }
+  }
+
+  /**
+   * Delete a file from a user hub
+   * @param {RequestUser} req The request obj
+   * @param {string} hubId The id of the hub
+   * @param {string} fileId The public id of the file on cloudinary
+   * @param {string} from The place deletion should take place
+   * @return {Promise<{message: string}>} The API response if successful
+   */
+  public async deleteFileFromHub(
+    req: RequestUser,
+    hubId: string,
+    fileId: string,
+    from: string,
+  ) {
+    this.logger.log(`Deleting file ${fileId}...`);
+
+    try {
+      let result: { message: string };
+      if (from !== null && from === 'documents') {
+        const foundUserHub = await this.prisma.hub.findUnique({
+          where: {
+            id: hubId,
+          },
+        });
+
+        if (!foundUserHub) {
+          throw new Error(this.messageHelpers.HUB_NOT_FOUND);
+        }
+
+        const deletedFile = await this.cloudinaryService.deleteFileByPublicId(
+          req.user.sub,
+          fileId,
+        );
+
+        const documentsInFoundHub =
+          foundUserHub.documents.length === 0 ? [] : foundUserHub.documents;
+
+        if (documentsInFoundHub.length === 0) {
+          throw new Error('No documents to delete');
+        }
+
+        const updatedDocuments = documentsInFoundHub.filter(
+          (doc) => !doc.includes(fileId),
+        );
+
+        const updatedHubDocuments = await this.prisma.hub.update({
+          where: {
+            id: foundUserHub.id,
+          },
+          data: {
+            documents: updatedDocuments,
+          },
+        });
+
+        if (!updatedHubDocuments) {
+          throw new Error('Failed to update hubs documents');
+        }
+
+        result = deletedFile;
+      } else {
+        const deletedFile = await this.cloudinaryService.deleteFileByPublicId(
+          req.user.sub,
+          fileId,
+        );
+        result = deletedFile;
+      }
+      return result;
+    } catch (e) {
+      this.logger.error('Failed to delete file', {
+        error: e,
+      });
+      throw new BadRequestException('Failed to delete file');
     }
   }
 

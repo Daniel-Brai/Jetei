@@ -43,6 +43,7 @@ model Hub {
   userId      String    @unique
   notes       Note[]    @relation("IsConnectedTo")
   invitee     Invitee[] @relation("HubInvitee")
+  documents   String[]  @default([])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -144,15 +145,15 @@ model Chat {
 }
 
 model Message {
-  id        String          @id @default(uuid())
-  content   String
-  sentAt    DateTime        @default(now())
-  readAt    DateTime?
-  senderId  String
-  isRead    Boolean         @default(false)
-  sender    ChatParticipant @relation(fields: [senderId], references: [id])
-  chatId    String
-  chat      Chat            @relation(fields: [chatId], references: [id])
+  id       String          @id @default(uuid())
+  content  String
+  sentAt   DateTime        @default(now())
+  readAt   DateTime?
+  senderId String
+  isRead   Boolean         @default(false)
+  sender   ChatParticipant @relation(fields: [senderId], references: [id])
+  chatId   String
+  chat     Chat            @relation(fields: [chatId], references: [id])
 }
 
 enum UserRole {
