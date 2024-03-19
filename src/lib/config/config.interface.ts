@@ -30,17 +30,17 @@ export interface IAppConfig {
      */
     ACCESS_JWT_TOKEN_SECRET_KEY: string;
     /**
-     * The github cleint id
+     * The google client id
      */
-    GITHUB_CLIENT_ID: string;
+    GOOGLE_CLIENT_ID: string;
     /**
-     * The Github Client secret;
+     * The google Client secret;
      */
-    GITHUB_CLIENT_SECRET: string;
+    GOOGLE_CLIENT_SECRET: string;
     /**
-     * The github callaback url;
+     * The google callaback url;
      */
-    GITHUB_CALLBACK_URL: string;
+    GOOGLE_CALLBACK_URL: string;
   };
   database: {
     pg: {

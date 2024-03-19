@@ -83,3 +83,14 @@ export type HubDocument = {
   url: string;
   extIcon: string;
 };
+
+/**
+ * Describes the payload from social providers
+ */
+export type SocialAuthenticationPayload = {
+  provider: string;
+  providerId: string;
+  email: string;
+  name: string;
+  picture: string;
+};
