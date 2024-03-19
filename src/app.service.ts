@@ -435,7 +435,7 @@ export class AppService {
       return res.render('views/401', {
         canonicalURL: canonicalURL,
         ogImagePath: `${canonicalURL}/${this.siteConfig.ogImagePath}`,
-        title: `401 - unathorized | ${this.siteConfig.name}`,
+        title: `401 - Unauthorized | ${this.siteConfig.name}`,
         description: `401 Error - Unauthorized | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,

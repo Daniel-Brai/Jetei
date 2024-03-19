@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   UseGuards,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { RequestUser } from '@/interfaces';
@@ -15,11 +16,10 @@ import { AccessTokenGuard } from './domain/api/v1/authentication/guards/access-t
 import { Roles } from './domain/api/v1/authentication/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { RolesGuard } from './domain/api/v1/authentication/guards/roles.guard';
-import { GithubAuthGuard } from './domain/api/v1/authentication/guards/github.guard';
 import { AuthenticationService } from './domain/api/v1/authentication/authentication.service';
 import { AppConfig } from './lib/config/config.provider';
-import { AuthGuard } from '@nestjs/passport';
-import { Profile } from 'passport-github2';
+import { GoogleAuthGuard } from './domain/api/v1/authentication/guards/google.guard';
+import { SocialAuthenticationPayload } from './types';
 
 @Controller()
 export class AppController {
@@ -27,7 +27,7 @@ export class AppController {
   constructor(
     private readonly appService: AppService,
     private readonly authService: AuthenticationService,
-  ) { }
+  ) {}
 
   @Get()
   async getIndex(@Req() req: Request, @Res() res: Response) {
@@ -74,27 +74,21 @@ export class AppController {
     return await this.appService.getTerms(req, res);
   }
 
-  @UseGuards(GithubAuthGuard)
-  @Get('/auth/github')
-  public async githubLogin() { }
+  @Get('/auth/google')
+  @UseGuards(GoogleAuthGuard)
+  public async githubLogin() {}
 
-  @UseGuards(GithubAuthGuard)
-  @Get('/auth/github/callback')
-  public async githubCallback(@Req() req: Request) {
-    const user = req.user as Profile;
-
-    console.log('user controler: ', user)
-
-    return await this.authService.validateGithubUser(user);
-
-    // // if (!user) {
-    // //   return { message: "No user found" }
-    // // }
-    // // console.log('User object in controller:', user);
-    // // if (!user) {
-    // //   return { message: 'Authentication failed' };
-    // // }
-    // return { message: 'Authentication successful', user: user };
+  @UseGuards(GoogleAuthGuard)
+  @Get('/auth/google/callback')
+  public async githubCallback(@Req() req: Request, @Res() res: Response) {
+    try {
+      return await this.authService.validateSocialAuthUser(
+        req.user as SocialAuthenticationPayload,
+        res,
+      );
+    } catch (e) {
+      throw new InternalServerErrorException(e);
+    }
   }
 
   @UseGuards(AccessTokenGuard)
@@ -168,7 +162,7 @@ export class AppController {
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/search')
-  async searchWorkspaceByRevelance() { }
+  async searchWorkspaceByRevelance() {}
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/chats/:chatId')

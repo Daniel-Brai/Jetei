@@ -1,8 +1,16 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Logger,
+  HttpStatus,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UserRole } from '@prisma/client';
+import { Response } from 'express';
+import { v4 } from 'uuid';
 import { RequestUser } from '@/interfaces';
-import { APIResponse, JwtPayload } from '@/types';
+import { APIResponse, JwtPayload, SocialAuthenticationPayload } from '@/types';
 import {
   AuthenticationHelpers,
   MessageHelpers,
@@ -18,11 +26,7 @@ import {
   UserSignUpDto,
   UserVerifyAccountDto,
 } from './dtos/authentication.dtos';
-import { Response } from 'express';
-import { v4 } from 'uuid';
 import { MailerEvent } from '@/common/events/app.events';
-import { UserRole } from '@prisma/client';
-import { Profile } from 'passport-github2';
 import { CloudinaryService } from '@/lib/cloudinary/cloudinary.service';
 
 @Injectable()
@@ -785,22 +789,20 @@ export class AuthenticationService {
     }
   }
 
-  public async validateGithubUser(
-    profile: Profile,
-  ): Promise<any> {
-    let res: Response;
-    console.log(profile)
-    const { id, username, emails, photos } = profile;
-    const payload = {
-      sub: id,
-      name: username,
-      email: emails.shift().value,
-      photo: photos.shift().value,
-    };
-    if (payload.email) {
+  /**
+   * Authenticate with Social Provider
+   * @param {SocialAuthenticationPayload} payload THe payload passed as the request user
+   * @returns {Promise<void>} Redirect to workspace if sucessful
+   */
+  public async validateSocialAuthUser(
+    req: SocialAuthenticationPayload,
+    res: Response,
+  ): Promise<void> {
+    console.log('User profile in service: ', req);
+    if (req.email) {
       const user = await this.prisma.user.findUnique({
         where: {
-          email: payload.email,
+          email: req.email,
         },
         include: {
           profile: true,
@@ -814,8 +816,7 @@ export class AuthenticationService {
           name: user.profile.name,
           role: user.role,
         };
-        
-        // return data;
+
         const tokenId = v4();
 
         const accessToken = await this.createToken(
@@ -848,34 +849,38 @@ export class AuthenticationService {
           );
         }
 
-        res.cookie('accessToken', accessToken, {
-          httpOnly: true,
-          secure:
-            this.appConfig.environment.NODE_ENV === 'production' ? true : false,
-          expires: new Date(Date.now() + 36000000),
-          sameSite: 'lax',
-        });
-        res.cookie('accessTokenId', tokenId, {
-          httpOnly: true,
-          secure:
-            this.appConfig.environment.NODE_ENV === 'production' ? true : false,
-          expires: new Date(Date.now() + 36000000),
-          sameSite: 'lax',
-        });
-
-        return res.redirect('/workspace');
-
+        return res
+          .status(HttpStatus.OK)
+          .cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure:
+              this.appConfig.environment.NODE_ENV === 'production'
+                ? true
+                : false,
+            expires: new Date(Date.now() + 36000000),
+            sameSite: 'lax',
+          })
+          .cookie('accessTokenId', tokenId, {
+            httpOnly: true,
+            secure:
+              this.appConfig.environment.NODE_ENV === 'production'
+                ? true
+                : false,
+            expires: new Date(Date.now() + 36000000),
+            sameSite: 'lax',
+          })
+          .redirect('/workspace');
       } else {
         const newUser = await this.prisma.user.create({
           data: {
-            email: payload.email,
+            email: req.email,
             role: UserRole.OWNER,
             isSocialAuth: true,
             isVerified: true,
             profile: {
               create: {
-                name: payload.name,
-                avatar: null,
+                name: req.name,
+                avatar: req?.picture,
               },
             },
           },
@@ -891,8 +896,6 @@ export class AuthenticationService {
           name: newUser.profile.name,
         };
 
-        // return data;
-
         const tokenId = v4();
 
         const accessToken = await this.createToken(
@@ -925,21 +928,27 @@ export class AuthenticationService {
           );
         }
 
-        res.cookie('accessToken', accessToken, {
-          httpOnly: true,
-          secure:
-            this.appConfig.environment.NODE_ENV === 'production' ? true : false,
-          expires: new Date(Date.now() + 36000000),
-          sameSite: 'lax',
-        });
-        res.cookie('accessTokenId', tokenId, {
-          httpOnly: true,
-          secure:
-            this.appConfig.environment.NODE_ENV === 'production' ? true : false,
-          expires: new Date(Date.now() + 36000000),
-          sameSite: 'lax',
-        });
-        return res.redirect('/workspace');
+        return res
+          .status(HttpStatus.OK)
+          .cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure:
+              this.appConfig.environment.NODE_ENV === 'production'
+                ? true
+                : false,
+            expires: new Date(Date.now() + 36000000),
+            sameSite: 'lax',
+          })
+          .cookie('accessTokenId', tokenId, {
+            httpOnly: true,
+            secure:
+              this.appConfig.environment.NODE_ENV === 'production'
+                ? true
+                : false,
+            expires: new Date(Date.now() + 36000000),
+            sameSite: 'lax',
+          })
+          .redirect('/workspace');
       }
     }
   }

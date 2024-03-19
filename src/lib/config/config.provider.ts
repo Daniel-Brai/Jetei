@@ -23,12 +23,12 @@ export const AppConfig: IAppConfig = {
     ACCESS_JWT_TOKEN_SECRET_KEY: configService.getOrThrow<string>(
       'ACCESS_JWT_TOKEN_SECRET_KEY',
     ),
-    GITHUB_CLIENT_ID: configService.getOrThrow<string>('GITHUB_CLIENT_ID'),
-    GITHUB_CLIENT_SECRET: configService.getOrThrow<string>(
-      'GITHUB_CLIENT_SECRET',
+    GOOGLE_CLIENT_ID: configService.getOrThrow<string>('GOOGLE_CLIENT_ID'),
+    GOOGLE_CLIENT_SECRET: configService.getOrThrow<string>(
+      'GOOGLE_CLIENT_SECRET',
     ),
-    GITHUB_CALLBACK_URL: configService.getOrThrow<string>(
-      'GITHUB_CALLBACK_URL',
+    GOOGLE_CALLBACK_URL: configService.getOrThrow<string>(
+      'GOOGLE_CALLBACK_URL',
     ),
   },
   database: {
