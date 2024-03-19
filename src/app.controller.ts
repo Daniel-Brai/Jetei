@@ -18,6 +18,8 @@ import { RolesGuard } from './domain/api/v1/authentication/guards/roles.guard';
 import { GithubAuthGuard } from './domain/api/v1/authentication/guards/github.guard';
 import { AuthenticationService } from './domain/api/v1/authentication/authentication.service';
 import { AppConfig } from './lib/config/config.provider';
+import { AuthGuard } from '@nestjs/passport';
+import { Profile } from 'passport-github2';
 
 @Controller()
 export class AppController {
@@ -25,7 +27,7 @@ export class AppController {
   constructor(
     private readonly appService: AppService,
     private readonly authService: AuthenticationService,
-  ) {}
+  ) { }
 
   @Get()
   async getIndex(@Req() req: Request, @Res() res: Response) {
@@ -74,17 +76,25 @@ export class AppController {
 
   @UseGuards(GithubAuthGuard)
   @Get('/auth/github')
-  public githubAuth() {}
+  public async githubLogin() { }
 
   @UseGuards(GithubAuthGuard)
   @Get('/auth/github/callback')
-  public async githubAuthCallback(@Req() req: Request) {
-    const user = req.user;
-    console.log('User object in controller:', user);
-    if (!user) {
-      return { message: 'Authentication failed' };
-    }
-    return { message: 'Authentication successful', user: user };
+  public async githubCallback(@Req() req: Request) {
+    const user = req.user as Profile;
+
+    console.log('user controler: ', user)
+
+    return await this.authService.validateGithubUser(user);
+
+    // // if (!user) {
+    // //   return { message: "No user found" }
+    // // }
+    // // console.log('User object in controller:', user);
+    // // if (!user) {
+    // //   return { message: 'Authentication failed' };
+    // // }
+    // return { message: 'Authentication successful', user: user };
   }
 
   @UseGuards(AccessTokenGuard)
@@ -158,7 +168,7 @@ export class AppController {
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/search')
-  async searchWorkspaceByRevelance() {}
+  async searchWorkspaceByRevelance() { }
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/chats/:chatId')

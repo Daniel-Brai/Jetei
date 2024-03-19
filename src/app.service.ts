@@ -572,6 +572,8 @@ export class AppService {
         ip: req.ip,
         url: req.url,
         user: req.user,
+        form_id: 'get-details',
+        api_url: '/api/v1/authentication/me',
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
         status: status,

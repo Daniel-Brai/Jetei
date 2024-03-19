@@ -11,6 +11,7 @@ import {
 import { PrismaService } from '@/infra/gateways/database/prisma/prisma.service';
 import { AppConfig } from '@/lib/config/config.provider';
 import {
+  UpdateProfileDto,
   UserForgetPasswordDto,
   UserLoginDto,
   UserResetPasswordDto,
@@ -22,6 +23,7 @@ import { v4 } from 'uuid';
 import { MailerEvent } from '@/common/events/app.events';
 import { UserRole } from '@prisma/client';
 import { Profile } from 'passport-github2';
+import { CloudinaryService } from '@/lib/cloudinary/cloudinary.service';
 
 @Injectable()
 export class AuthenticationService {
@@ -35,6 +37,7 @@ export class AuthenticationService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   /**
@@ -444,7 +447,7 @@ export class AuthenticationService {
    * @param {UserResetPasswordDto} data The data passed
    * @returns {Promise<APIResponse<any>>} redirects to account reset confirmed page if successful
    */
-  public async ResetPasswordByToken(
+  public async resetPasswordByToken(
     token: string,
     data: UserResetPasswordDto,
   ): Promise<APIResponse<any>> {
@@ -543,6 +546,182 @@ export class AuthenticationService {
     }
   }
 
+  /**
+   * Get user profile
+   * @param {Request} req The request object
+   * @returns {Promise<APIResponse<any>>} The API Response
+   */
+  public async getProfile(req: RequestUser): Promise<APIResponse<any>> {
+    this.logger.log(`Get profile details for user ${req.user.sub}`);
+
+    try {
+      const user = await this.prisma.user.findUnique({
+        select: {
+          id: true,
+          email: true,
+          profile: true,
+        },
+        where: {
+          id: req.user.sub,
+        },
+      });
+
+      if (!user) {
+        throw new Error(this.messageHelper.USER_ACCOUNT_NOT_EXISTING);
+      }
+
+      return {
+        type: 'success',
+        status_code: 200,
+        data: user,
+        details: {},
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelper.RETRIEVAL_ACTION_FAILED, {
+        error: e,
+      });
+      throw new BadRequestException(this.messageHelper.RETRIEVAL_ACTION_FAILED);
+    }
+  }
+
+  /**
+   * Update user profile
+   * @param {Request} req The request object
+   * @param {UpdateProfileDto} data The passed to update the user profile
+   * @returns {Promise<APIResponse<any>>} The API Response
+   */
+  public async updateProfile(
+    req: RequestUser,
+    data: Omit<UpdateProfileDto, 'avatar'>,
+    file?: Express.Multer.File,
+  ): Promise<APIResponse<any>> {
+    this.logger.log(`Update profile details for user ${req.user.sub}`);
+
+    try {
+      const user = await this.prisma.user.findUnique({
+        select: {
+          id: true,
+          email: true,
+          password: true,
+          profile: true,
+        },
+        where: {
+          id: req.user.sub,
+        },
+      });
+
+      if (!user) {
+        throw new Error(this.messageHelper.USER_ACCOUNT_NOT_EXISTING);
+      }
+
+      if (data.email) {
+        const foundUser = await this.prisma.user.findUnique({
+          where: {
+            email: data.email,
+          },
+        });
+
+        if (foundUser) {
+          throw new Error(this.messageHelper.USER_REGISTER_FAILED);
+        }
+      }
+
+      if (file.size > 25 * 1024 * 1024) {
+        throw new Error('File size exceeds 25MB');
+      }
+
+      const avatar = file
+        ? await this.cloudinaryService.uploadFileByContentType(
+            req.user.sub,
+            ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'],
+            file,
+          )
+        : null;
+
+      const password =
+        data.new_password !== null
+          ? await this.authHelper.hashCredential(data.new_password)
+          : user.password;
+
+      const updateUser = await this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          email: data.email ? data.email : user.email,
+          password: password,
+          profile: {
+            update: {
+              bio: data.bio ? data.bio : user.profile.bio,
+              name: data.name ? data.name : user.profile.name,
+              avatar: avatar,
+            },
+          },
+        },
+      });
+
+      if (!updateUser) {
+        throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
+      }
+
+      return {
+        type: 'success',
+        status_code: 200,
+        api_message: 'Account updated successfully',
+        details: {},
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelper.RETRIEVAL_ACTION_FAILED, {
+        error: e,
+      });
+      throw new BadRequestException(this.messageHelper.RETRIEVAL_ACTION_FAILED);
+    }
+  }
+
+  /**
+   *  Delete user account
+   * @param {Request} req The request object
+   * @returns {Promise<APIResponse<any>>} The API Response
+   */
+  public async deleteAccount(req: RequestUser): Promise<APIResponse<any>> {
+    this.logger.log(`Delete account for user ${req.user.sub}`);
+
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          id: req.user.sub,
+        },
+      });
+
+      if (!user) {
+        throw new Error(this.messageHelper.USER_ACCOUNT_NOT_EXISTING);
+      }
+
+      const deletedUser = await this.prisma.user.delete({
+        where: {
+          id: user.id,
+        },
+      });
+
+      if (!deletedUser) {
+        throw new Error(this.messageHelper.DELETE_ACTION_FAILED);
+      }
+
+      return {
+        type: 'success',
+        status_code: 200,
+        api_message: 'Account deleted successfully',
+        data: [],
+        details: {},
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelper.DELETE_ACTION_FAILED, {
+        error: e,
+      });
+      throw new BadRequestException(this.messageHelper.DELETE_ACTION_FAILED);
+    }
+  }
+
   public async invalidateUserToken(req: RequestUser, res: Response) {
     this.logger.log(`Invalidate token for user ${req.user?.sub || null}`);
     try {
@@ -606,7 +785,11 @@ export class AuthenticationService {
     }
   }
 
-  public async validateGithubUser(profile: Profile): Promise<JwtPayload> {
+  public async validateGithubUser(
+    profile: Profile,
+  ): Promise<any> {
+    let res: Response;
+    console.log(profile)
     const { id, username, emails, photos } = profile;
     const payload = {
       sub: id,
@@ -631,8 +814,57 @@ export class AuthenticationService {
           name: user.profile.name,
           role: user.role,
         };
-        console.log('Data was found: ', data);
-        return data;
+        
+        // return data;
+        const tokenId = v4();
+
+        const accessToken = await this.createToken(
+          {
+            sub: data.sub,
+            name: data.name,
+            email: data.email,
+            role: data.role,
+          },
+          tokenId,
+          36000,
+        );
+
+        if (!accessToken) {
+          throw new Error(`${this.messageHelper.CREATE_ACTION_FAILED} - Token`);
+        }
+
+        const newUserToken = await this.prisma.authToken.create({
+          data: {
+            name: `access_token:${data.sub}`,
+            content: `${accessToken}--${tokenId}`,
+            userId: data.sub,
+            expiryInMilliSecs: 36000000,
+          },
+        });
+
+        if (!newUserToken) {
+          throw new Error(
+            `${this.messageHelper.CREATE_ACTION_FAILED} - AuthToken`,
+          );
+        }
+
+        res.cookie('accessToken', accessToken, {
+          httpOnly: true,
+          secure:
+            this.appConfig.environment.NODE_ENV === 'production' ? true : false,
+          expires: new Date(Date.now() + 36000000),
+          sameSite: 'lax',
+        });
+        res.cookie('accessTokenId', tokenId, {
+          httpOnly: true,
+          secure:
+            this.appConfig.environment.NODE_ENV === 'production' ? true : false,
+          expires: new Date(Date.now() + 36000000),
+          sameSite: 'lax',
+        });
+
+        return res.redirect('/workspace');
+
       } else {
         const newUser = await this.prisma.user.create({
           data: {
@@ -643,7 +875,7 @@ export class AuthenticationService {
             profile: {
               create: {
                 name: payload.name,
-                avatar: '',
+                avatar: null,
               },
             },
           },
@@ -658,8 +890,56 @@ export class AuthenticationService {
           role: newUser.role,
           name: newUser.profile.name,
         };
-        console.log('Data created: ', data);
-        return data;
+
+        // return data;
+
+        const tokenId = v4();
+
+        const accessToken = await this.createToken(
+          {
+            sub: data.sub,
+            name: data.name,
+            email: data.email,
+            role: data.role,
+          },
+          tokenId,
+          36000,
+        );
+
+        if (!accessToken) {
+          throw new Error(`${this.messageHelper.CREATE_ACTION_FAILED} - Token`);
+        }
+
+        const newUserToken = await this.prisma.authToken.create({
+          data: {
+            name: `access_token:${data.sub}`,
+            content: `${accessToken}--${tokenId}`,
+            userId: data.sub,
+            expiryInMilliSecs: 36000000,
+          },
+        });
+
+        if (!newUserToken) {
+          throw new Error(
+            `${this.messageHelper.CREATE_ACTION_FAILED} - AuthToken`,
+          );
+        }
+
+        res.cookie('accessToken', accessToken, {
+          httpOnly: true,
+          secure:
+            this.appConfig.environment.NODE_ENV === 'production' ? true : false,
+          expires: new Date(Date.now() + 36000000),
+          sameSite: 'lax',
+        });
+        res.cookie('accessTokenId', tokenId, {
+          httpOnly: true,
+          secure:
+            this.appConfig.environment.NODE_ENV === 'production' ? true : false,
+          expires: new Date(Date.now() + 36000000),
+          sameSite: 'lax',
+        });
+        return res.redirect('/workspace');
       }
     }
   }

@@ -7,7 +7,7 @@ import { MailerEvent } from '@/common/events/app.events';
 import { PrismaService } from '@/infrastructure/gateways/database/prisma/prisma.service';
 import { AuthenticationService } from '@/domain/api/v1/authentication/authentication.service';
 import { RequestUser } from '@/interfaces';
-import { APIResponse } from '@/types';
+import { APIResponse, HubDocument } from '@/types';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   BadRequestException,
@@ -15,7 +15,7 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Hub, Invitee, Note } from '@prisma/client';
+import { Hub, Invitee, Note, Prisma } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { v4 } from 'uuid';
 import {
@@ -81,6 +81,7 @@ export class HubsService {
             name: data.name,
             description: data.description,
             userId: foundUser.id,
+            documents: [],
           },
         });
 
@@ -415,6 +416,7 @@ export class HubsService {
 
     try {
       let uploadedFileUrl: { url: string };
+      let extIcon: string;
 
       if (file.size > 25 * 1024 * 1024) {
         throw new Error('File size exceeds 25MB');
@@ -445,10 +447,41 @@ export class HubsService {
             file,
           );
 
-        const documentsInFoundHub =
-          foundUserHub.documents.length === 0 ? [] : foundUserHub.documents;
+        const image_icon =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-image"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><circle cx="10" cy="12" r="2"/><path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22"/></svg>';
+        const file_icon =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>';
 
-        const newDocuments = documentsInFoundHub.concat(uploadedFile);
+        const pathParts = uploadedFile.split('/');
+        const fileName = pathParts[pathParts.length - 1];
+        const [name, ext] = fileName.split('.');
+
+        if (
+          ext === 'jpeg' ||
+          ext === 'png' ||
+          ext === 'jpeg' ||
+          ext === 'webp'
+        ) {
+          extIcon = image_icon;
+        } else {
+          extIcon = file_icon;
+        }
+
+        const data: HubDocument[] = [
+          {
+            key: name,
+            fileName: fileName,
+            url: uploadedFile,
+            extIcon: extIcon,
+          },
+        ];
+
+        let foundDocuments = foundUserHub.documents as Prisma.JsonArray;
+
+        foundDocuments =
+          foundDocuments.length === 0 ? [] : (foundDocuments as HubDocument[]);
+
+        const newDocuments = foundDocuments.concat(data);
 
         const updatedHubDocuments = await this.prisma.hub.update({
           where: {
@@ -523,16 +556,15 @@ export class HubsService {
           fileId,
         );
 
-        const documentsInFoundHub =
-          foundUserHub.documents.length === 0 ? [] : foundUserHub.documents;
+        const foundDocuments = foundUserHub.documents as Prisma.JsonArray;
 
-        if (documentsInFoundHub.length === 0) {
-          throw new Error('No documents to delete');
+        if (foundDocuments.length === 0) {
+          throw new Error('No documents found');
         }
 
-        const updatedDocuments = documentsInFoundHub.filter(
-          (doc) => !doc.includes(fileId),
-        );
+        const updatedDocuments = foundDocuments.filter(
+          (doc: HubDocument) => doc.key !== fileId,
+        ) as HubDocument[];
 
         const updatedHubDocuments = await this.prisma.hub.update({
           where: {

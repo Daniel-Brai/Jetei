@@ -68,7 +68,18 @@ export type Message = {
 export type AllowedMimeTypes =
   | 'image/png'
   | 'image/jpeg'
+  | 'image/jpg'
   | 'image/webp'
   | 'application/pdf'
   | 'text/markdown'
   | 'text/plain';
+
+/**
+ * Describes the document in hub
+ */
+export type HubDocument = {
+  key: string;
+  fileName: string;
+  url: string;
+  extIcon: string;
+};

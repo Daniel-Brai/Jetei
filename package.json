@@ -69,6 +69,7 @@
     "npm": "^10.5.0",
     "nunjucks": "^3.2.4",
     "passport": "^0.7.0",
+    "passport-github-oauth20": "^1.0.4",
     "passport-github2": "^0.1.12",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",

@@ -1,6 +1,6 @@
 import { Request } from 'express';
 import { UserRole } from '@prisma/client';
-import { Document } from './types';
+import { AllowedMimeTypes, Document } from './types';
 
 /**
  * Describes an interface for site locals
@@ -51,4 +51,11 @@ export interface Operation {
   content: string;
   position: number;
   replaceLength?: number;
+}
+
+/**
+ * Describe the interface for a file
+ */
+export interface IsFileOptions {
+  mime: AllowedMimeTypes[]
 }

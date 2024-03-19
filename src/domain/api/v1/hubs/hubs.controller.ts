@@ -12,7 +12,6 @@ import {
   Patch,
   UploadedFile,
   FileTypeValidator,
-  MaxFileSizeValidator,
   ParseFilePipe,
   Query,
   UseInterceptors,

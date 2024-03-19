@@ -94,9 +94,13 @@
     !url.includes('privacy') ||
     !url.includes('terms')
   ) {
-    searchInput.addEventListener('click', () => {
-      searchModal.classList.remove('hidden');
-    });
+
+    if (searchInput) {
+      searchInput.addEventListener('click', () => {
+        searchModal.classList.remove('hidden');
+
+      });
+    }
 
     searchModalClose.addEventListener('click', () => {
       searchModal.classList.add('hidden');

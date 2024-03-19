@@ -8,10 +8,16 @@ import {
   Query,
   Res,
   Get,
+  Delete,
+  UploadedFile,
+  ParseFilePipe,
+  UseInterceptors,
+  FileTypeValidator,
 } from '@nestjs/common';
 import { PrefixedController } from '@/common/decorators/app.decorators';
 import { AuthenticationService } from './authentication.service';
 import {
+  UpdateProfileDto,
   UserForgetPasswordDto,
   UserLoginDto,
   UserResetPasswordDto,
@@ -19,6 +25,9 @@ import {
   UserVerifyAccountDto,
 } from './dtos/authentication.dtos';
 import { Response } from 'express';
+import { RequestUser } from '@/interfaces';
+import { AccessTokenGuard } from './guards/access-token.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @PrefixedController('authentication')
 export class AuthenticationController {
@@ -57,6 +66,32 @@ export class AuthenticationController {
     @Query('token') token: string,
     @Body() body: UserResetPasswordDto,
   ) {
-    return await this.authService.ResetPasswordByToken(token, body);
+    return await this.authService.resetPasswordByToken(token, body);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('/me')
+  public async getProfile(@Req() Req: RequestUser) {
+    return await this.authService.getProfile(Req);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('avatar'))
+  public async updateProfileDto(
+    @Req() req: RequestUser, 
+    @Body() data: Omit<UpdateProfileDto, 'avatar'>,   
+    @UploadedFile(
+      'avatar'
+    ) file?: UpdateProfileDto['avatar']) {
+    return await this.authService.updateProfile(req, data, file);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @HttpCode(HttpStatus.OK)
+  @Delete('/me')
+  public async deleteAccount(@Req() req: RequestUser) {
+    return await this.authService.deleteAccount(req)
   }
 }

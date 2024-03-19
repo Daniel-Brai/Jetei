@@ -48,7 +48,7 @@ htmx.defineExtension('load-templates', {
             var templateName = nunjucksTemplate.getAttribute('nunjucks-template');
             var template = htmx.find('#' + templateName);
             template.innerHTML = `
-        <div id="hub-container-id" data-id="{{ data.id }}" class="flex w-full flex-col space-y-6 mb-10">
+        <div id="hub-container-id" data-hub-id="{{ data.id }}" class="flex w-full flex-col space-y-6 mb-10">
             <div class="flex flex-col space-y-2 text-left">
             <div class="text-2xl md:text-[32px] font-semibold tracking-tight flex items-center w-full">
                 {{ data.name }}
@@ -209,24 +209,24 @@ htmx.defineExtension('load-templates', {
             </div>    
             <div id="docuemnts-card class="flex flex-col items-center justify-center">
                 {% for document in data.documents %}
-                    <div>
+                    <div id="document-{{ document.key }}">
                         <div class="grid gap-6 cursor-pointer mb-4">
                             <div class="flex items-center justify-between space-x-4">
                                 <div class="flex items-center space-x-4">
-                                    <div class="bg-muted rounded-full document-icon">
+                                    <div data-icon='{{ document.extIcon }}' class="bg-muted rounded-full document-icon">
                                         
                                     </div>
                                     <div>
-                                    <p class="text-sm font-medium leading-none"></p>
+                                    <p class="text-sm font-medium leading-none">{{ document.fileName }}</p>
                                 </div>
                             </div>
                             <div class="flex items-center">
                                 <div class="mr-4 cursor-pointer">
-                                    <button data-href="{{ document }}" class="file-download flex items-center justify-center" onclick="window.open('{{ document }}')">
+                                    <button class="file-download flex items-center justify-center" onclick="window.open('{{ document.url }}')">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                                     </button>
                                 </div>
-                                <button class="btn-outline btn-base-size text-sm rounded-md flex items-center justify-center">
+                                <button data-key="{{ document.key }}" class="btn-outline btn-base-size text-sm rounded-md flex items-center justify-center file-delete">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                 </button>
                             </div>
@@ -285,14 +285,13 @@ htmx.defineExtension('load-templates', {
 });
 
 setTimeout(() => {
-    const hubId = document.getElementById('hub-container-id').getAttribute('data-id');
+    const hub = document.getElementById('hub-container-id')
+    const hubId = hub.getAttribute('data-hub-id');
     const dates = document.querySelectorAll('.updated-at')
     const note_texts = document.querySelectorAll('.note-text')
     const docIcons = document.querySelectorAll('.document-icon')
     const docDownload = document.querySelectorAll('.file-download')
-    let docsData = [];
-    const image_icon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-image"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><circle cx="10" cy="12" r="2"/><path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22"/></svg>'
-    const file_icon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>'
+    const docDelete = document.querySelectorAll('.file-delete')
     note_texts.forEach((n) => {
         if (n.textContent.length > 300) {
             n.textContent = `${subString(n.textContent, 300)}...`
@@ -303,24 +302,28 @@ setTimeout(() => {
         d.classList.remove('hidden')
         d.textContent = `${formatDistanceToNow(d.textContent)}`
     })
-
-    for (let d of docDownload) {
-        let extIcon;
-        const pathParts = d.getAttribute('data-href').split('/');
-        const fileName = pathParts[pathParts.length - 1];
-        const [name, ext] = fileName.split('.');
-
-        if (ext === 'jpeg' || ext === 'png' || ext === 'jpeg' || ext === 'webp') {
-            extIcon = image_icon;
-        } else {
-            extIcon = file_icon;
-        }
-        docsData.push({"key": name, "filename": fileName, "extIcon": extIcon})
-    }
-
-    console.log(docsData)
-    docsData.forEach((d) => {
+    
+    docIcons.forEach((i) => {
+        const icon = i.getAttribute('data-icon')
+        i.innerHTML = icon
     })
 
+    docDelete.forEach((d) => {
+        const fileId = d.getAttribute('data-key')
+
+        const fileHTML = document.getElementById(`document-${fileId}`)
+
+        d.addEventListener('click', async () => {
+            console.log('clicked')
+            fileHTML.remove()
+
+            let res = await fetch(`/api/v1/hubs/${hubId}/file/${fileId}?from=documents`, {
+                method: 'DELETE',
+            })
+            res =  await res.json()
+            console.log(res.message)
+        })
+
+    })
 }, 100)
 

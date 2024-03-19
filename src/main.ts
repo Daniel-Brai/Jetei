@@ -17,7 +17,6 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
-    cors: true,
   });
   const logger = app.get(Logger);
   const reflector = app.get(Reflector);
@@ -39,6 +38,7 @@ async function bootstrap() {
   ).render;
 
   app.useLogger(logger);
+  app.enableCors();
   app.flushLogs();
   app.enableShutdownHooks();
   app.useWebSocketAdapter(new IoAdapter());
@@ -70,6 +70,7 @@ async function bootstrap() {
   app.set('trust proxy', 1);
 
   // middlewares
+  app.use(cookieParser());
   app.use(compression({ level: 7, compression: 512 }));
   app.use(
     helmet({
@@ -78,7 +79,6 @@ async function bootstrap() {
   );
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
-  app.use(cookieParser());
 
   await app.listen(port, async () => {
     logger.log(

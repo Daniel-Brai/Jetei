@@ -43,7 +43,7 @@ model Hub {
   userId      String    @unique
   notes       Note[]    @relation("IsConnectedTo")
   invitee     Invitee[] @relation("HubInvitee")
-  documents   String[]  @default([])
+  documents   Json      @db.Json()
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
