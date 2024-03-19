@@ -32,7 +32,7 @@ To run Jetei locally on your machine, follow these steps:
    git clone https://github.com/Daniel-Brai/Jetei.git
    ```
 
-3. **Configure credentials**: Navigate to the base directory of the Jetei project, configure your email client to be `sendwave` or `smtp` in the `.env.local` file.
+3. **Configure credentials**: Navigate to the base directory of the Jetei project, configure your empty credentials found in the `.env.local` file.
 
 4. **Run the application**: Start up Docker on your local machine and navigate to the base directory of the Jetei. Use the following command to start the application:
 
@@ -41,6 +41,15 @@ To run Jetei locally on your machine, follow these steps:
       ```bash
       chmod +x ./scripts/docker.local.sh && ./scripts/docker.local.sh up -d
       ```
+
+
+## Limitations and Minor stuff
+
+1. Currently, Jetei only supports two concurrent users on for the editing of notes to due to the limitations of character wise operational transformation over webssokets. **Note:** An improvement on the conflict resolution on the note editor is planned.
+
+2. Since, the UI is rendered from the server. User experience is not best and as reactive as I would want it to be. You may ask why not use React.js, Next.js, or Astro. Well I wouldn't have as much as I would like and again I would still need to build an API backend for services or use a service like Ably for realtime interactions or Upstash for Redis. I didn't want to deal with all this. Well, the UI will be improved gradually though I would have to write a lot of Javascript.
+
+3. Jetei network payload isn't as optimal as I would like because I have minified the Javascript yet. Though it clocks under 200ms on my machine for rendering and a request back to server to render out a data needed for that page. **Note**: Since Jetei is still very early, I have still working on some UI smells when involve me writing some Javascript to make the data representable on page.
 
 ## Contributing
 
