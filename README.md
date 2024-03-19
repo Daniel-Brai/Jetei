@@ -45,11 +45,13 @@ To run Jetei locally on your machine, follow these steps:
 
 ## Limitations and Minor stuff
 
-1. Currently, Jetei only supports two concurrent users on for the editing of notes to due to the limitations of character wise operational transformation over webssokets. **Note:** An improvement on the conflict resolution on the note editor is planned.
+1. Currently, Jetei only supports *2 concurrent users* on for the editing of notes to due to the limitations of character wise operational transformation over websockets. **Note:** An improvement on the conflict resolution (i.e OT Algorithm) on the note editor is planned.
 
-2. Since, the UI is rendered from the server. User experience is not best and as reactive as I would want it to be. You may ask why not use React.js, Next.js, or Astro. Well I wouldn't have as much as I would like and again I would still need to build an API backend for services or use a service like Ably for realtime interactions or Upstash for Redis. I didn't want to deal with all this. Well, the UI will be improved gradually though I would have to write a lot of Javascript.
+2. Again, Jetei is being rendered from the server as such user experience is not as reactive as I would want it to be. You may ask why not use React.js, Next.js, or Astro. Well I would still need to build an API backend for some services or use a service like Ably for realtime interactions or Upstash for Redis. I would have to deal with seperation between the client and server. I didn't want to deal with all this so I opted from doing everything with the server. Well, the UI will be improved gradually though I would have to write some Javascript.
 
-3. Jetei network payload isn't as optimal as I would like because I have minified the Javascript yet. Though it clocks under 200ms on my machine for rendering and a request back to server to render out a data needed for that page. **Note**: Since Jetei is still very early, I have still working on some UI smells when involve me writing some Javascript to make the data representable on page.
+3. Jetei network payload isn't as optimal as I would like because I have not minified the Javascript yet and done general optimizations yet. Though it clocks under 200ms on my local machine for rendering and a request back to server to render out a data needed for that page but in free cloud environment **Note**: Since Jetei is still very early, I have still working on some UI smells when involve me writing some Javascript to make the data representable on page.
+
+4. I would need to optimise the database schema by least breaking down tables to a maximum of 3NF, take into account referential integrity contraints, and add indexes wherever necessary.
 
 ## Contributing
 
