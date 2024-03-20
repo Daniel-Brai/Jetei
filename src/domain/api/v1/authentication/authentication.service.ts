@@ -596,12 +596,19 @@ export class AuthenticationService {
    */
   public async updateProfile(
     req: RequestUser,
-    data: Omit<UpdateProfileDto, 'avatar'>,
-    file?: Express.Multer.File,
+    data?: UpdateProfileDto,
   ): Promise<APIResponse<any>> {
     this.logger.log(`Update profile details for user ${req.user.sub}`);
 
     try {
+      console.log('data: ', {
+        name: data?.name,
+        bio: data?.bio,
+        avatar: data?.avatar,
+        new_password: data?.new_password,
+        new_password_confirm: data?.new_password_confirm,
+        email: data.email,
+      });
       const user = await this.prisma.user.findUnique({
         select: {
           id: true,
@@ -614,6 +621,9 @@ export class AuthenticationService {
         },
       });
 
+      let password: string = null;
+      let avatar: string = null;
+
       if (!user) {
         throw new Error(this.messageHelper.USER_ACCOUNT_NOT_EXISTING);
       }
@@ -625,42 +635,51 @@ export class AuthenticationService {
           },
         });
 
-        if (foundUser) {
+        if (foundUser.email !== req.user.email) {
           throw new Error(this.messageHelper.USER_REGISTER_FAILED);
         }
       }
 
-      if (file.size > 25 * 1024 * 1024) {
-        throw new Error('File size exceeds 25MB');
+      if (data.new_password) {
+        const isValid = data.validate();
+
+        if (!isValid) {
+          throw new Error("Passwords don't match");
+        }
+
+        password = await this.authHelper.hashCredential(data.new_password);
       }
 
-      const avatar = file
-        ? await this.cloudinaryService.uploadFileByContentType(
-            req.user.sub,
-            ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'],
-            file,
-          )
-        : null;
 
-      const password =
-        data.new_password !== null
-          ? await this.authHelper.hashCredential(data.new_password)
-          : user.password;
+      if (data.avatar !== null) {
+        avatar = data.avatar;
+      }
+
+      const updateUserProfile = await this.prisma.profile.update({
+        where: {
+          userId: user.id,
+        },
+        data: {
+          bio: data.bio || user.profile.bio,
+          name: data.name || user.profile.name,
+          avatar: avatar || user.profile.avatar,
+        },
+      });
+
+      if (!updateUserProfile) {
+        throw new Error('Failed to updated user profile');
+      }
 
       const updateUser = await this.prisma.user.update({
         where: {
           id: user.id,
         },
         data: {
-          email: data.email ? data.email : user.email,
-          password: password,
-          profile: {
-            update: {
-              bio: data.bio ? data.bio : user.profile.bio,
-              name: data.name ? data.name : user.profile.name,
-              avatar: avatar,
-            },
-          },
+          email: data.email || user.email,
+          password: password || user.password,
+        },
+        include: {
+          profile: true,
         },
       });
 
@@ -672,13 +691,22 @@ export class AuthenticationService {
         type: 'success',
         status_code: 200,
         api_message: 'Account updated successfully',
+        data: {
+          id: updateUser.id,
+          email: updateUser.email,
+          profile: {
+            bio: updateUserProfile.bio,
+            name: updateUserProfile.name,
+            avatar: updateUserProfile.avatar,
+          },
+        },
         details: {},
       };
     } catch (e) {
       this.logger.error(this.messageHelper.RETRIEVAL_ACTION_FAILED, {
         error: e,
       });
-      throw new BadRequestException(this.messageHelper.RETRIEVAL_ACTION_FAILED);
+      throw new BadRequestException(e);
     }
   }
 

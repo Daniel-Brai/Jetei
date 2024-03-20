@@ -7,7 +7,10 @@ import {
   MaxLength,
   IsOptional,
 } from 'class-validator';
-import { CustomMatchPasswords, IsFile } from '@/common/decorators/app.decorators';
+import {
+  CustomMatchPasswords,
+  IsFile,
+} from '@/common/decorators/app.decorators';
 import { UploadedFile } from '@nestjs/common';
 
 export class UserSignUpDto {
@@ -79,39 +82,34 @@ export class UserResetPasswordDto {
   public new_password_confirm: string;
 }
 
-
 export class UpdateProfileDto {
   @MaxLength(255)
   @IsString()
   @IsOptional()
-  public name: string;
+  public name?: string;
 
   @IsEmail()
   @IsOptional()
-  public email: string;
+  public email?: string;
 
   @MaxLength(255)
   @IsString()
   @IsOptional()
-  public bio: string;
+  public bio?: string;
 
-  @IsFile({ mime: ['image/jpeg', 'image/jpg' ,'image/png', 'image/webp'] })
-  @IsOptional()
-  public avatar: Express.Multer.File;
-
-  @IsStrongPassword({
-    minLength: 8,
-    minLowercase: 1,
-    minNumbers: 1,
-    minSymbols: 1,
-    minUppercase: 1,
-  })
   @IsString()
   @IsOptional()
-  public new_password: string;
+  public avatar?: string;
 
-  @Validate(CustomMatchPasswords, ['new_password'])
   @IsString()
   @IsOptional()
-  public new_password_confirm: string;
+  public new_password?: string;
+
+  @IsString()
+  @IsOptional()
+  public new_password_confirm?: string;
+
+  public validate() {
+    return this.new_password === this.new_password_confirm;
+  }
 }

@@ -1,15 +1,13 @@
-{% extends 'views/layouts/base.html' %} 
-
-{% block js %}
+{% extends 'views/layouts/base.html' %} {% block js %}
 <script nonce="{{ nonce }}" src="/assets/js/json-enc.js"></script>
 <script nonce="{{ nonce }}" src="/assets/js/settings.template.js"></script>
 <script nonce="{{ nonce }}" src="/assets/js/nunjucks.min.js"></script>
-{% endblock %}
-
-
-{% block content %}
-<section class="container mt-12 grid-cols-1 sm:grid-cols-2" hx-ext="load-templates" >
-  <div 
+{% endblock %} {% block content %}
+<section
+  class="container mt-12 grid-cols-1 sm:grid-cols-2"
+  hx-ext="load-templates"
+>
+  <div
     id="{{ form_id }}"
     data-hx-ext="json-enc"
     data-hx-get="{{ api_url }}"
@@ -17,11 +15,8 @@
     data-hx-trigger="load"
     data-hx-target="#settings-container"
     nunjucks-template="settings"
-  >
-  </div>
-  <div
-    id="settings-container"
   ></div>
+  <div id="settings-container" class="mb-8"></div>
 
   <template id="settings"> </template>
 </section>

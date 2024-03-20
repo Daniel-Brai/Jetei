@@ -17,7 +17,7 @@ import {
 } from '@nestjs/common';
 import { Hub, Invitee, Note, Prisma } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
-import { v4 } from 'uuid';
+import { v4, validate } from 'uuid';
 import {
   CreateHubDto,
   CreateHubNoteDto,
@@ -406,8 +406,8 @@ export class HubsService {
    */
   public async userHubUploadFile(
     req: RequestUser,
-    hubId: string,
     file: Express.Multer.File,
+    hubId?: string,
     to?: string,
   ): Promise<{ url: string }> {
     this.logger.log(
@@ -422,7 +422,12 @@ export class HubsService {
         throw new Error('File size exceeds 25MB');
       }
 
-      if (to !== null && to === 'documents') {
+      if (
+        hubId !== null &&
+        validate(hubId) &&
+        to !== null &&
+        to === 'documents'
+      ) {
         const foundUserHub = await this.prisma.hub.findUnique({
           where: {
             id: hubId,
@@ -498,6 +503,10 @@ export class HubsService {
 
         uploadedFileUrl = { url: uploadedFile };
       } else {
+        if (file.size > 25 * 1024 * 1024) {
+          throw new Error('File size exceeds 25MB');
+        }
+
         const uploadedFile =
           await this.cloudinaryService.uploadFileByContentType(
             req.user.sub,

@@ -13,6 +13,8 @@ import {
   ParseFilePipe,
   UseInterceptors,
   FileTypeValidator,
+  Patch,
+  Put,
 } from '@nestjs/common';
 import { PrefixedController } from '@/common/decorators/app.decorators';
 import { AuthenticationService } from './authentication.service';
@@ -78,20 +80,18 @@ export class AuthenticationController {
 
   @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.OK)
-  @UseInterceptors(FileInterceptor('avatar'))
+  @Put('/me')
   public async updateProfileDto(
-    @Req() req: RequestUser, 
-    @Body() data: Omit<UpdateProfileDto, 'avatar'>,   
-    @UploadedFile(
-      'avatar'
-    ) file?: UpdateProfileDto['avatar']) {
-    return await this.authService.updateProfile(req, data, file);
+    @Req() req: RequestUser,
+    @Body() data: UpdateProfileDto,
+  ) {
+    return await this.authService.updateProfile(req, data);
   }
 
   @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.OK)
   @Delete('/me')
   public async deleteAccount(@Req() req: RequestUser) {
-    return await this.authService.deleteAccount(req)
+    return await this.authService.deleteAccount(req);
   }
 }

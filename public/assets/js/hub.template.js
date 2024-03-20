@@ -198,7 +198,7 @@ htmx.defineExtension('load-templates', {
                                     id="file"
                                     name="file"
                                     type="file"
-                                    class="file-input sr-only"
+                                    class="file-input sr-only hidden"
                                     />
                                 </label>
                                 <button id="upload-document-submit" class="hidden" type="submit">Upload</button>
@@ -254,8 +254,8 @@ htmx.defineExtension('load-templates', {
                     const res = await fetch(
                         "/api/v1/hubs/{{ data.id }}/upload-file?to=documents",
                         {
-                        method: 'POST',
-                        body: formData,
+                            method: 'POST',
+                            body: formData,
                         },
                     );
                     const data = await res.json();

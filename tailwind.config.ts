@@ -5,6 +5,7 @@ const config = {
   darkMode: ['class'],
   content: [
     './public/ui/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}',
+    '/public/assets/js/**/*.js',
     './src/app.service.ts',
   ],
   prefix: '',

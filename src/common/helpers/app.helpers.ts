@@ -292,7 +292,8 @@ export const AuthenticationHelpers = {
    */
   hashCredential: async (text: string): Promise<string> => {
     try {
-      return await bcrypt.hash(text, salt);
+      const rounds = await bcrypt.genSalt(Number(salt));
+      return await bcrypt.hash(text, rounds);
     } catch (e) {
       throw new Error(e);
     }

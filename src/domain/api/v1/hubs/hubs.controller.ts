@@ -104,7 +104,6 @@ export class HubsController {
   @Post('/:hubId/upload-file')
   public async uploadFileToHub(
     @Req() req: RequestUser,
-    @Param('hubId', ParseUUIDPipe) hubId: string,
     @UploadedFile(
       'file',
       new ParseFilePipe({
@@ -117,9 +116,10 @@ export class HubsController {
       }),
     )
     file: Express.Multer.File,
+    @Param('hubId') hubId?: string,
     @Query('to') to?: string,
   ) {
-    return await this.hubsService.userHubUploadFile(req, hubId, file, to);
+    return await this.hubsService.userHubUploadFile(req, file, hubId, to);
   }
 
   @UseGuards(AccessTokenGuard)
