@@ -32,14 +32,14 @@ To run Jetei locally on your machine, follow these steps:
    git clone https://github.com/Daniel-Brai/Jetei.git
    ```
 
-3. **Configure credentials**: Navigate to the base directory of the Jetei project, configure your empty credentials found in the `.env.local` file.
+3. **Configure credentials**: Navigate to the base directory of the Jetei project, configure the empty credentials found in the `.env.local` file in  a `.env` file.
 
 4. **Run the application**: Start up Docker on your local machine and navigate to the base directory of the Jetei. Use the following command to start the application:
 
     * **On Linux or MacOS**
 
       ```bash
-      chmod +x ./scripts/docker.local.sh && ./scripts/docker.local.sh up -d
+      chmod +x ./scripts/docker.sh && ./scripts/docker.sh up -d
       ```
 
 
