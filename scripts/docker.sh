@@ -9,4 +9,4 @@ cd "$(dirname "$0")/.."
     
 echo "Starting Jetei...."
 
-docker-compose -f  docker-compose.local.yml up $@
+docker-compose up -d
