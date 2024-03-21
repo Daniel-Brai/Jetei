@@ -680,14 +680,6 @@ export class AuthenticationService {
     this.logger.log(`Update profile details for user ${req.user.sub}`);
 
     try {
-      console.log('data: ', {
-        name: data.name,
-        bio: data.bio,
-        avatar: data.avatar,
-        new_password: data.new_password,
-        new_password_confirm: data.new_password_confirm,
-        email: data.email,
-      });
       const user = await this.prisma.user.findUnique({
         select: {
           id: true,
