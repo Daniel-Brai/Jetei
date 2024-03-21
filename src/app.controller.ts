@@ -70,11 +70,6 @@ export class AppController {
     return await this.appService.getPrivacy(req, res);
   }
 
-  @Get('/terms')
-  async getTerms(@Req() req: Request, @Res() res: Response) {
-    return await this.appService.getTerms(req, res);
-  }
-
   @Get('/auth/google')
   @UseGuards(GoogleAuthGuard)
   public async githubLogin() {}

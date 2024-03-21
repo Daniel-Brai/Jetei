@@ -491,39 +491,6 @@ export class AppService {
     }
   }
 
-  public async getTerms(req: Request, res: Response): Promise<void> {
-    this.logger.log(`Get Jetei Terms page`);
-
-    try {
-      const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
-      const status = await this.healthCheck();
-      const canonicalURL = getCanonicalUrl(req);
-
-      setLocals(req, res);
-
-      return res.render('views/terms', {
-        canonicalURL: canonicalURL,
-        ogImagePath: `${canonicalURL}/${SiteConfig.ogImagePath}`,
-        title: `Terms | ${SiteConfig.name}`,
-        description: `Terms | ${SiteConfig.name}`,
-        ip: req.ip,
-        url: req.url,
-        user: req.user,
-        nonce: generateNonce(),
-        logoutUrl: this.logoutUrl,
-        status: status,
-        ...SiteConfig,
-      });
-    } catch (e) {
-      this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
-        error: e,
-      });
-      throw new InternalServerErrorException(
-        this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
   public async getPrivacy(req: Request, res: Response): Promise<void> {
     this.logger.log(`Get Jetei privacy page`);
 
