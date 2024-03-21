@@ -1,6 +1,6 @@
 import { Request } from 'express';
 import { UserRole } from '@prisma/client';
-import { AllowedMimeTypes, Document } from './types';
+import { AllowedMimeTypes, Document, FeatureFlagObject } from './types';
 
 /**
  * Describes an interface for site locals
@@ -18,6 +18,7 @@ export interface ISiteLocals {
   stringLength: (text: string) => number;
   authenticatedUser: () => any;
   stripMarkdownToString?: (markdown: string) => string;
+  getFlags: () => any;
 }
 
 /**

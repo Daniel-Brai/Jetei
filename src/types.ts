@@ -109,3 +109,19 @@ export type SearchResult = {
   readonly url: string;
   readonly updatedAt?: string;
 };
+
+/**
+ * Describes the feature flag object
+ */
+export type FeatureFlagObject = {
+  USE_SOCIAL_AUTH: boolean;
+  USE_SMTP: boolean;
+};
+
+/**
+ * Describes the flags
+ */
+export type FeatureFlags = {
+  useSocialAuth: boolean;
+  useStmp: boolean;
+};

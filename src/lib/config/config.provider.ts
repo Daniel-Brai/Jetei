@@ -15,6 +15,7 @@ export const AppConfig: IAppConfig = {
     PORT: Number(configService.get<number>('PORT') || 3000),
     WS_PORT: Number(configService.get<number>('WS_PORT') || 3001),
     PROD_URL: configService.get<string>('PROD_URL'),
+    FLAGS: configService.get<string>('FLAGS'),
   },
   authentication: {
     HASHING_SALT_OR_ROUNDS: configService.get<string | number>(

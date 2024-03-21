@@ -9,7 +9,7 @@ import * as milli from 'markdown-it-linkify-images';
 import * as sanitizeHtml from 'sanitize-html';
 import { v4 as uuidv4 } from 'uuid';
 import { ISiteLocals, RequestUser } from '@/interfaces';
-import { JwtPayload, JwtOptions } from '@/types';
+import { JwtPayload, JwtOptions, FeatureFlagObject } from '@/types';
 import { AppConfig, SiteConfig } from '@/lib/config/config.provider';
 
 const salt = AppConfig.authentication.HASHING_SALT_OR_ROUNDS;
@@ -239,6 +239,32 @@ export const SiteHelpers = {
     return lineBreakReplaced.trim();
   },
   /**
+   * Parse the flags from the environment variables
+   * @returns {FeatureFlags} The allowed features
+   */
+  parseFlagsFromEnv: () => {
+    const DEFAULT_FLAGS = {
+      USE_SOCIAL_AUTH: false,
+      USE_SMTP: false,
+    } as FeatureFlagObject;
+
+    const flagsStr = AppConfig.environment.FLAGS;
+
+    const flags: Record<string, boolean> = { ...DEFAULT_FLAGS };
+
+    flagsStr.split(';').forEach((flag) => {
+      const [key, value] = flag.split('=');
+      if (key && value !== undefined) {
+        flags[key] = value.toLowerCase() === 'true';
+      }
+    });
+
+    return {
+      useSocialAuth: flags.USE_SOCIAL_AUTH,
+      useSmtp: flags.USE_SMTP,
+    };
+  },
+  /**
    * Get the canoncial url of the site
    * @param {Request} req - The request object
    * @returns {string} The full request url
@@ -260,6 +286,7 @@ export const SiteHelpers = {
       htmlToText: (htmlString: string) =>
         SiteHelpers.stripHtmlPreservingStructure(htmlString),
       genId: () => uuidv4(),
+      getFlags: () => SiteHelpers.parseFlagsFromEnv(),
       generateInitials: () => SiteHelpers.genInitials(req as RequestUser),
       isAuthenticated: () => AuthenticationHelpers.isAuthenticated(req),
       subString: (text, end) => SiteHelpers.subString(text, end),

@@ -19,6 +19,10 @@ export interface IAppConfig {
      * The url of the application deployed
      */
     PROD_URL?: string;
+    /**
+     * The feature flags used seperated by comma;
+     */
+    FLAGS?: string;
   };
   authentication: {
     /**
