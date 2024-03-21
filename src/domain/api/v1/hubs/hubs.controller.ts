@@ -22,6 +22,7 @@ import { HubsService } from './hubs.service';
 import {
   CreateHubDto,
   CreateHubNoteDto,
+  CreateNoteLinkDto,
   InviteeToHubDto,
   UpdateHubDto,
   UpdateHubInviteeDto,
@@ -41,6 +42,26 @@ export class HubsController {
     @Body() body: InviteeToHubDto,
   ) {
     return await this.hubsService.inviteToHubByIdAssignees(req, body);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @HttpCode(HttpStatus.CREATED)
+  @Post('/note-link')
+  public async linkNotes(
+    @Req() req: RequestUser,
+    @Body() body: CreateNoteLinkDto,
+  ) {
+    return await this.hubsService.createNoteLink(req, body);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @HttpCode(HttpStatus.CREATED)
+  @Get('/note-link/:noteId')
+  public async getHubNoteLinks(
+    @Req() req: RequestUser,
+    @Param('noteId', ParseUUIDPipe) noteId: string,
+  ) {
+    return await this.hubsService.getNoteLinks(req, noteId);
   }
 
   @UseGuards(AccessTokenGuard)

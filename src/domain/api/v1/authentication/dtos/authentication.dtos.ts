@@ -7,11 +7,7 @@ import {
   MaxLength,
   IsOptional,
 } from 'class-validator';
-import {
-  CustomMatchPasswords,
-  IsFile,
-} from '@/common/decorators/app.decorators';
-import { UploadedFile } from '@nestjs/common';
+import { CustomMatchPasswords } from '@/common/decorators/app.decorators';
 
 export class UserSignUpDto {
   @MaxLength(255)
@@ -86,30 +82,44 @@ export class UpdateProfileDto {
   @MaxLength(255)
   @IsString()
   @IsOptional()
-  public name?: string;
+  public name: string;
 
   @IsEmail()
   @IsOptional()
-  public email?: string;
+  public email: string;
 
   @MaxLength(255)
   @IsString()
   @IsOptional()
-  public bio?: string;
+  public bio: string;
 
   @IsString()
   @IsOptional()
-  public avatar?: string;
+  public avatar: string;
 
   @IsString()
   @IsOptional()
-  public new_password?: string;
+  public new_password: string;
 
   @IsString()
   @IsOptional()
-  public new_password_confirm?: string;
+  public new_password_confirm: string;
 
   public validate() {
     return this.new_password === this.new_password_confirm;
   }
+}
+
+export class HubInviteeQueryDto {
+  @IsString()
+  @IsOptional()
+  public readonly type?: string;
+
+  @IsString()
+  @IsOptional()
+  public token?: string;
+
+  @IsString()
+  @IsOptional()
+  public readonly to?: string;
 }

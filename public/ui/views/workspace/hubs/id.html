@@ -22,5 +22,33 @@
 
   <template id="hubs-{{ hubId }}"> </template>
 </section>
+<script nonce="{{ nonce }}">
+
+  setTimeout(() => {
+    const deleteButtons = document.querySelectorAll('.delete-invitee-btn')
+
+    deleteButtons.forEach(async (b) => {
+      const inviteeId = b.getAttribute('data-id')
+      b.addEventListener('click', async (e) => {
+        const card = document.getElementById(`invitee-${inviteeId}`)
+
+        const response = await fetch(`/api/v1/hubs/{{ hubId }}/invitees/${inviteeId}`, {
+          method: 'DELETE',
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+
+        const data = await response.json()
+
+        if (data.type === 'success') {
+          card.remove();
+        } else {
+          console.error(data.api_message)
+        }
+      })
+    })
+  }, 4000)
+</script>
 {% endblock %} {% block footer %} {% include "partials/_footer_alt.html" %} {%
 endblock %}

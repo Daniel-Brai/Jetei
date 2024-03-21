@@ -2,16 +2,32 @@
 
 {% block js %}
 <script nonce="{{ nonce }}" src="/assets/js/json-enc.js"></script>
-<script nonce="{{ nonce }}" src="/assets/js/client-side-templates.js"></script>
+<script nonce="{{ nonce }}" src="/assets/js/bookmarks.template.js"></script>
 <script nonce="{{ nonce }}" src="/assets/js/nunjucks.min.js"></script>
 {% endblock %} 
 
 {% block content %}
-<section class="container mt-8 py-20" data-hx-ext="client-side-templates">
+<section class="container mt-8 py-20" data-hx-ext="load-templates">
+    <div
+        id="{{ form_id }}"
+        data-hx-get="{{ api_url }}"
+        data-hx-ext="json-enc"
+        data-hx-swap="innerHTML"
+        data-hx-target="#bookmarks-container"
+        nunjucks-template="bookmarks"
+    ></div>
 
+    <div
+        id="bookmarks-container"
+        class="flex flex-col items-center space-y-2 lg:flex-row lg:space-x-7"
+        data-hx-ext="preload"
+    ></div>
+
+    <template id="bookmarks"> </template>
+</section>
 </section>
 {% endblock %}
 
 {% block footer %}
-    {% include "partials/_footer_alt.html" %}
+    {% include 'partials/_footer_alt.html' %}
 {% endblock %}

@@ -59,6 +59,8 @@
 
   form = document.getElementById('{{ form_id }}');
 
+  const hubId = "{{ hubId }}"
+
   if (!form) {
     console.error('Form with name {{ form_name }} not found');
     throw new Error('Form with name {{ form_name }} not found');
@@ -126,7 +128,7 @@
           });
         }
         setTimeout(() => {
-          window.location.href = `/workspace/hubs/{{ hubId }}/notes/${data[0].id}/edit`;
+          window.location.href = `/workspace/hubs/${hubId}/notes/${data[0].id}/edit`;
         }, 800);
       } else {
         api_message = "Failed to create note"

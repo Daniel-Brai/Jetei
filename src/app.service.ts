@@ -137,7 +137,7 @@ export class AppService {
           name: `access_token:${req.user.sub}`,
           content: `${accessToken}--${tokenId}`,
           userId: req.user.sub,
-          expiryInMilliSecs: 36000000,
+          expiryInMilliSecs: '36000000',
         },
       });
 
@@ -229,7 +229,7 @@ export class AppService {
         ip: req.ip,
         url: req.url,
         nonce: generateNonce(),
-        api_url: '/api/v1/authentication/forget-password',
+        api_url: '/api/v1/authentication/forgot-password',
         form_id: 'forgot-password-form',
         form_name: 'Forgot password',
         redirectUrl: '/account/forgot-password/started',
@@ -648,7 +648,7 @@ export class AppService {
         nonce: generateNonce(),
         status: status,
         user: req.user,
-        api_url: `/api/v1/authentication/reset-password?=token=${token}`,
+        api_url: `/api/v1/authentication/reset-password?token=${token}`,
         form_id: 'reset-password-form',
         form_name: 'Reset password',
         redirectUrl: '/account/reset-confirmed',
@@ -753,6 +753,8 @@ export class AppService {
         ip: req.ip,
         url: req.url,
         user: req.user,
+        api_url: '/api/v1/authentication/me/bookmarks',
+        form_id: 'get-bookmarks',
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
         status: status,
@@ -935,7 +937,7 @@ export class AppService {
 
       return res.render('views/workspace/hubs/invitees/edit', {
         canonicalURL: canonicalURL,
-        title: `Invite to Hub | ${this.siteConfig.name}`,
+        title: `Edit Invitee Privileges | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
         user: req.user,

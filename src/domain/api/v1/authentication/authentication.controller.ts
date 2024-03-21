@@ -9,16 +9,12 @@ import {
   Res,
   Get,
   Delete,
-  UploadedFile,
-  ParseFilePipe,
-  UseInterceptors,
-  FileTypeValidator,
-  Patch,
   Put,
 } from '@nestjs/common';
 import { PrefixedController } from '@/common/decorators/app.decorators';
 import { AuthenticationService } from './authentication.service';
 import {
+  HubInviteeQueryDto,
   UpdateProfileDto,
   UserForgetPasswordDto,
   UserLoginDto,
@@ -29,11 +25,16 @@ import {
 import { Response } from 'express';
 import { RequestUser } from '@/interfaces';
 import { AccessTokenGuard } from './guards/access-token.guard';
-import { FileInterceptor } from '@nestjs/platform-express';
 
 @PrefixedController('authentication')
 export class AuthenticationController {
   constructor(private readonly authService: AuthenticationService) {}
+
+  @HttpCode(HttpStatus.OK)
+  @Post('/forgot-password')
+  public async forgotPassword(@Body() body: UserForgetPasswordDto) {
+    return await this.authService.forgotPassword(body);
+  }
 
   @HttpCode(HttpStatus.CREATED)
   @Post('/signup')
@@ -46,20 +47,15 @@ export class AuthenticationController {
   public async login(
     @Body() body: UserLoginDto,
     @Res({ passthrough: true }) res: Response,
+    @Query() query?: HubInviteeQueryDto,
   ) {
-    return await this.authService.login(body, res);
+    return await this.authService.login(body, res, query);
   }
 
   @HttpCode(HttpStatus.OK)
   @Post('/verify-account')
   public async verify(@Query() query: UserVerifyAccountDto) {
     return await this.authService.verify(query);
-  }
-
-  @HttpCode(HttpStatus.OK)
-  @Post('/forgot-password')
-  public async forgotPassword(@Body() body: UserForgetPasswordDto) {
-    return await this.authService.forgotPassword(body);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -93,5 +89,14 @@ export class AuthenticationController {
   @Delete('/me')
   public async deleteAccount(@Req() req: RequestUser) {
     return await this.authService.deleteAccount(req);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Get('/me/bookmarks')
+  public async getBookmarks(
+    @Req() req: RequestUser,
+    @Query('cursor') cursor?: string,
+  ) {
+    return await this.authService.getBookmarks(req, cursor);
   }
 }

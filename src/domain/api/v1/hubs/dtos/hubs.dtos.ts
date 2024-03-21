@@ -47,3 +47,13 @@ export class CreateHubNoteDto {
   @IsDefined()
   public name: string;
 }
+
+export class CreateNoteLinkDto {
+  @IsUUID()
+  @IsDefined()
+  public readonly sourceNoteId: string;
+
+  @IsUUID()
+  @IsDefined()
+  public readonly targetNoteId: string;
+}

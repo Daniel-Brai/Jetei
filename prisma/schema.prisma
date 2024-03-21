@@ -80,7 +80,7 @@ model AuthToken {
   invitee           Invitee? @relation(fields: [inviteeId], references: [id])
   name              String?
   content           String?  @unique
-  expiryInMilliSecs Int
+  expiryInMilliSecs String   
   isBlackListed     Boolean  @default(false)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -118,6 +118,7 @@ model Link {
   sourceNoteId String
   targetNote   Note?    @relation("TargetLinks", fields: [targetNoteId], references: [id])
   targetNoteId String?  @unique
+  createdById  String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

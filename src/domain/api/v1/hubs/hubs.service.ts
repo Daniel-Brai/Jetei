@@ -21,6 +21,7 @@ import { v4, validate } from 'uuid';
 import {
   CreateHubDto,
   CreateHubNoteDto,
+  CreateNoteLinkDto,
   InviteeToHubDto,
   UpdateHubDto,
   UpdateHubInviteeDto,
@@ -131,21 +132,23 @@ export class HubsService {
           throw new Error(this.messageHelpers.HUB_NOT_FOUND);
         }
 
-        const existingInvite = await tx.invitee.findFirst({
+        const existingInvite = await tx.invitee.findUnique({
           where: {
             email: data.email,
             hubId: data.hubId,
           },
         });
-        if (!existingInvite) {
+
+        if (existingInvite) {
           throw new Error(this.messageHelpers.USER_ALREADY_IN_HUB);
         }
+
         const newInvitee = await tx.invitee.create({
           data: {
             name: data.name,
             email: data.email,
             role: data.role,
-            hub: { connect: { id: foundHub.id } },
+            hubId: foundHub.id,
           },
         });
 
@@ -162,7 +165,7 @@ export class HubsService {
             role: newInvitee.role,
           },
           tokenId,
-          14400,
+          2419200,
         );
 
         if (!accessToken) {
@@ -173,23 +176,12 @@ export class HubsService {
 
         const tokenName = `invitee_access_token:${newInvitee.id}`;
 
-        const updateInviteeWithAuthToken = await tx.invitee.update({
-          where: {
-            id: newInvitee.id,
-          },
+        const updateInviteeWithAuthToken = await tx.authToken.create({
           data: {
-            tokens: {
-              create: [
-                {
-                  name: tokenName,
-                  content: `${accessToken}--${tokenId}`,
-                  expiryInMilliSecs: 14400000,
-                },
-              ],
-            },
-          },
-          include: {
-            tokens: true,
+            name: tokenName,
+            content: `${accessToken}--${tokenId}`,
+            expiryInMilliSecs: '2419200000',
+            inviteeId: newInvitee.id,
           },
         });
         if (!updateInviteeWithAuthToken) {
@@ -197,11 +189,11 @@ export class HubsService {
         }
 
         return {
-          token: accessToken,
-          tokenId: tokenId,
-          hubId: updateInviteeWithAuthToken.hubId,
+          token: `${accessToken}--${tokenId}`,
+          hubId: newInvitee.hubId,
           hubName: foundHub.name,
-          email: updateInviteeWithAuthToken.email,
+          email: newInvitee.email,
+          name: newInvitee.name,
         };
       });
       this.eventEmitter.emit(
@@ -211,7 +203,7 @@ export class HubsService {
           to: invitee.email,
           templatePath: './invitee-to-hub',
           data: {
-            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/login?type=invitee&token=${invitee.token}&tokenId=${invitee.tokenId}&redirectId=${invitee.hubId}` : `${this.appConfig.environment.PROD_URL}/login?type=invitee&token=${invitee.token}&tokenId=${invitee.tokenId}&redirectId=${invitee.hubId}`}`,
+            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/login?type=member&token=${invitee.token}&to=${invitee.hubId}` : `${this.appConfig.environment.PROD_URL}/login?type=member&token=${invitee.token}&to=${invitee.hubId}`}`,
             hub: invitee.hubName,
           },
         }),
@@ -219,14 +211,14 @@ export class HubsService {
       return {
         type: 'success',
         status_code: 201,
-        api_message: `${invitee.email} was invited successfully`,
+        api_message: `${invitee.name} invited successfully`,
       };
     } catch (e) {
       this.logger.error(this.messageHelpers.CREATE_ACTION_FAILED, {
         context: `Invite user to hub ${data.hubId}`,
         error: e,
       });
-      throw new BadRequestException(this.messageHelpers.CREATE_ACTION_FAILED);
+      throw new BadRequestException(e);
     }
   }
 
@@ -960,6 +952,103 @@ export class HubsService {
         error: e,
       });
       throw new BadRequestException(this.messageHelpers.CREATE_ACTION_FAILED);
+    }
+  }
+
+  /**
+   * Create a note link
+   * @param {RequestUser} req The request object
+   * @param {CreateNoteLinkDto} data The data passed to create a note link
+   * @returns {Promise<APIResponse<any>>} The API Response
+   */
+  public async createNoteLink(
+    req: RequestUser,
+    data: CreateNoteLinkDto,
+  ): Promise<APIResponse<any>> {
+    this.logger.log(
+      `Creating note link for user ${req.user.sub} on note ${data.sourceNoteId}`,
+    );
+
+    try {
+      const foundLink = await this.prisma.link.findUnique({
+        where: {
+          sourceNoteId: data.sourceNoteId,
+          targetNoteId: data.targetNoteId,
+        },
+      });
+
+      if (foundLink) {
+        throw new Error('Notes are already linked');
+      }
+
+      const newLink = await this.prisma.link.create({
+        data: {
+          sourceNoteId: data.sourceNoteId,
+          targetNoteId: data.targetNoteId,
+          createdById: req.user.sub,
+        },
+      });
+
+      if (!newLink) {
+        throw new Error('Failed to create note link');
+      }
+
+      return {
+        status_code: 200,
+        type: 'success',
+        api_message: 'Link created',
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelpers.CREATE_ACTION_FAILED, {
+        error: e,
+      });
+      throw new BadRequestException(this.messageHelpers.CREATE_ACTION_FAILED);
+    }
+  }
+
+  /**
+   * Get the note links
+   * @param {string} hubId The id of the hub
+   * @param {string} noteId The id of the note
+   * @returns {Promise<APIResponse<any>>} The API Response
+   */
+  public async getNoteLinks(
+    req: RequestUser,
+    noteId: string,
+  ): Promise<APIResponse<any>> {
+    this.logger.log(`Get the links for note ${noteId}`);
+
+    try {
+      const foundLinks = await this.prisma.note.findUnique({
+        where: {
+          id: noteId,
+          OR: [{ createdById: req.user.sub }, { updatedById: req.user.sub }],
+        },
+        include: {
+          links: {
+            include: {
+              targetNote: true,
+            },
+          },
+        },
+      });
+
+      if (!foundLinks) {
+        throw new Error('Failed to fetch note links');
+      }
+
+      return {
+        status_code: 200,
+        type: 'success',
+        data: foundLinks,
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelpers.RETRIEVAL_ACTION_FAILED, {
+        error: e,
+      });
+      throw new BadRequestException(
+        this.messageHelpers.RETRIEVAL_ACTION_FAILED,
+      );
     }
   }
 }

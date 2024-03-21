@@ -8,7 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UserRole } from '@prisma/client';
 import { Response } from 'express';
-import { v4 } from 'uuid';
+import { v4, validate } from 'uuid';
 import { RequestUser } from '@/interfaces';
 import { APIResponse, JwtPayload, SocialAuthenticationPayload } from '@/types';
 import {
@@ -19,6 +19,7 @@ import {
 import { PrismaService } from '@/infra/gateways/database/prisma/prisma.service';
 import { AppConfig } from '@/lib/config/config.provider';
 import {
+  HubInviteeQueryDto,
   UpdateProfileDto,
   UserForgetPasswordDto,
   UserLoginDto,
@@ -125,7 +126,7 @@ export class AuthenticationService {
             name: `verification_token:${newUser.id}`,
             content: `${verificationToken}--${tokenId}`,
             userId: newUser.id,
-            expiryInMilliSecs: 14400000,
+            expiryInMilliSecs: '14400000',
           },
         });
 
@@ -170,82 +171,153 @@ export class AuthenticationService {
    * Log in a user via email and password
    * @param {UserLoginDto} data The data passed to create the user
    * @param {Response} res The response object
-   * @returns {any} Passes the user cookies to response object
+   * @returns {Promise<any>} The API Response
    */
-  public async login(data: UserLoginDto, res: Response): Promise<any> {
+  public async login(
+    data: UserLoginDto,
+    res: Response,
+    query?: HubInviteeQueryDto,
+  ): Promise<any> {
     this.logger.log(`Log in user with email: ${data.email}`);
     try {
-      const foundUser = await this.validateUser(data.email);
+      if (
+        query === null &&
+        query.type === null &&
+        query.token === null &&
+        query.to === null
+      ) {
+        const foundUser = await this.validateUser(data.email);
 
-      if (!foundUser) {
-        throw new Error(this.messageHelper.USER_ACCOUNT_NOT_EXISTING);
-      }
+        if (!foundUser) {
+          throw new Error(this.messageHelper.USER_ACCOUNT_NOT_EXISTING);
+        }
 
-      if (!foundUser.isVerified) {
-        throw new Error(this.messageHelper.USER_VERIFICATION_FAILED);
-      }
+        if (!foundUser.isVerified) {
+          throw new Error(this.messageHelper.USER_VERIFICATION_FAILED);
+        }
 
-      const isValid = await this.authHelper.verifyCredential(
-        data.password,
-        foundUser.password,
-      );
-
-      if (!isValid) {
-        throw new Error(this.messageHelper.USER_LOGIN_FAILED);
-      }
-
-      const tokenId = v4();
-
-      const accessToken = await this.createToken(
-        {
-          sub: foundUser.id,
-          name: foundUser.profile.name,
-          email: foundUser.email,
-          role: foundUser.role,
-        },
-        tokenId,
-        36000,
-      );
-
-      if (!accessToken) {
-        throw new Error(`${this.messageHelper.CREATE_ACTION_FAILED} - Token`);
-      }
-
-      const newUserToken = await this.prisma.authToken.create({
-        data: {
-          name: `access_token:${foundUser.id}`,
-          content: `${accessToken}--${tokenId}`,
-          userId: foundUser.id,
-          expiryInMilliSecs: 36000000,
-        },
-      });
-
-      if (!newUserToken) {
-        throw new Error(
-          `${this.messageHelper.CREATE_ACTION_FAILED} - AuthToken`,
+        const isValid = await this.authHelper.verifyCredential(
+          data.password,
+          foundUser.password,
         );
-      }
 
-      res.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure:
-          this.appConfig.environment.NODE_ENV === 'production' ? true : false,
-        expires: new Date(Date.now() + 36000000),
-        sameSite: 'lax',
-      });
-      res.cookie('accessTokenId', tokenId, {
-        httpOnly: true,
-        secure:
-          this.appConfig.environment.NODE_ENV === 'production' ? true : false,
-        expires: new Date(Date.now() + 36000000),
-        sameSite: 'lax',
-      });
-      return res.send({
-        status_code: 200,
-        type: 'success',
-        api_message: 'Login successful',
-        api_description: 'Proceeding to your workspace...',
-      } as APIResponse<any>);
+        if (!isValid) {
+          throw new Error(this.messageHelper.USER_LOGIN_FAILED);
+        }
+
+        const tokenId = v4();
+
+        const accessToken = await this.createToken(
+          {
+            sub: foundUser.id,
+            name: foundUser.profile.name,
+            email: foundUser.email,
+            role: foundUser.role,
+          },
+          tokenId,
+          36000,
+        );
+
+        if (!accessToken) {
+          throw new Error(`${this.messageHelper.CREATE_ACTION_FAILED} - Token`);
+        }
+
+        const newUserToken = await this.prisma.authToken.create({
+          data: {
+            name: `access_token:${foundUser.id}`,
+            content: `${accessToken}--${tokenId}`,
+            userId: foundUser.id,
+            expiryInMilliSecs: '36000000',
+          },
+        });
+
+        if (!newUserToken) {
+          throw new Error(
+            `${this.messageHelper.CREATE_ACTION_FAILED} - AuthToken`,
+          );
+        }
+
+        res.cookie('accessToken', accessToken, {
+          httpOnly: true,
+          secure:
+            this.appConfig.environment.NODE_ENV === 'production' ? true : false,
+          expires: new Date(Date.now() + 36000000),
+          sameSite: 'lax',
+        });
+        res.cookie('accessTokenId', tokenId, {
+          httpOnly: true,
+          secure:
+            this.appConfig.environment.NODE_ENV === 'production' ? true : false,
+          expires: new Date(Date.now() + 36000000),
+          sameSite: 'lax',
+        });
+        return res.send({
+          status_code: 200,
+          type: 'success',
+          api_message: 'Login successful',
+          api_description: 'Proceeding to your workspace...',
+        } as APIResponse<any>);
+      } else if (
+        query.type === 'member' &&
+        query.token !== null &&
+        query.to !== null &&
+        validate(query.to)
+      ) {
+        const authToken = await this.prisma.authToken.findFirst({
+          where: {
+            content: query.token,
+          },
+        });
+
+        if (!authToken) {
+          throw new Error(this.messageHelper.INVALID_TOKEN);
+        }
+
+        const authArr = this.siteHelper.splitAtFirstOccurrenceRegex(
+          authToken.content,
+          '--',
+        );
+
+        const accessToken = authArr[0];
+        const tokenId = authArr[1];
+
+        const decoded = await this.validateToken(accessToken, tokenId);
+
+        if (!decoded) {
+          throw new Error(this.messageHelper.INVALID_TOKEN);
+        }
+
+        const expiryDate =
+          authToken.createdAt.getMilliseconds() +
+          parseInt(authToken.expiryInMilliSecs);
+
+        const currentDate = new Date().getMilliseconds();
+
+        if (currentDate > expiryDate) {
+          throw new Error(this.messageHelper.EXPIRED_TOKEN);
+        }
+
+        return res
+          .cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure:
+              this.appConfig.environment.NODE_ENV === 'production'
+                ? true
+                : false,
+            expires: new Date(Date.now() + 36000000),
+            sameSite: 'lax',
+          })
+          .cookie('accessTokenId', tokenId, {
+            httpOnly: true,
+            secure:
+              this.appConfig.environment.NODE_ENV === 'production'
+                ? true
+                : false,
+            expires: new Date(Date.now() + 36000000),
+            sameSite: 'lax',
+          })
+          .redirect(`/workspace/hubs/${query.to}`);
+      }
     } catch (e) {
       this.logger.error(this.messageHelper.USER_LOGIN_FAILED, {
         context: `Unable to login in user :${data.email}`,
@@ -281,7 +353,6 @@ export class AuthenticationService {
 
         const jwtToken = authArr[0];
         const tokenId = authArr[1];
-        console.log(jwtToken, tokenId);
 
         const decoded = await this.validateToken(jwtToken, tokenId);
 
@@ -290,7 +361,8 @@ export class AuthenticationService {
         }
 
         const expiryDate =
-          authToken.createdAt.getMilliseconds() + authToken.expiryInMilliSecs;
+          authToken.createdAt.getMilliseconds() +
+          parseInt(authToken.expiryInMilliSecs);
 
         const currentDate = new Date().getMilliseconds();
 
@@ -365,14 +437,14 @@ export class AuthenticationService {
    * @param {UserForgetPasswordDto} data The data passed
    * @returns {Promise<void>} Sends a email if the user account exists
    */
-
   public async forgotPassword(
     data: UserForgetPasswordDto,
   ): Promise<APIResponse<any>> {
+    console.log('email: ', data.email);
     this.logger.log(`Forget password of user with email: ${data.email}`);
     try {
       const d = await this.prisma.$transaction(async (tx) => {
-        const foundUser = await tx.user.findUniqueOrThrow({
+        const foundUser = await tx.user.findUnique({
           where: {
             email: data.email,
           },
@@ -407,7 +479,7 @@ export class AuthenticationService {
             name: `forgot_password_token:${foundUser.id}`,
             content: `${forgotPasswordToken}--${tokenId}`,
             userId: foundUser.id,
-            expiryInMilliSecs: 36000000,
+            expiryInMilliSecs: '36000000',
           },
         });
 
@@ -435,7 +507,7 @@ export class AuthenticationService {
         type: 'success',
         status_code: 200,
         api_message: `Forgot password started`,
-        api_description: "We've sent you a reset link to your email",
+        api_description: 'Reset link sent to your email',
       };
     } catch (e) {
       this.logger.error(this.messageHelper.USER_FORGOT_PASSWORD_FAILED, {
@@ -457,78 +529,80 @@ export class AuthenticationService {
   ): Promise<APIResponse<any>> {
     this.logger.log(`Reset password of user`);
     try {
-      const d = await this.prisma.$transaction(async (tx) => {
-        const authToken = await tx.authToken.findFirst({
-          where: {
-            content: token,
-          },
-        });
-
-        if (!authToken) {
-          throw new Error(this.messageHelper.INVALID_TOKEN);
-        }
-
-        const authArr = this.siteHelper.splitAtFirstOccurrenceRegex(
-          authToken.content,
-          '--',
-        );
-
-        const jwtToken = authArr[0];
-        const tokenId = authArr[1];
-
-        const decoded = await this.validateToken(jwtToken, tokenId);
-
-        if (!decoded) {
-          throw new Error(this.messageHelper.INVALID_TOKEN);
-        }
-
-        const expiryDate =
-          authToken.createdAt.getMilliseconds() + authToken.expiryInMilliSecs;
-
-        const currentDate = new Date().getMilliseconds();
-
-        if (currentDate > expiryDate) {
-          throw new Error(this.messageHelper.EXPIRED_TOKEN);
-        }
-
-        const hashedPassword = await this.authHelper.hashCredential(
-          data.new_password,
-        );
-
-        if (!hashedPassword) {
-          throw new Error(this.messageHelper.UNEXPECTED_RESULT);
-        }
-
-        const updatedUser = await tx.user.update({
-          where: {
-            id: authToken.userId,
-          },
-          data: {
-            password: hashedPassword,
-            tokens: {
-              update: {
-                where: {
-                  id: authToken.id,
-                },
-                data: {
-                  isBlackListed: true,
-                },
-              },
-            },
-          },
-        });
-
-        if (!updatedUser) {
-          throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
-        }
-
-        return { email: updatedUser.email };
+      const authToken = await this.prisma.authToken.findFirst({
+        where: {
+          content: token,
+        },
       });
+
+      if (!authToken) {
+        throw new Error(this.messageHelper.INVALID_TOKEN);
+      }
+
+      const authArr = this.siteHelper.splitAtFirstOccurrenceRegex(
+        authToken.content,
+        '--',
+      );
+
+      const jwtToken = authArr[0];
+      const tokenId = authArr[1];
+
+      const decoded = await this.validateToken(jwtToken, tokenId);
+
+      if (!decoded) {
+        throw new Error(this.messageHelper.INVALID_TOKEN);
+      }
+
+      const expiryDate =
+        authToken.createdAt.getMilliseconds() +
+        parseInt(authToken.expiryInMilliSecs);
+
+      const currentDate = new Date().getMilliseconds();
+
+      if (currentDate > expiryDate) {
+        throw new Error(this.messageHelper.EXPIRED_TOKEN);
+      }
+
+      const hashedPassword = await this.authHelper.hashCredential(
+        data.new_password,
+      );
+
+      if (!hashedPassword) {
+        throw new Error(this.messageHelper.UNEXPECTED_RESULT);
+      }
+
+      const updatedUser = await this.prisma.user.update({
+        where: {
+          id: authToken.userId,
+        },
+        data: {
+          password: hashedPassword,
+        },
+      });
+
+      if (!updatedUser) {
+        throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
+      }
+
+      const updatedToken = await this.prisma.authToken.update({
+        where: {
+          id: authToken.id,
+        },
+        data: {
+          isBlackListed: true,
+          expiryInMilliSecs: '0',
+        },
+      });
+
+      if (!updatedToken) {
+        throw new Error(this.messageHelper.UPDATE_ACTION_FAILED);
+      }
+
       this.eventEmitter.emit(
         'user.email',
         new MailerEvent('base', {
           subject: 'Jetei Account Reset Password Done',
-          to: d.email,
+          to: updatedUser.email,
           templatePath: './reset-password-done',
           data: {
             url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/login` : `${this.appConfig.environment.NODE_ENV}/login`}`,
@@ -596,17 +670,17 @@ export class AuthenticationService {
    */
   public async updateProfile(
     req: RequestUser,
-    data?: UpdateProfileDto,
+    data: UpdateProfileDto,
   ): Promise<APIResponse<any>> {
     this.logger.log(`Update profile details for user ${req.user.sub}`);
 
     try {
       console.log('data: ', {
-        name: data?.name,
-        bio: data?.bio,
-        avatar: data?.avatar,
-        new_password: data?.new_password,
-        new_password_confirm: data?.new_password_confirm,
+        name: data.name,
+        bio: data.bio,
+        avatar: data.avatar,
+        new_password: data.new_password,
+        new_password_confirm: data.new_password_confirm,
         email: data.email,
       });
       const user = await this.prisma.user.findUnique({
@@ -649,7 +723,6 @@ export class AuthenticationService {
 
         password = await this.authHelper.hashCredential(data.new_password);
       }
-
 
       if (data.avatar !== null) {
         avatar = data.avatar;
@@ -782,7 +855,7 @@ export class AuthenticationService {
                   content: `${token}--${tokenId}`,
                 },
                 data: {
-                  expiryInMilliSecs: 0,
+                  expiryInMilliSecs: '0',
                   isBlackListed: true,
                 },
               },
@@ -867,7 +940,7 @@ export class AuthenticationService {
             name: `access_token:${data.sub}`,
             content: `${accessToken}--${tokenId}`,
             userId: data.sub,
-            expiryInMilliSecs: 36000000,
+            expiryInMilliSecs: '36000000',
           },
         });
 
@@ -946,7 +1019,7 @@ export class AuthenticationService {
             name: `access_token:${data.sub}`,
             content: `${accessToken}--${tokenId}`,
             userId: data.sub,
-            expiryInMilliSecs: 36000000,
+            expiryInMilliSecs: '36000000',
           },
         });
 
@@ -978,6 +1051,70 @@ export class AuthenticationService {
           })
           .redirect('/workspace');
       }
+    }
+  }
+
+  /**
+   * Get bookmarks
+   * @param {RequestUser} req THe request object
+   * @param {string} cursor The cursor of the pagination
+   * @returns The API Response
+   */
+  public async getBookmarks(req: RequestUser, cursor?: string) {
+    this.logger.log(`Get bookmarks for user ${req.user.sub}`);
+
+    try {
+      const foundBookmarks = await this.prisma.bookmark.findMany({
+        take: 10,
+        orderBy: [{ createdAt: 'desc' }],
+        where: {
+          userId: req.user.sub,
+          createdAt: {
+            gte: cursor
+              ? new Date(cursor)
+              : new Date('2024-03-15T22:34:54.292Z'),
+          },
+        },
+      });
+
+      if (foundBookmarks.length === 0) {
+        return {
+          status_code: 200,
+          message: 'No bookmarks founds',
+          data: [],
+          metaData: {
+            lastCursor: null,
+            hasNextPage: false,
+          },
+        };
+      }
+
+      const lastBookmarkCreatedAt =
+        foundBookmarks[foundBookmarks.length - 1].createdAt;
+      const hasNextBookmarkPage = await this.prisma.bookmark.findMany({
+        take: 10,
+        skip: 1,
+        orderBy: [{ createdAt: 'desc' }],
+        where: {
+          updatedAt: {
+            lte: new Date(lastBookmarkCreatedAt),
+          },
+        },
+      });
+
+      return {
+        status_code: 200,
+        data: foundBookmarks,
+        metaData: {
+          hasNextPage: hasNextBookmarkPage.length > 1,
+          lastCursor: lastBookmarkCreatedAt,
+        },
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelper.RETRIEVAL_ACTION_FAILED, {
+        error: e,
+      });
+      throw new BadRequestException(this.messageHelper.RETRIEVAL_ACTION_FAILED);
     }
   }
 

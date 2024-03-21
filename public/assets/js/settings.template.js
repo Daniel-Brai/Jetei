@@ -65,7 +65,7 @@ htmx.defineExtension('load-templates', {
             >
             <div class="mt-2 flex items-center gap-x-3">
               {% if data.profile.avatar %}
-                <img id="avatarImg" src="{{ data.profile.avatar }}" class="h-12 w-12" />
+                <img id="avatarImg" src="{{ data.profile.avatar }}" class="h-8 w-8 rounded-full object-cover" />
               {% else %}
               <div class="w-8 h-8"> 
                 <svg
@@ -95,7 +95,7 @@ htmx.defineExtension('load-templates', {
                       class="sr-only hidden"
                     />
                   </label>
-                  <button id="upload-avatar" class="hidden" type="button">Upload</button>
+                  <button name="upload-avatar" id="upload-avatar" class="hidden" type="button">Upload</button>
                   <input id="avatar-url" class="hidden" value="" />
                 </div>
             </div>
@@ -207,7 +207,7 @@ const cancelButton = document.getElementById('cancel-btn');
 const avatarImg = document.getElementById('avatarImg')
 const avatar = document.getElementById('avatar')
 const email = document.getElementById('email')
-const name = document.getElementById('name')
+const nameEl = document.getElementById('name')
 const bio = document.getElementById('bio')
 const password = document.getElementById('new_password') 
 const password_confirm = document.getElementById('new_password_confirm') 
@@ -215,8 +215,6 @@ const submitAvatarButton = document.getElementById('upload-avatar');
 const avatarLink = document.getElementById('avatar-url');
 const toastContainer = document.getElementById('message-container')
 const toastMessage = document.getElementById('message-renderer')
-
-console.log(avatarLink)
 
 cancelButton.addEventListener('click', () => {
   updateProfileForm.reset()
@@ -247,42 +245,49 @@ submitAvatarButton.addEventListener('click', async () => {
             },
         );
         const data = await res.json();
-        avatarLink.setAttribute('value', data.url)
-        console.log(data)
+
+        if (avatarImg) {
+          avatarImg.setAttribute('src', data.url)
+          avatarLink.setAttribute('value', data.url)
+        } else {
+          avatarLink.setAttribute('value', data.url)
+        }
     } catch (e) {
         console.log(e);
     }
 });
 
 submitButton.addEventListener('click', async () => {
-    console.log('clicked')
     let file = avatar.files > 0 ? avatar.files[0] : null;
     let emailValue = email.value ? email.value.trim() : null;
-    let nameValue = name.value ? name.value.trim() : null;
+    let nameValue = nameEl.value ? nameEl.value.trim() : null;
     let pValue =  password.value ? password.value.trim() : null;
     let pcValue = password_confirm.value ? password_confirm.value.trim() : null;
     let bioValue = bio.value ? bio.value.trim() : null;
     let avatarValue = document.getElementById('avatar-url') ? document.getElementById('avatar-url').value : null
 
-    console.log(file, emailValue, nameValue, bioValue, pcValue, pValue, avatarValue)
+    let body = {
+      email: emailValue,
+      name: nameValue,
+      bio: bioValue,
+      avatar: avatarValue,
+      new_password: pValue,
+      new_password_confirm: pcValue,
+    }
 
     try {
         const res = await fetch(
           "/api/v1/authentication/me",
           {
             method: 'PUT',
-            body: JSON.stringify({
-              email: emailValue,
-              name: nameValue,
-              bio: bioValue,
-              avatar: avatarValue,
-              new_password: pValue,
-              new_password_confirm: pcValue,
-            })
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
           },
         );
       
-        const data = await res.json()
+        const { data } = await res.json()
 
         if (data.type === 'success') {
           updateProfileForm.reset()
@@ -291,9 +296,9 @@ submitButton.addEventListener('click', async () => {
           setTimeout(() => {
             toastContainer.classList.add('hidden')
           }, 3000)
-          name.value = data.profile.name;
-          bio.value = data.profile.bio
-          email.value = data.email
+          nameEl.setAttribute('value', data.profile?.name);
+          bio.setAttribute('value', data.profile?.bio)
+          email.setAttribute('value', data?.email)
         } else if (data.type === 'error') {
           updateProfileForm.reset()
           toastContainer.classList.remove('hidden')
@@ -308,9 +313,8 @@ submitButton.addEventListener('click', async () => {
     }
 })
 </script>
+`
 
-            
-            `
       if (template) {
         return nunjucks.renderString(template.innerHTML, data);
       } else {
