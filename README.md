@@ -1,6 +1,6 @@
 # Jetei
 
-![image](https://github.com/Daniel-Brai/Jetei/assets/88239970/d72ee59b-c428-4619-a892-4fb948d90ae4)
+![image](https://github.com/Daniel-Brai/Jetei/assets/88239970/e6a4e59c-3859-4586-83b9-2a284af08e78)
 
 ## Description
 
