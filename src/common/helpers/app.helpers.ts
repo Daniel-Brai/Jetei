@@ -9,7 +9,8 @@ import * as milli from 'markdown-it-linkify-images';
 import * as sanitizeHtml from 'sanitize-html';
 import { v4 as uuidv4 } from 'uuid';
 import { ISiteLocals, RequestUser } from '@/interfaces';
-import { JwtPayload, JwtOptions, FeatureFlagObject } from '@/types';
+import { JwtPayload, JwtOptions } from '@/types';
+import { DEFAULT_FLAGS } from '@/common/constants/app.constants';
 import { AppConfig, SiteConfig } from '@/lib/config/config.provider';
 
 const salt = AppConfig.authentication.HASHING_SALT_OR_ROUNDS;
@@ -243,11 +244,6 @@ export const SiteHelpers = {
    * @returns {FeatureFlags} The allowed features
    */
   parseFlagsFromEnv: () => {
-    const DEFAULT_FLAGS = {
-      USE_SOCIAL_AUTH: false,
-      USE_SMTP: false,
-    } as FeatureFlagObject;
-
     const flagsStr = AppConfig.environment.FLAGS;
 
     const flags: Record<string, boolean> = { ...DEFAULT_FLAGS };
