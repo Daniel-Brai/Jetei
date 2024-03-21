@@ -1,5 +1,4 @@
 import { UserRole } from '@prisma/client';
-import { OperationType } from './interfaces';
 
 /**
  * Describes a response for the client to consume
@@ -13,7 +12,7 @@ export type APIResponse<T> = {
     timestamp?: string;
     path?: string;
   };
-  data?: Array<T> | object;
+  data?: T | object;
 };
 
 /**
@@ -93,4 +92,19 @@ export type SocialAuthenticationPayload = {
   email: string;
   name: string;
   picture: string;
+};
+
+/**
+ * Describes the type of prefix used for search query
+ */
+export type SearchPrefix = 'hubs:' | 'notes:' | 'bookmarks:';
+
+/**
+ * Descreibes the base mapping for a search result
+ */
+export type SearchResult = {
+  readonly name: string;
+  readonly description?: string;
+  readonly url: string;
+  readonly updatedAt?: string;
 };

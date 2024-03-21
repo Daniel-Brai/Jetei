@@ -41,12 +41,12 @@
       message = response['api_message'];
       desc = response['api_description'];
       status = response['status_code'];
+      console.log(response)
     } catch (e) {
       response = null;
       status = event.detail.xhr.status;
     }
 
-    console.log(response)
 
     toast_provider = document.getElementById('toast-provider');
     toast_title = document.getElementById('toast-title');

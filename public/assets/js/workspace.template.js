@@ -155,6 +155,36 @@ htmx.defineExtension('load-templates', {
         class="relative z-20 flex space-x-6 items-center justify-between text-lg font-medium -mt-2"
       >
         <span class="font-medium text-xl sm:text-2xl lg:text-2xl"> My Chats </span>
+        <div
+          class="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        >
+          <a href="workspace/chats">
+            <div
+              class="relative btn-outline rounded-md flex items-center px-3 py-2 space-x-2 cursor-pointer"
+            >
+              <div class="text-muted-foreground">
+                <svg
+                  class="size-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-plus-circle"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M8 12h8" />
+                  <path d="M12 8v8" />
+                </svg>
+              </div>
+              <p class="text-sm">Start a chat</p>
+            </div>
+          </a>
+        </div>
       </div>
 
       <div class="relative z-20 my-6 w-full">
@@ -199,8 +229,8 @@ htmx.defineExtension('load-templates', {
           </div>
         {% endfor %}
         {% if results.chats|length == 0 %}
-        <div class="py-3 {% if result.hubs|length == 0 %}mt-4{% else %}mt-6{% endif %} btn-outline rounded-md">
-          <div class="flex items-center justify-center space-x-4 py-4">
+        <div class="py-3 {% if result.hubs|length == 0 %}mt-2.5{% else %}mt-6{% endif %} btn-outline rounded-md">
+          <div class="mt-1 flex items-center justify-center space-x-4 py-4">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <p class="text-sm font-medium text-center">
               You don't have any message yet!

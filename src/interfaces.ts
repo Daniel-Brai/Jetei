@@ -57,5 +57,5 @@ export interface Operation {
  * Describe the interface for a file
  */
 export interface IsFileOptions {
-  mime: AllowedMimeTypes[]
+  mime: AllowedMimeTypes[];
 }

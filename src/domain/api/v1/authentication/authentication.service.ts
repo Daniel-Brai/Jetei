@@ -171,6 +171,7 @@ export class AuthenticationService {
    * Log in a user via email and password
    * @param {UserLoginDto} data The data passed to create the user
    * @param {Response} res The response object
+   * @param {HubInviteeQueryDto} query The optional query parameters passed
    * @returns {Promise<any>} The API Response
    */
   public async login(
@@ -180,12 +181,7 @@ export class AuthenticationService {
   ): Promise<any> {
     this.logger.log(`Log in user with email: ${data.email}`);
     try {
-      if (
-        query === null &&
-        query.type === null &&
-        query.token === null &&
-        query.to === null
-      ) {
+      if (!query.type && !query.token && !query.to) {
         const foundUser = await this.validateUser(data.email);
 
         if (!foundUser) {
@@ -237,26 +233,33 @@ export class AuthenticationService {
           );
         }
 
-        res.cookie('accessToken', accessToken, {
-          httpOnly: true,
-          secure:
-            this.appConfig.environment.NODE_ENV === 'production' ? true : false,
-          expires: new Date(Date.now() + 36000000),
-          sameSite: 'lax',
-        });
-        res.cookie('accessTokenId', tokenId, {
-          httpOnly: true,
-          secure:
-            this.appConfig.environment.NODE_ENV === 'production' ? true : false,
-          expires: new Date(Date.now() + 36000000),
-          sameSite: 'lax',
-        });
-        return res.send({
+        const response = {
           status_code: 200,
           type: 'success',
           api_message: 'Login successful',
           api_description: 'Proceeding to your workspace...',
-        } as APIResponse<any>);
+        } as APIResponse<any>;
+
+        return res
+          .cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure:
+              this.appConfig.environment.NODE_ENV === 'production'
+                ? true
+                : false,
+            expires: new Date(Date.now() + 36000000),
+            sameSite: 'lax',
+          })
+          .cookie('accessTokenId', tokenId, {
+            httpOnly: true,
+            secure:
+              this.appConfig.environment.NODE_ENV === 'production'
+                ? true
+                : false,
+            expires: new Date(Date.now() + 36000000),
+            sameSite: 'lax',
+          })
+          .send(response);
       } else if (
         query.type === 'member' &&
         query.token !== null &&

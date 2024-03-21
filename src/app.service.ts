@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -11,6 +12,8 @@ import { AppConfig, SiteConfig } from '@/lib/config/config.provider';
 import { PrismaService } from '@/infra/gateways/database/prisma/prisma.service';
 import { Response, Request } from 'express';
 import { v4 } from 'uuid';
+import { SearchQueryDto } from './common/dtos/app.dtos';
+import { APIResponse, SearchResult } from './types';
 
 @Injectable()
 export class AppService {
@@ -1112,5 +1115,190 @@ export class AppService {
         this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  public async getWorkspaceSearchResults(
+    req: RequestUser,
+    query: SearchQueryDto,
+  ) {
+    this.logger.log(
+      `Get search results for prefix: ${query.prefix} for text: ${query.text} `,
+    );
+
+    try {
+      const { data } = await this.searchQueryBuilder(req, query);
+      return this.buildSearchResultsHTMLResponse(data as SearchResult[]);
+    } catch (e) {
+      this.logger.error(this.messageHelpers.RETRIEVAL_ACTION_FAILED, {
+        error: e,
+      });
+      throw new BadRequestException(e);
+    }
+  }
+
+  private async searchQueryBuilder(
+    req: RequestUser,
+    query: SearchQueryDto,
+  ): Promise<APIResponse<SearchResult[]>> {
+    try {
+      if (query.prefix === 'bookmarks:') {
+        const foundBookmarks = await this.prisma.bookmark.findMany({
+          where: {
+            userId: req.user.sub,
+            name: {
+              contains: query.text,
+              mode: 'insensitive',
+            },
+          },
+          orderBy: [{ updatedAt: 'desc' }],
+          take: 4,
+        });
+
+        if (foundBookmarks.length === 0) {
+          return {
+            type: 'success',
+            status_code: 200,
+            data: [],
+          };
+        }
+
+        const data: SearchResult[] = foundBookmarks.map((b) => {
+          return {
+            name: b.name,
+            url: `/workspace/bookmarks/${b.id}`,
+            updatedAt: this.siteHelpers.formatDistanceToNow(b.updatedAt),
+          };
+        });
+        return {
+          type: 'success',
+          status_code: 200,
+          data: data,
+        };
+      } else if (query.prefix === 'notes:') {
+        const foundNotes = await this.prisma.note.findMany({
+          where: {
+            name: {
+              contains: query.text,
+              mode: 'insensitive',
+            },
+          },
+          orderBy: [{ updatedAt: 'desc' }],
+          take: 4,
+        });
+
+        if (foundNotes.length === 0) {
+          return {
+            type: 'success',
+            status_code: 200,
+            data: [],
+          };
+        }
+
+        const data: SearchResult[] = foundNotes.map((n) => {
+          return {
+            name: n.name,
+            description: n.text,
+            url: `/workspace/hubs/${n.hubId}/notes/${n.id}/edit`,
+            updatedAt: this.siteHelpers.formatDistanceToNow(n.updatedAt),
+          };
+        });
+        return {
+          type: 'success',
+          status_code: 200,
+          data: data,
+        };
+      } else if (query.prefix === 'hubs:') {
+        const foundHubs = await this.prisma.hub.findMany({
+          where: {
+            userId: req.user.sub,
+            name: {
+              contains: query.text,
+              mode: 'insensitive',
+            },
+          },
+          orderBy: [{ updatedAt: 'desc' }],
+          take: 4,
+        });
+
+        if (foundHubs.length === 0) {
+          return {
+            type: 'success',
+            status_code: 200,
+            data: [],
+          };
+        }
+
+        const data: SearchResult[] = foundHubs.map((h) => {
+          return {
+            name: h.name,
+            description: h.description,
+            url: `/workspace/hubs/${h.id}`,
+            updatedAt: this.siteHelpers.formatDistanceToNow(h.updatedAt),
+          };
+        });
+        return {
+          type: 'success',
+          status_code: 200,
+          data: data,
+        };
+      } else {
+        throw new Error(`Unknown prefix: ${query.prefix}`);
+      }
+    } catch (e) {
+      throw new Error(e);
+    }
+  }
+
+  private buildSearchResultsHTMLResponse(result: SearchResult[]) {
+    let HTML = '';
+
+    if (result.length === 0) {
+      HTML += `
+      <div class="px-4 py-3 btn-outline rounded-md w-full">
+        <div class="flex items-center justify-center space-x-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-x"><path d="m13.5 8.5-5 5"/><path d="m8.5 8.5 5 5"/><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <p class="text-sm font-medium text-center">
+            Oops! We can't find what you are looking for!
+          </p>
+        </div>
+      </div>
+      `;
+      return HTML;
+    }
+
+    for (let i = 0; i < result.length; i++) {
+      const data = result[i];
+      HTML += `
+      <a
+        class="flex px-4 py-2 justify-between gap-x-6 btn-outline rounded-md cursor-pointer w-full"
+        href="${data.url}"
+      >
+        <div class="flex min-w-0 gap-x-4">
+          <div class="min-w-0 flex-auto">
+            <p
+              class="text-sm font-semibold leading-6 text-foreground"
+            >
+              ${data.name}
+            </p>
+            <p
+              class="mt-1 truncate text-xs leading-5 text-gray-500"
+            >
+              ${data?.description}
+            </p>
+          </div>
+        </div>
+        <div
+          class="hidden shrink-0 sm:flex sm:flex-col sm:items-end"
+        >
+          <p class="mt-1 text-xs leading-5 text-gray-500">
+            ${data.updatedAt}
+          </p>
+          <p class="text-sm leading-6 text-muted-foreground">
+          </p>
+        </div>
+      </a> 
+      `;
+    }
+    return HTML;
   }
 }

@@ -20,6 +20,7 @@ import { AuthenticationService } from './domain/api/v1/authentication/authentica
 import { AppConfig } from './lib/config/config.provider';
 import { GoogleAuthGuard } from './domain/api/v1/authentication/guards/google.guard';
 import { SocialAuthenticationPayload } from './types';
+import { SearchQueryDto } from './common/dtos/app.dtos';
 
 @Controller()
 export class AppController {
@@ -152,6 +153,15 @@ export class AppController {
   }
 
   @UseGuards(AccessTokenGuard)
+  @Get('/workspace/search')
+  async getWorkspaceSearch(
+    @Req() req: RequestUser,
+    @Query() query: SearchQueryDto,
+  ) {
+    return await this.appService.getWorkspaceSearchResults(req, query);
+  }
+
+  @UseGuards(AccessTokenGuard)
   @Get('/workspace/bookmarks')
   async searchWorkspaceBookmarkmarks(
     @Req() req: RequestUser,
@@ -161,8 +171,8 @@ export class AppController {
   }
 
   @UseGuards(AccessTokenGuard)
-  @Get('/workspace/search')
-  async searchWorkspaceByRevelance() {}
+  @Get('/workspace/chats')
+  async getStartChat(@Req() req: RequestUser) {}
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/chats/:chatId')

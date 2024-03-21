@@ -10,8 +10,6 @@
     class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
   ></div>
 
-  {% from 'macros/form.html' import input_non_required_no_pattern %}
-
   <div
     class="fixed inset-0 z-10 w-screen overflow-y-auto search-content"
     id="search-modal-content"
@@ -65,91 +63,23 @@
                       </svg>
                     </span>
                   </div>
-                  {{ input_non_required_no_pattern(id="search-workspace-input",
-                  type="search", name="search-workspace-input",
-                  extra_class="select-none h-10 pl-10 rounded-md border
-                  border-input bg-background px-24 py-2 text-sm
-                  text-muted-foreground", placeholder="Search...") }}
+                  <input
+                    class="flex h-10 w-full select-none pl-10 bg-background px-24 py-2 text-sm text-muted-foreground rounded-md border border-input ring-offset-background file:border-0 file:text-white file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    type="text"
+                    id="search-workspace-input"
+                    name="search-workspace-input"
+                    minlength="6"
+                    placeholder="Tab to Search..."
+                    data-hx-trigger="keyup changed delay:1s" 
+                    data-hx-target="#search-results" 
+                    data-hx-swap="innerHTML"
+                  />
                 </div>
                 <div
-                  id="search-results"
-                  class="mt-4 flex flex-col items-center justify-center space-y-3"
+                  class="mt-4 flex flex-col items-center justify-center space-y-3 w-full"
                 >
-                  <ul role="list" class="divide-y divide-gray-100">
-                    <a
-                      class="flex px-4 py-2 justify-between gap-x-6 btn-outline rounded-md cursor-pointer"
-                    >
-                      <div class="flex min-w-0 gap-x-4">
-                        <div class="min-w-0 flex-auto">
-                          <p
-                            class="text-sm font-semibold leading-6 text-foreground"
-                          >
-                            Leslie Alexander
-                          </p>
-                          <p
-                            class="mt-1 truncate text-xs leading-5 text-gray-500"
-                          >
-                            leslie.alexander@example.com
-                          </p>
-                        </div>
-                      </div>
-                      <div
-                        class="hidden shrink-0 sm:flex sm:flex-col sm:items-end"
-                      >
-                        <p class="text-sm leading-6 text-muted-foreground">
-                          Co-Founder / CEO
-                        </p>
-                        <p class="mt-1 text-xs leading-5 text-gray-500">
-                          Last seen
-                          <time datetime="2023-01-23T13:23Z">3h ago</time>
-                        </p>
-                      </div>
-                    </a>
+                  <ul id="search-results" role="list" class="divide-y divide-gray-100 w-full">
                   </ul>
-
-                  <!-- <a
-                    id="{{ item.id }}"
-                    class="mt-3 flex items-center mb-3 gap-2 overflow-hidden rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent"
-                    preload="mouseover"
-                  >
-                    <div class="mr-3">
-                      {% if note.photo %}
-                      <img
-                        class="size-6 object-cover rounded-full"
-                        loading="eager"
-                        src="{{ item.photo }}"
-                      />
-                      {% else %}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="lucide lucide-square-library"
-                      >
-                        <rect width="18" height="18" x="3" y="3" rx="2" />
-                        <path d="M7 7v10" />
-                        <path d="M11 7v10" />
-                        <path d="m15 7 2 10" />
-                      </svg>
-                      {% endif %}
-                    </div>
-                    <div class="flex w-full flex-col gap-1">
-                      <div class="flex items-center">
-                        <div class="flex items-center gap-2">
-                          <div class="font-semibold">{{ item.name }}</div>
-                        </div>
-                      </div>
-                      <div class="hub-desc text-xs font-medium">
-                        {{ item.description }}
-                      </div>
-                    </div>
-                  </a> -->
                 </div>
               </div>
             </div>
@@ -163,9 +93,38 @@
   const searchModal = document.getElementById('search-modal');
   const searchModalContent = document.getElementById('search-modal-content');
   const searchInput = document.getElementById('search-input');
+  const searchWorkInput = document.getElementById('search-workspace-input');
   const searchModalBlur = document.getElementById('search-blur');
   const searchModalClose = document.getElementById('search-modal-close-btn');
   let url = '{{ url }}';
+
+  const searchPrefixes = ['bookmarks:', 'hubs:', 'notes:'];
+  let currentPrefixIndex = 0;
+
+  searchWorkInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Tab') {
+      event.preventDefault(); 
+
+      searchWorkInput.value = '';
+
+      currentPrefixIndex = (currentPrefixIndex + 1) % searchPrefixes.length;
+      searchWorkInput.value = searchPrefixes[currentPrefixIndex];
+    }
+  });
+
+  searchWorkInput.addEventListener('input', (event) => {
+    const inputValue = event.target.value;
+    let [prefix, text] = inputValue.split(':')
+    prefix = prefix + ':'
+
+    if (prefix && text) {
+      const searchParams = new URLSearchParams();
+      searchParams.append('prefix', prefix);
+      searchParams.append('text', text);
+      const url = '/workspace/search?' + searchParams.toString();
+      htmx.ajax('GET', url, '#search-results');
+    }
+  });
 
   if (
     !url ||
