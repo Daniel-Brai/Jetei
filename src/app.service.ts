@@ -749,7 +749,7 @@ export class AppService {
 
       setLocals(req, res);
 
-      return res.render('views/workspace/bookmarks', {
+      return res.render('views/workspace/bookmarks/index', {
         canonicalURL: canonicalURL,
         title: `Your Bookmarks | ${this.siteConfig.name}`,
         description: `Your Bookmarks | ${this.siteConfig.name}`,
@@ -758,6 +758,45 @@ export class AppService {
         user: req.user,
         api_url: '/api/v1/authentication/me/bookmarks',
         form_id: 'get-bookmarks',
+        form_name: 'Create Bookmark',
+        nonce: generateNonce(),
+        logoutUrl: this.logoutUrl,
+        status: status,
+        ...this.siteConfig,
+      });
+    } catch (e) {
+      this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
+        error: e,
+      });
+      throw new InternalServerErrorException(
+        this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async getWorkspaceBookmarksCreate(
+    req: RequestUser,
+    res: Response,
+  ): Promise<void> {
+    this.logger.log(`Get Jetei Workspace Bookwarks create page`);
+
+    try {
+      const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
+      const status = await this.healthCheck();
+      const canonicalURL = getCanonicalUrl(req);
+
+      setLocals(req, res);
+
+      return res.render('views/workspace/bookmarks/new', {
+        canonicalURL: canonicalURL,
+        title: `Create a Bookmark | ${this.siteConfig.name}`,
+        description: `Create a Bookmark | ${this.siteConfig.name}`,
+        ip: req.ip,
+        url: req.url,
+        user: req.user,
+        api_url: '/api/v1/authentication/me/bookmarks',
+        form_id: 'create-bookmarks',
+        form_name: 'Create Bookmark',
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
         status: status,

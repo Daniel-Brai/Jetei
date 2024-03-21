@@ -11,6 +11,7 @@
     <div
         id="{{ form_id }}"
         data-hx-get="{{ api_url }}"
+        data-hx-trigger="load"
         data-hx-ext="json-enc"
         data-hx-swap="innerHTML"
         data-hx-target="#bookmarks-container"

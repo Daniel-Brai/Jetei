@@ -29,6 +29,7 @@ import {
 } from './dtos/authentication.dtos';
 import { MailerEvent } from '@/common/events/app.events';
 import { CloudinaryService } from '@/lib/cloudinary/cloudinary.service';
+import { CreateBookmarkDto } from '@/common/dtos/app.dtos';
 
 @Injectable()
 export class AuthenticationService {
@@ -1117,6 +1118,48 @@ export class AuthenticationService {
         error: e,
       });
       throw new BadRequestException(this.messageHelper.RETRIEVAL_ACTION_FAILED);
+    }
+  }
+
+  /**
+   * Create a bookmark
+   * @param {RequestUser} req The request object
+   * @param {CreateBookmarkDto} data The data passed to create the bookmark
+   * @returns {Promise<APIResponse<any>>} The API Response
+   */
+  public async createBookmark(
+    req: RequestUser,
+    data: CreateBookmarkDto,
+  ): Promise<APIResponse<any>> {
+    this.logger.log(`Create bookmarks for user ${req.user.sub}`);
+
+    try {
+      const bookmark = await this.prisma.bookmark.create({
+        data: {
+          userId: req.user.sub,
+          name: data.name,
+          content: data.content,
+          url: data.url ? data.url : null,
+          tags: data.tags ? data.tags.split(',') : null,
+        },
+      });
+
+      if (!bookmark) {
+        throw new Error(this.messageHelper.CREATE_ACTION_FAILED);
+      }
+
+      return {
+        type: 'success',
+        status_code: 200,
+        api_message: 'Bookmark created succesfully',
+        api_description: 'Proceeding to bookmarks...',
+        data: bookmark,
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelper.CREATE_ACTION_FAILED, {
+        error: e,
+      });
+      throw new BadRequestException(this.messageHelper.CREATE_ACTION_FAILED);
     }
   }
 

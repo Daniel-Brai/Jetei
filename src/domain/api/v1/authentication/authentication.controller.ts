@@ -25,6 +25,7 @@ import {
 import { Response } from 'express';
 import { RequestUser } from '@/interfaces';
 import { AccessTokenGuard } from './guards/access-token.guard';
+import { CreateBookmarkDto } from '@/common/dtos/app.dtos';
 
 @PrefixedController('authentication')
 export class AuthenticationController {
@@ -98,5 +99,14 @@ export class AuthenticationController {
     @Query('cursor') cursor?: string,
   ) {
     return await this.authService.getBookmarks(req, cursor);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Post('/me/bookmarks')
+  public async createBookmark(
+    @Req() req: RequestUser,
+    @Body() data: CreateBookmarkDto,
+  ) {
+    return await this.authService.createBookmark(req, data);
   }
 }

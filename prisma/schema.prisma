@@ -80,7 +80,7 @@ model AuthToken {
   invitee           Invitee? @relation(fields: [inviteeId], references: [id])
   name              String?
   content           String?  @unique
-  expiryInMilliSecs String   
+  expiryInMilliSecs String
   isBlackListed     Boolean  @default(false)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -103,13 +103,16 @@ model Note {
 }
 
 model Bookmark {
-  id        String   @id @default(uuid())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-  name      String
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  name        String
+  content     String
+  url         String?
+  tags        String[] @default([])
+  isFavourite Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Link {

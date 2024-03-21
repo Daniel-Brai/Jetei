@@ -171,8 +171,13 @@ export class AppController {
   }
 
   @UseGuards(AccessTokenGuard)
-  @Get('/workspace/chats')
-  async getStartChat(@Req() req: RequestUser) {}
+  @Get('/workspace/bookmarks/new')
+  async createWorkspaceBookmarks(
+    @Req() req: RequestUser,
+    @Res() res: Response,
+  ) {
+    return await this.appService.getWorkspaceBookmarksCreate(req, res);
+  }
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/chats/:chatId')
