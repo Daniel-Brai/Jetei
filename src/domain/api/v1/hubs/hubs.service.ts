@@ -223,6 +223,48 @@ export class HubsService {
   }
 
   /**
+   * Get invitee details
+   * @param {string} hubId The id of the hub
+   * @param {string} inviteeId The id of the invitee
+   * @returns {Promise<APIResponse<any>>} The API Response
+   */
+  public async getInviteeDetails(
+    hubId: string,
+    inviteeId: string,
+  ): Promise<APIResponse<any>> {
+    this.logger.log(`Get invitee details`);
+    try {
+      const existingInvitee = await this.prisma.invitee.findUnique({
+        where: {
+          id: inviteeId,
+          hubId: hubId,
+        },
+      });
+
+      if (!existingInvitee) {
+        throw new Error('User not in hub');
+      }
+
+      return {
+        type: 'success',
+        status_code: 200,
+        data: {
+          id: existingInvitee.id,
+          email: existingInvitee.email,
+          name: existingInvitee.name,
+          role: existingInvitee.role,
+        },
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelpers.RETRIEVAL_ACTION_FAILED, {
+        context: `Get invitee for ${hubId}`,
+        error: e,
+      });
+      throw new BadRequestException(e);
+    }
+  }
+
+  /**
    * Update an invitee to a hub
    * @param {RequestUser} req The request object
    * @param {string} hubId The id of the hub

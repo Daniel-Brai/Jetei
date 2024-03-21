@@ -209,6 +209,7 @@ export class AuthenticationService {
             name: foundUser.profile.name,
             email: foundUser.email,
             role: foundUser.role,
+            avatar: foundUser.profile.avatar,
           },
           tokenId,
           36000,
@@ -468,6 +469,7 @@ export class AuthenticationService {
             name: foundUser.profile.name,
             email: foundUser.email,
             role: foundUser.role,
+            avatar: foundUser.profile.avatar,
           },
           tokenId,
           36000,
@@ -929,6 +931,7 @@ export class AuthenticationService {
             name: data.name,
             email: data.email,
             role: data.role,
+            avatar: user.profile.avatar,
           },
           tokenId,
           36000,
@@ -981,15 +984,17 @@ export class AuthenticationService {
             role: UserRole.OWNER,
             isSocialAuth: true,
             isVerified: true,
-            profile: {
-              create: {
-                name: req.name,
-                avatar: req?.picture,
-              },
-            },
           },
           include: {
             profile: true,
+          },
+        });
+
+        const newUserProfile = await this.prisma.profile.create({
+          data: {
+            name: req.name,
+            avatar: req?.picture,
+            userId: newUser.id,
           },
         });
 
@@ -997,7 +1002,8 @@ export class AuthenticationService {
           sub: newUser.id,
           email: newUser.email,
           role: newUser.role,
-          name: newUser.profile.name,
+          name: newUserProfile.name,
+          avatar: newUserProfile.avatar,
         };
 
         const tokenId = v4();
@@ -1008,6 +1014,7 @@ export class AuthenticationService {
             name: data.name,
             email: data.email,
             role: data.role,
+            avatar: data.avatar,
           },
           tokenId,
           36000,

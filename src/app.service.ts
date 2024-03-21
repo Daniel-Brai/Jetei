@@ -944,6 +944,7 @@ export class AppService {
         ip: req.ip,
         url: req.url,
         user: req.user,
+        hubId: hubId,
         inviteeId: inviteeId,
         form_id: `hub-edit-invitee-${inviteeId}`,
         api_url: `/api/v1/hubs/${hubId}/invitees/${inviteeId}`,

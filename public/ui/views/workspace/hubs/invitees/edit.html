@@ -1,12 +1,8 @@
-{% extends "views/layouts/base.html" %} 
-
-{% block js %}
+{% extends "views/layouts/base.html" %} {% block js %}
 <script nonce="{{ nonce }}" src="/assets/js/json-enc.js"></script>
 <script nonce="{{ nonce }}" src="/assets/js/client-side-templates.js"></script>
 <script nonce="{{ nonce }}" src="/assets/js/nunjucks.min.js"></script>
-{% endblock %} 
-
-{% block content %}
+{% endblock %} {% block content %}
 <section class="container mt-8 py-24" data-hx-ext="client-side-templates">
   <div class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-96">
     <div class="flex flex-col space-y-2 text-center">
@@ -28,18 +24,25 @@
       data-hx-target="#result"
       nunjucks-template="toast"
     >
-      {% from "macros/form.html" import input_required_no_pattern, input_non_required, button, select with context %}
-
-      {% set options = [{ value: "EDITOR", text: "Editor" }, { value: "VIEWER", text: "Viewer" }] %}
-      
-      {{ input_non_required(type="text",id="name", name="name", placeholder="Name", title="Name must be at least 4 characters long") }} 
-      {{ input_non_required(type="email",id="email", name="email", placeholder="Email", title="Email must be a valid email") }} 
-      {{ select(name="role", id="role", base_option="Select invitee permissions", options=options) }}
+      {% from "macros/form.html" import input_required_no_pattern,
+      input_non_required, button, select with context %} {% set options = [{
+      value: "EDITOR", text: "Editor" }, { value: "VIEWER", text: "Viewer" }] %}
+      {{ input_non_required(type="text",id="name", name="name",
+      placeholder="Name", title="Name must be at least 4 characters long") }} {{
+      input_non_required(type="email",id="email", name="email",
+      placeholder="Email", title="Email must be a valid email") }} {{
+      select(name="role", id="role", base_option="Select invitee permissions",
+      options=options) }}
       <div class="w-full inline-flex items-end justify-end">
-      <a href="/workspace/hubs" class="btn-link text-gradient_indigo-purple font-semibold text-[13px] text-right hover:bg-white">Go to hubs</a>
+        <a
+          href="/workspace/hubs"
+          class="btn-link text-gradient_indigo-purple font-semibold text-[13px] text-right hover:bg-white"
+          >Go to hubs</a
+        >
       </div>
-      
-      {{ button(class="btn-base-variant btn-base-size text-sm rounded-md flex items-center justify-center", text="Save") }}
+
+      {{ button(class="btn-base-variant btn-base-size text-sm rounded-md flex
+      items-center justify-center", text="Save") }}
 
       <div id="result"></div>
 
@@ -87,15 +90,38 @@
         </div>
       </template>
     </form>
-    
-    <form data-hx-ext="json-enc" data-hx-delete="{{ api_url }}" data-hx-trigger="submit">
-      {{ button(class="-mt-6 btn-outline btn-base-size rounded-sm text-sm flex items-center justify-center w-full", text="Delete") }}
+
+    <form
+      data-hx-ext="json-enc"
+      data-hx-delete="{{ api_url }}"
+      data-hx-trigger="submit"
+    >
+      {{ button(class="-mt-6 btn-outline btn-base-size rounded-sm text-sm flex
+      items-center justify-center w-full", text="Delete") }}
     </form>
   </div>
 </section>
-{% include 'partials/_form_handler.html' %} 
-{% endblock %}
+<script nonce="{{ nonce }}">
+  window.onload = async function() {
+    const response = await fetch("{{ api_url }}", {
+      method: 'GET',
+      headers: {
+        "Content-Type": "application/json",
+      }
+    })
 
-{% block footer %}
-    {% include "partials/_footer_alt.html" %}
-{% endblock %}
+    const data = await response.json()
+
+    if (data.type === 'success') {
+      const name = document.getElementById('name')
+      const email = document.getElementById('email')
+      name.setAttribute('value', data.data.name)
+      email.setAttribute('value', data.data.email)
+    } else {
+      return;
+    }
+  };
+</script>
+
+{% include 'partials/_form_handler.html' %} {% endblock %} {% block footer %} {%
+include "partials/_footer_alt.html" %} {% endblock %}

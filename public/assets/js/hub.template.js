@@ -94,7 +94,7 @@ htmx.defineExtension('load-templates', {
         </div>
         <div class="space-y-8 mb-4">
             {% for note in data.notes %}
-                <a class="cursor-pointer" href="/workspace{{ details.path }}/notes/{{ note.id }}/edit" preload="mouseover">
+                <a class="cursor-pointer" href="/workspace{{ details.path }}/notes/{{ note.id }}/edit" preload="mouseover" title="{{ note.name }}">
                     <div class="flex items-center space-x-2 btn-ghost py-3 px-3 rounded-md overflow-hidden">
                         <div class="mr-3">
                             <svg class="size-7" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M16 2v20"/></svg>
@@ -102,7 +102,7 @@ htmx.defineExtension('load-templates', {
                         <div class="space-y-1 w-full">
                             <div class="w-full flex items-center justify-between text-sm font-medium leading-none">
                                 {% if note.name %}
-                                    {{ note.name }}
+                                    <span class="note-name">{{ note.name }}</span>
                                 {% else %}
                                     No name yet
                                 {% endif %}
@@ -347,9 +347,22 @@ setTimeout(() => {
     const hubId = hub.getAttribute('data-hub-id');
     const dates = document.querySelectorAll('.updated-at')
     const note_texts = document.querySelectorAll('.note-text')
+    const note_names = document.querySelectorAll('.note-name')
     const docIcons = document.querySelectorAll('.document-icon')
     const docDownload = document.querySelectorAll('.file-download')
     const docDelete = document.querySelectorAll('.file-delete')
+    let windowWidth = window.innerWidth;
+
+    window.addEventListener('resize', () => {
+        windowWidth = window.innerWidth;
+    });
+
+    note_names.forEach((n) => {
+        if (windowWidth < 560) {
+            n.textContent = `${subString(n.textContent, Math.round(n.textContent.length / 2))}...`
+        }
+        n.textContent = `${subString(n.textContent, 300)}`
+    })
     note_texts.forEach((n) => {
         if (n.textContent.length > 300) {
             n.textContent = `${subString(n.textContent, 300)}...`

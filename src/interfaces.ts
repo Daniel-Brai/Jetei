@@ -29,6 +29,7 @@ export interface RequestUser extends Request {
     name: string;
     email: string;
     role: UserRole;
+    avatar?: string;
   };
 }
 

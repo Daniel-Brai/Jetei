@@ -167,6 +167,16 @@ export class HubsController {
   }
 
   @UseGuards(AccessTokenGuard)
+  @Get('/:hubId/invitees/:inviteeId')
+  @HttpCode(HttpStatus.OK)
+  public async getInviteeByHubId(
+    @Param('hubId', ParseUUIDPipe) hubId: string,
+    @Param('inviteeId', ParseUUIDPipe) inviteeId: string,
+  ) {
+    return await this.hubsService.getInviteeDetails(hubId, inviteeId);
+  }
+
+  @UseGuards(AccessTokenGuard)
   @Patch('/:hubId/invitees/:inviteeId')
   @HttpCode(HttpStatus.OK)
   public async editHubInviteeByHubId(

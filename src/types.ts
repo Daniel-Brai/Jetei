@@ -23,6 +23,7 @@ export type JwtPayload = {
   name?: string;
   email: string;
   role: UserRole;
+  avatar?: string;
 };
 
 /**
