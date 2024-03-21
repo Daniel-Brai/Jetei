@@ -39,7 +39,7 @@ To run Jetei locally on your machine, follow these steps:
     * **On Linux or MacOS**
 
       ```bash
-      chmod +x ./scripts/docker.sh && ./scripts/docker.sh up -d
+      chmod +x ./scripts/docker.sh && ./scripts/docker.sh
       ```
 
 
