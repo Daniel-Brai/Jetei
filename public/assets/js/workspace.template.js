@@ -158,7 +158,7 @@ htmx.defineExtension('load-templates', {
         <div
           class="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
         >
-          <a href="workspace/chats">
+          <a href="workspace/chats/new">
             <div
               class="relative btn-outline rounded-md flex items-center px-3 py-2 space-x-2 cursor-pointer"
             >

@@ -30,7 +30,11 @@ export class AppService {
     private readonly prisma: PrismaService,
   ) {}
 
-  public async healthCheck() {
+  /**
+   * Get the health status of the application
+   * @returns {Promise<{name: string; colur: string}>} The Status Response
+   */
+  public async healthCheck(): Promise<{ name: string; colour: string }> {
     const status = await this.healthService.check([
       () => this.dbService.pingCheck('database', this.prisma),
     ]);
@@ -46,6 +50,12 @@ export class AppService {
     };
   }
 
+  /**
+   * Get index page
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getIndex(req: Request, res: Response): Promise<void> {
     this.logger.log(`Get Jetei homepage`);
 
@@ -78,6 +88,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get login page
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getLogin(req: Request, res: Response): Promise<void> {
     this.logger.log(`Get Jetei Login page`);
 
@@ -112,6 +128,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Callback for Github Authentication
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response if successful
+   */
   public async githubAuthCallback(
     req: RequestUser,
     res: Response,
@@ -175,11 +197,23 @@ export class AppService {
     }
   }
 
+  /**
+   * Logout user
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response if sucessful
+   */
   public async getLogout(req: RequestUser, res: Response) {
     this.logger.log(`Log out authenticated user: ${req.user.sub}`);
     await this.authService.invalidateUserToken(req, res);
   }
 
+  /**
+   * Get signup page
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getSignup(req: Request, res: Response): Promise<void> {
     this.logger.log(`Get Jetei Signup page`);
 
@@ -215,6 +249,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get forgot password page
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getForgotPassword(req: Request, res: Response): Promise<void> {
     this.logger.log(`Get Jetei Forgot password page`);
 
@@ -284,6 +324,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get signup successful page
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getSignUpSuccessful(req: Request, res: Response): Promise<void> {
     this.logger.log(`Get Jetei Signup success page`);
 
@@ -315,6 +361,13 @@ export class AppService {
     }
   }
 
+  /**
+   * Get verification page
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @param {string} token The token passed for user verification
+   * @returns {Promise<void>} The HTML response
+   */
   public async getVerification(
     req: Request,
     res: Response,
@@ -357,6 +410,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get verification successful page
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getVerificationSuccessful(
     req: Request,
     res: Response,
@@ -392,6 +451,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get forbidden page
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getForbidden(req: Request, res: Response): Promise<void> {
     this.logger.log(`Get Jetei 403 page`);
 
@@ -425,6 +490,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get unauthorized page
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getUnauthorized(req: Request, res: Response): Promise<void> {
     this.logger.log(`Get Jetei 401 page`);
 
@@ -458,6 +529,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get resource not found page
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getNotFound(req: Request, res: Response): Promise<void> {
     this.logger.log(`Get Jetei 404 page`);
 
@@ -491,6 +568,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get privacy page
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getPrivacy(req: Request, res: Response): Promise<void> {
     this.logger.log(`Get Jetei privacy page`);
 
@@ -524,6 +607,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get settings page
+   * @param {RequestUser} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getUserSettings(req: RequestUser, res: Response): Promise<void> {
     this.logger.log(`Get Jetei User Settings page`);
 
@@ -559,6 +648,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get internal server error page
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getInternalServerError(
     req: Request,
     res: Response,
@@ -595,6 +690,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get reset password page
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getResetPasswordByToken(
     req: Request,
     res: Response,
@@ -635,6 +736,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get reset password successful page
+   * @param {Request} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getResetPasswordConfirmed(
     req: Request,
     res: Response,
@@ -668,6 +775,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get workspace page
+   * @param {RequestUser} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getWorkspace(req: RequestUser, res: Response): Promise<void> {
     this.logger.log(`Get Jetei Workspace page for user: ${req.user.sub}`);
 
@@ -688,8 +801,6 @@ export class AppService {
         nonce: generateNonce(),
         logoutUrl: this.logoutUrl,
         api_url: '/api/v1/hubs/latest-notes-and-chats',
-        hubs: [],
-        chats: [],
         status: status,
         ...this.siteConfig,
       });
@@ -703,6 +814,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get workspace bookwark page
+   * @param {RequestUser} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getWorkspaceBookmarks(
     req: RequestUser,
     res: Response,
@@ -741,6 +858,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get workspace bookmark create page
+   * @param {RequestUser} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getWorkspaceBookmarksCreate(
     req: RequestUser,
     res: Response,
@@ -779,6 +902,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get workspace hubs page
+   * @param {RequestUser} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getWorkspaceHubs(
     req: RequestUser,
     res: Response,
@@ -795,6 +924,7 @@ export class AppService {
       return res.render('views/workspace/hubs/index', {
         canonicalURL: canonicalURL,
         title: `Your Hubs | ${this.siteConfig.name}`,
+        description: `Your Hubs | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
         user: req.user,
@@ -816,6 +946,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Get workspace hubs create page
+   * @param {RequestUser} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getWorkspaceHubsCreate(
     req: RequestUser,
     res: Response,
@@ -832,6 +968,7 @@ export class AppService {
       return res.render('views/workspace/hubs/new', {
         canonicalURL: canonicalURL,
         title: `Create Hub | ${this.siteConfig.name}`,
+        description: `Create Hub | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
         user: req.user,
@@ -853,6 +990,13 @@ export class AppService {
     }
   }
 
+  /**
+   * Get workspace hubs edit page
+   * @param {string} hubId The id of hub
+   * @param {RequestUser} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getWorkspaceHubsEdit(
     hubId: string,
     req: RequestUser,
@@ -870,6 +1014,7 @@ export class AppService {
       return res.render('views/workspace/hubs/edit', {
         canonicalURL: canonicalURL,
         title: `Edit Hub | ${this.siteConfig.name}`,
+        description: `Edit Hub | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
         user: req.user,
@@ -891,8 +1036,14 @@ export class AppService {
     }
   }
 
+  /**
+   * Get workspace add hub invitee page
+   * @param {RequestUser} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getWorkspaceHubAddInvitee(
-    req: Request,
+    req: RequestUser,
     res: Response,
   ): Promise<void> {
     this.logger.log(`Get Jetei Workspace add invitee to hub page`);
@@ -907,6 +1058,7 @@ export class AppService {
       return res.render('views/workspace/hubs/invitees/new', {
         canonicalURL: canonicalURL,
         title: `Invite to Hub | ${this.siteConfig.name}`,
+        description: `Invite to Hub | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
         user: req.user,
@@ -929,6 +1081,14 @@ export class AppService {
     }
   }
 
+  /**
+   * Get workspace hubs edit invitee page
+   * @param {string} hubId The id of the hub
+   * @param {string} inviteeId  The id of the invitee
+   * @param {RequestUser} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getWorkspaceHubInviteeEdit(
     hubId: string,
     inviteeId: string,
@@ -947,6 +1107,7 @@ export class AppService {
       return res.render('views/workspace/hubs/invitees/edit', {
         canonicalURL: canonicalURL,
         title: `Edit Invitee Privileges | ${this.siteConfig.name}`,
+        description: `Edit Invitee Privileges | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
         user: req.user,
@@ -970,6 +1131,13 @@ export class AppService {
     }
   }
 
+  /**
+   * Get workspace hub by id page
+   * @param {string} hubId The id of hub
+   * @param {RequestUser} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getWorkspaceHubById(
     hubId: string,
     req: RequestUser,
@@ -986,6 +1154,7 @@ export class AppService {
       return res.render('views/workspace/hubs/id', {
         canonicalURL: canonicalURL,
         title: `Your Hub  | ${this.siteConfig.name}`,
+        description: `Your Hub | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
         user: req.user,
@@ -1007,6 +1176,13 @@ export class AppService {
     }
   }
 
+  /**
+   * Get workspace hub create note page
+   * @param {string} hubId The id of hub
+   * @param {RequestUser} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getWorkspaceHubCreateNewNote(
     hubId: string,
     req: RequestUser,
@@ -1023,6 +1199,7 @@ export class AppService {
       return res.render('views/workspace/hubs/notes/new', {
         canonicalURL: canonicalURL,
         title: `Create a Note | ${this.siteConfig.name}`,
+        description: `Create a Note | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
         api_url: `/api/v1/hubs/${hubId}/notes`,
@@ -1045,6 +1222,14 @@ export class AppService {
     }
   }
 
+  /**
+   * Get workspace hub edit note by id page
+   * @param {string} hubId The id of hub
+   * @param {string} noteId The id of note
+   * @param {RequestUser} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getWorkspaceHubByIdNoteByIdEdit(
     hubId: string,
     noteId: string,
@@ -1062,10 +1247,10 @@ export class AppService {
       return res.render('views/workspace/hubs/notes/edit', {
         canonicalURL: canonicalURL,
         title: `Edit Note | ${this.siteConfig.name}`,
+        description: `Edit Note | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
         ws_url: `${AppConfig.environment.NODE_ENV === 'development' ? `ws://localhost:${AppConfig.environment.WS_PORT}` : `wss://${req.hostname}:${AppConfig.environment.WS_PORT}`}`,
-        api_url: `/api/v1/workspace/hubs/${hubId}/notes/${noteId}`,
         note_link_url: `/api/v1/hubs/${hubId}/notes/${noteId}/link`,
         form_id: `edit-note`,
         form_name: 'Edit Note',
@@ -1087,6 +1272,14 @@ export class AppService {
     }
   }
 
+  /**
+   * Get workspace hub create chat page
+   * @param {string} hubId The id of hub
+   * @param {string} noteId The id of note
+   * @param {RequestUser} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
   public async getWorkspaceChatById(
     chatId: string,
     req: Request,
@@ -1103,6 +1296,7 @@ export class AppService {
       return res.render('views/workspace/chats/id', {
         canonicalURL: canonicalURL,
         title: `Chat | ${this.siteConfig.name}`,
+        description: `Chat | ${this.siteConfig.name}`,
         ip: req.ip,
         url: req.url,
         nonce: generateNonce(),
@@ -1124,10 +1318,60 @@ export class AppService {
     }
   }
 
+  /**
+   * Get workspace hub create chat page
+   * @param {RequestUser} req The request object
+   * @param {Response} res The response object
+   * @returns {Promise<void>} The HTML response
+   */
+  public async getWorkspaceChatCreate(
+    req: RequestUser,
+    res: Response,
+  ): Promise<void> {
+    this.logger.log(`Get Jetei Workspace chat create page`);
+
+    try {
+      const { setLocals, generateNonce, getCanonicalUrl } = this.siteHelpers;
+      const status = await this.healthCheck();
+      const canonicalURL = getCanonicalUrl(req);
+
+      setLocals(req, res);
+
+      return res.render('views/workspace/chats/new', {
+        canonicalURL: canonicalURL,
+        title: `New Chat | ${this.siteConfig.name}`,
+        description: `New Chat | ${this.siteConfig.name}`,
+        ip: req.ip,
+        nonce: generateNonce(),
+        user: req.user,
+        ws_url: `${AppConfig.environment.NODE_ENV === 'development' ? `ws://localhost:${AppConfig.environment.WS_PORT}` : `wss://${req.hostname}`}`,
+        api_url: `/api/v1/hubs/invitees`,
+        form_id: 'new-chat-form',
+        form_name: 'New Chat',
+        status: status,
+        logoutUrl: this.logoutUrl,
+        ...this.siteConfig,
+      });
+    } catch (e) {
+      this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
+        error: e,
+      });
+      throw new InternalServerErrorException(
+        this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Get workspace hub search results
+   * @param {RequestUser} req The request object
+   * @param {SearchQueryDto} query The search query
+   * @returns {Promise<string>} The HTML response
+   */
   public async getWorkspaceSearchResults(
     req: RequestUser,
     query: SearchQueryDto,
-  ) {
+  ): Promise<string> {
     this.logger.log(
       `Get search results for prefix: ${query.prefix} for text: ${query.text} `,
     );
@@ -1143,6 +1387,12 @@ export class AppService {
     }
   }
 
+  /**
+   * Builds search results
+   * @param {RequestUser} req The request object
+   * @param {SearchQueryDto} query The query passed
+   * @returns {Promise<APIResponse<SearchResult[]>>} The API response
+   */
   private async searchQueryBuilder(
     req: RequestUser,
     query: SearchQueryDto,
@@ -1256,7 +1506,12 @@ export class AppService {
     }
   }
 
-  private buildSearchResultsHTMLResponse(result: SearchResult[]) {
+  /**
+   * Builds the HTML response
+   * @param {SearchResult[]} result The search results
+   * @returns {string} THe HTML Response
+   */
+  private buildSearchResultsHTMLResponse(result: SearchResult[]): string {
     let HTML = '';
 
     if (result.length === 0) {
@@ -1277,7 +1532,7 @@ export class AppService {
       const data = result[i];
       HTML += `
       <a
-        class="flex px-4 py-2 justify-between gap-x-6 btn-outline rounded-md cursor-pointer w-full"
+        class="mb-5 flex px-4 py-2 justify-between gap-x-6 btn-outline rounded-md cursor-pointer w-full"
         href="${data.url}"
       >
         <div class="flex min-w-0 gap-x-4">
@@ -1290,7 +1545,7 @@ export class AppService {
             <p
               class="mt-1 truncate text-xs leading-5 text-gray-500"
             >
-              ${data?.description}
+              ${!data?.description ? '' : data.description}
             </p>
           </div>
         </div>

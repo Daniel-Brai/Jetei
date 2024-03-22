@@ -46,6 +46,13 @@ export class HubsController {
 
   @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.CREATED)
+  @Get('/invitees')
+  public async getInvitees(@Req() req: RequestUser) {
+    return await this.hubsService.getUserWithHubsAndInvitees(req);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @HttpCode(HttpStatus.CREATED)
   @Post('/note-link')
   public async linkNotes(
     @Req() req: RequestUser,

@@ -78,7 +78,7 @@
                 <div
                   class="mt-4 flex flex-col items-center justify-center space-y-3 w-full"
                 >
-                  <ul id="search-results" role="list" class="divide-y divide-gray-100 w-full">
+                  <ul id="search-results" role="list" class="flex flex-col w-full h-auto">
                   </ul>
                 </div>
               </div>
@@ -96,6 +96,7 @@
   const searchWorkInput = document.getElementById('search-workspace-input');
   const searchModalBlur = document.getElementById('search-blur');
   const searchModalClose = document.getElementById('search-modal-close-btn');
+  const searchModalResults = document.getElementById('search-results');
   let url = '{{ url }}';
 
   const searchPrefixes = ['bookmarks:', 'hubs:', 'notes:'];
@@ -141,6 +142,7 @@
 
     searchModalClose.addEventListener('click', () => {
       searchModal.classList.add('hidden');
+      searchModalResults.innerHTML = '';
     });
   }
 </script>

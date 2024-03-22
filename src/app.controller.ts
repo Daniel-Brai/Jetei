@@ -31,42 +31,42 @@ export class AppController {
   ) {}
 
   @Get()
-  async getIndex(@Req() req: Request, @Res() res: Response) {
+  public async getIndex(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getIndex(req, res);
   }
 
   @Get('/page/unauthorized')
-  async get401(@Req() req: Request, @Res() res: Response) {
+  public async get401(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getUnauthorized(req, res);
   }
 
   @Get('/page/access-denied')
-  async get403(@Req() req: Request, @Res() res: Response) {
+  public async get403(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getForbidden(req, res);
   }
 
   @Get('/page/not-found')
-  async get404(@Req() req: Request, @Res() res: Response) {
+  public async get404(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getNotFound(req, res);
   }
 
   @Get('/page/internal-server-error')
-  async get500(@Req() req: Request, @Res() res: Response) {
+  public async get500(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getInternalServerError(req, res);
   }
 
   @Get('/login')
-  async getLogin(@Req() req: Request, @Res() res: Response) {
+  public async getLogin(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getLogin(req, res);
   }
 
   @Get('/signup')
-  async getSignup(@Req() req: Request, @Res() res: Response) {
+  public async getSignup(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getSignup(req, res);
   }
 
   @Get('/privacy')
-  async getPrivacy(@Req() req: Request, @Res() res: Response) {
+  public async getPrivacy(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getPrivacy(req, res);
   }
 
@@ -89,22 +89,25 @@ export class AppController {
 
   @UseGuards(AccessTokenGuard)
   @Get('/account/logout')
-  async getLogout(@Req() req: RequestUser, @Res() res: Response) {
+  public async getLogout(@Req() req: RequestUser, @Res() res: Response) {
     return await this.appService.getLogout(req, res);
   }
 
   @Get('/account/signup-successful')
-  async getSignupSuccessful(@Req() req: Request, @Res() res: Response) {
+  public async getSignupSuccessful(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getSignUpSuccessful(req, res);
   }
 
   @Get('/account/verification-successful')
-  async getVerificationSuccessful(@Req() req: Request, @Res() res: Response) {
+  public async getVerificationSuccessful(
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     return await this.appService.getVerificationSuccessful(req, res);
   }
 
   @Get('/account/verification')
-  async getVerification(
+  public async getVerification(
     @Req() req: Request,
     @Res() res: Response,
     @Query('token') token: string,
@@ -113,17 +116,20 @@ export class AppController {
   }
 
   @Get('/account/forgot-password')
-  async getForgotPassword(@Req() req: Request, @Res() res: Response) {
+  public async getForgotPassword(@Req() req: Request, @Res() res: Response) {
     return await this.appService.getForgotPassword(req, res);
   }
 
   @Get('/account/forgot-password/started')
-  async getForgotPasswordStarted(@Req() req: Request, @Res() res: Response) {
+  public async getForgotPasswordStarted(
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     return await this.appService.getForgotPasswordStarted(req, res);
   }
 
   @Get('/account/reset-password')
-  async getResetPasswordByToken(
+  public async getResetPasswordByToken(
     @Req() req: Request,
     @Res() res: Response,
     @Query('token') token: string,
@@ -132,24 +138,27 @@ export class AppController {
   }
 
   @Get('/account/reset-confirmed')
-  async getResetPasswordConfirmed(@Req() req: Request, @Res() res: Response) {
+  public async getResetPasswordConfirmed(
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     return await this.appService.getResetPasswordConfirmed(req, res);
   }
 
   @Get('/settings')
-  async getSettings(@Req() req: RequestUser, @Res() res: Response) {
+  public async getSettings(@Req() req: RequestUser, @Res() res: Response) {
     return await this.appService.getUserSettings(req, res);
   }
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace')
-  async getWorkspace(@Req() req: RequestUser, @Res() res: Response) {
+  public async getWorkspace(@Req() req: RequestUser, @Res() res: Response) {
     return await this.appService.getWorkspace(req, res);
   }
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/search')
-  async getWorkspaceSearch(
+  public async getWorkspaceSearch(
     @Req() req: RequestUser,
     @Query() query: SearchQueryDto,
   ) {
@@ -158,7 +167,7 @@ export class AppController {
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/bookmarks')
-  async searchWorkspaceBookmarkmarks(
+  public async searchWorkspaceBookmarkmarks(
     @Req() req: RequestUser,
     @Res() res: Response,
   ) {
@@ -167,7 +176,7 @@ export class AppController {
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/bookmarks/new')
-  async createWorkspaceBookmarks(
+  public async createWorkspaceBookmarks(
     @Req() req: RequestUser,
     @Res() res: Response,
   ) {
@@ -175,8 +184,17 @@ export class AppController {
   }
 
   @UseGuards(AccessTokenGuard)
+  @Get('/workspace/chats/new')
+  public async getWorkspaceCreateNewChat(
+    @Req() req: RequestUser,
+    @Res() res: Response,
+  ) {
+    return await this.appService.getWorkspaceChatCreate(req, res);
+  }
+
+  @UseGuards(AccessTokenGuard)
   @Get('/workspace/chats/:chatId')
-  async getWorkspaceChatsById(
+  public async getWorkspaceChatsById(
     @Param('chatId', ParseUUIDPipe) chatId: string,
     @Req() req: RequestUser,
     @Res() res: Response,
@@ -186,19 +204,22 @@ export class AppController {
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs')
-  async getWorkspaceHubs(@Req() req: RequestUser, @Res() res: Response) {
+  public async getWorkspaceHubs(@Req() req: RequestUser, @Res() res: Response) {
     return await this.appService.getWorkspaceHubs(req, res);
   }
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/new')
-  async getWorkspaceHubsCreate(@Req() req: RequestUser, @Res() res: Response) {
+  public async getWorkspaceHubsCreate(
+    @Req() req: RequestUser,
+    @Res() res: Response,
+  ) {
     return await this.appService.getWorkspaceHubsCreate(req, res);
   }
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/add-invitee')
-  async getWorkspaceAddHubInvitee(
+  public async getWorkspaceAddHubInvitee(
     @Req() req: RequestUser,
     @Res() res: Response,
   ) {
@@ -207,7 +228,7 @@ export class AppController {
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/:hubId')
-  async getWorkspaceHubById(
+  public async getWorkspaceHubById(
     @Param('hubId', ParseUUIDPipe) hubId: string,
     @Req() req: RequestUser,
     @Res() res: Response,
@@ -217,7 +238,7 @@ export class AppController {
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/:hubId/edit')
-  async getWorkspaceHubsEdit(
+  public async getWorkspaceHubsEdit(
     @Param('hubId', ParseUUIDPipe) hubId: string,
     @Req() req: RequestUser,
     @Res() res: Response,
@@ -227,7 +248,7 @@ export class AppController {
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/:hubId/notes/new')
-  async getWorkspaceHubByIdAddNewNote(
+  public async getWorkspaceHubByIdAddNewNote(
     @Param('hubId', ParseUUIDPipe) hubId: string,
     @Req() req: RequestUser,
     @Res() res: Response,
@@ -238,7 +259,7 @@ export class AppController {
   @UseGuards(AccessTokenGuard, RolesGuard)
   @Roles(UserRole['OWNER'], UserRole['EDITOR'])
   @Get('/workspace/hubs/:hubId/notes/:noteId/edit')
-  async getWorkspaceHubByIdNoteByIdEdit(
+  public async getWorkspaceHubByIdNoteByIdEdit(
     @Param('hubId', ParseUUIDPipe) hubId: string,
     @Param('noteId', ParseUUIDPipe) noteId: string,
     @Req() req: RequestUser,
@@ -254,7 +275,7 @@ export class AppController {
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/:hubId/invitees/:inviteeId/edit')
-  async getWorkspaceHubInviteeEdit(
+  public async getWorkspaceHubInviteeEdit(
     @Param('hubId', ParseUUIDPipe) hubId: string,
     @Param('inviteeId', ParseUUIDPipe) inviteeId: string,
     @Req() req: RequestUser,

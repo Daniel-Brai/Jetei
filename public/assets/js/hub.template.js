@@ -132,7 +132,7 @@ htmx.defineExtension('load-templates', {
         </div>
     </div>
 
-    <div class="w-full h-full px-5">
+    <div class="w-full h-full">
         <div class="flex flex-col space-y-2 text-left">
             <div class="flex items-center justify-between mb-4">
                 <p class="text-xl font-semibold md:text-[30px] tracking-tight">Your Documents</p>

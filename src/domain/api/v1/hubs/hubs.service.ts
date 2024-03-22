@@ -15,7 +15,7 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Hub, Invitee, Note, Prisma } from '@prisma/client';
+import { Hub, Invitee, Note, Prisma, User } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { v4, validate } from 'uuid';
 import {
@@ -216,6 +216,55 @@ export class HubsService {
     } catch (e) {
       this.logger.error(this.messageHelpers.CREATE_ACTION_FAILED, {
         context: `Invite user to hub ${data.hubId}`,
+        error: e,
+      });
+      throw new BadRequestException(e);
+    }
+  }
+
+  /**
+   * Get the user invitees and their hubs info
+   * @param {RequestUser} req The request user
+   * @returns {Promise<APIResponse<any>>} The API Response
+   */
+  public async getUserWithHubsAndInvitees(
+    req: RequestUser,
+  ): Promise<APIResponse<any>> {
+    this.logger.log(`Get the invitees info for user ${req.user.sub}`);
+
+    try {
+      const hubs = await this.prisma.hub.findMany({
+        where: { userId: req.user.sub },
+        include: {
+          invitee: {
+            take: 10,
+            orderBy: [{ createdAt: 'desc' }],
+          },
+        },
+      });
+
+      if (!hubs) {
+        throw new Error(this.messageHelpers.USER_ACCOUNT_NOT_EXISTING);
+      }
+
+      const data = hubs.flatMap((hub) =>
+        hub.invitee.map((invitee) => ({
+          inviteeId: invitee.id,
+          inviteeName: invitee.name,
+          inviteeEmail: invitee.email,
+          inviteeRole: invitee.role,
+          hubId: hub.id,
+          hubName: hub.name,
+        })),
+      );
+      return {
+        type: 'success',
+        status_code: 200,
+        data: data,
+      };
+    } catch (e) {
+      this.logger.error(this.messageHelpers.RETRIEVAL_ACTION_FAILED, {
+        context: `Get invitees for user`,
         error: e,
       });
       throw new BadRequestException(e);
