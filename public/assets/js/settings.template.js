@@ -247,7 +247,9 @@ submitAvatarButton.addEventListener('click', async () => {
         const data = await res.json();
 
         if (avatarImg) {
+          const imgEl = document.querySelector('img[data-id="avatar-img"]')
           avatarImg.setAttribute('src', data.url)
+          imgEl.setAttribute('src', data.url)
           avatarLink.setAttribute('value', data.url)
         } else {
           avatarLink.setAttribute('value', data.url)
@@ -323,3 +325,4 @@ submitButton.addEventListener('click', async () => {
     }
   },
 });
+

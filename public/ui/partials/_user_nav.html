@@ -7,7 +7,7 @@
 
 <div class="relative">
   {% if avatar %}
-  <img id="user-avatar-btn-{{ id }}" src="{{ avatar }}" class="h-10 w-10 rounded-full object-cover cursor-pointer" title="{{ name }}"/>
+  <img data-id="avatar-img" id="user-avatar-btn-{{ id }}" src="{{ avatar }}" class="border-2 h-10 w-10 rounded-full object-cover cursor-pointer" title="{{ name }}"/>
   {% else %}
   {{ avatar_button(id, avatar_class="btn-ghost h-10 w-10 rounded-full cursor-pointer", user_initials=initials, title=name) }}
   {% endif %}
