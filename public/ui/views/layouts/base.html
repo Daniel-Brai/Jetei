@@ -64,5 +64,14 @@
       nonce="{{ nonce }}"
       src="/assets/js/loading-states.js"
     ></script>
+    <script nonce="{{ nonce }}">
+      let port;
+
+      window.addEventListener('pageshow', (event) => {
+        if (event.persisted) {
+          port = chrome.runtime.connect();
+        }
+      });
+    </script>
   </body>
 </html>

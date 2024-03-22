@@ -35,6 +35,23 @@ export class HubsController {
   constructor(private readonly hubsService: HubsService) {}
 
   @UseGuards(AccessTokenGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get()
+  public async getUserHubs(@Req() req: RequestUser) {
+    return await this.hubsService.getUserHubs(req);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @HttpCode(HttpStatus.CREATED)
+  @Post()
+  public async createHubByUserId(
+    @Req() req: RequestUser,
+    @Body() body: CreateHubDto,
+  ) {
+    return await this.hubsService.createHubByUserId(req, body);
+  }
+
+  @UseGuards(AccessTokenGuard)
   @HttpCode(HttpStatus.CREATED)
   @Post('/add-invitee')
   public async addInviteeToHubByHubId(
@@ -76,23 +93,6 @@ export class HubsController {
   @Get('/latest-notes-and-chats')
   public async getLatestNotesAndChats(@Req() req: RequestUser) {
     return await this.hubsService.getUserLatestNotesAndChats(req);
-  }
-
-  @UseGuards(AccessTokenGuard)
-  @HttpCode(HttpStatus.OK)
-  @Get()
-  public async getUserHubs(@Req() req: RequestUser) {
-    return await this.hubsService.getUserHubs(req);
-  }
-
-  @UseGuards(AccessTokenGuard)
-  @HttpCode(HttpStatus.CREATED)
-  @Post()
-  public async createHubByUserId(
-    @Req() req: RequestUser,
-    @Body() body: CreateHubDto,
-  ) {
-    return await this.hubsService.createHubByUserId(req, body);
   }
 
   @UseGuards(AccessTokenGuard)

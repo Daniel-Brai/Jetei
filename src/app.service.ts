@@ -976,6 +976,7 @@ export class AppService {
         api_url: '/api/v1/hubs',
         form_name: 'Hub create',
         nonce: generateNonce(),
+        redirectUrl: '/workspace/hubs',
         logoutUrl: this.logoutUrl,
         status: status,
         ...this.siteConfig,

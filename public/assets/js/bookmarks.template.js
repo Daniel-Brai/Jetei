@@ -60,7 +60,7 @@ htmx.defineExtension('load-templates', {
 
     <div class="flex flex-col space-y-3 mb-10">
         <div class="flex items-center justify-between mb-4">
-            <p class="text-xl font-semibold md:text-[30px] tracking-tight">Your Recent Bookmarks</p>
+            <p class="text-xl font-semibold md:text-[30px] tracking-tight">Recent Bookmarks</p>
             <div
                 class="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
             >
@@ -87,7 +87,7 @@ htmx.defineExtension('load-templates', {
                             <path d="M12 8v8" />
                             </svg>
                         </div>
-                        <p class="text-sm">Create a bookmark</p>
+                        <p class="text-xs sm:text-sm">Create a bookmark</p>
                     </div>
                 </a>
             </div>
@@ -95,7 +95,7 @@ htmx.defineExtension('load-templates', {
         <div class="space-y-8 mb-4">
             {% for bookmark in data %}
                 <a class="cursor-pointer" href="{{ bookmark.url }}" title="{{ bookmark.name }}">
-                    <div class="flex items-center space-x-2 btn-ghost py-3 px-3 rounded-md overflow-hidden">
+                    <div class="flex items-center space-x-2 btn-outline py-3 px-3 rounded-md overflow-hidden">
                         <div class="mr-3">
                             <svg class="size-7" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
                         </div>
