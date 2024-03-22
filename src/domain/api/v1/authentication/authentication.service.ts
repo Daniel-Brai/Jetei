@@ -142,6 +142,7 @@ export class AuthenticationService {
           token: newUserToken.content,
         };
       });
+
       this.eventEmitter.emit(
         'user.email',
         new MailerEvent('base', {

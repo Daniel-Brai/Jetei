@@ -39,9 +39,7 @@
     "@nestjs/mapped-types": "^2.0.5",
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.3.3",
-    "@nestjs/platform-fastify": "^10.3.3",
     "@nestjs/platform-socket.io": "^10.3.3",
-    "@nestjs/swagger": "^7.3.0",
     "@nestjs/terminus": "^10.2.3",
     "@nestjs/websockets": "^10.3.3",
     "@prisma/client": "^5.10.2",
@@ -70,8 +68,6 @@
     "npm": "^10.5.0",
     "nunjucks": "^3.2.4",
     "passport": "^0.7.0",
-    "passport-github-oauth20": "^1.0.4",
-    "passport-github2": "^0.1.12",
     "passport-google-oauth2": "^0.2.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
@@ -102,7 +98,6 @@
     "@types/nodemailer": "^6.4.14",
     "@types/nunjucks": "^3.2.6",
     "@types/passport": "^1.0.16",
-    "@types/passport-github2": "^1.2.9",
     "@types/passport-google-oauth2": "^0.1.8",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
@@ -136,6 +131,9 @@
       "ts"
     ],
     "rootDir": "src",
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/$1"
+    },
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"

@@ -25,11 +25,11 @@
       nunjucks-template="toast"
     >
       {% from "macros/form.html" import input_required_no_pattern,
-      input_non_required, button, select with context %} {% set options = [{
+      input_non_required_no_pattern, button, select with context %} {% set options = [{
       value: "EDITOR", text: "Editor" }, { value: "VIEWER", text: "Viewer" }] %}
-      {{ input_non_required(type="text",id="name", name="name",
+      {{ input_non_required_no_pattern(type="text",id="name", name="name",
       placeholder="Name", title="Name must be at least 4 characters long") }} {{
-      input_non_required(type="email",id="email", name="email",
+      input_non_required_no_pattern(type="email",id="email", name="email",
       placeholder="Email", title="Email must be a valid email") }} {{
       select(name="role", id="role", base_option="Select invitee permissions",
       options=options) }}
