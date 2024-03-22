@@ -20,6 +20,11 @@ Jetei, a powerful and dynamic real-time collaborative knowledge base application
   
 * **HTMX** A modern, lightweight library that enhances HTML with powerful client-side functionality. HTMX enables Jetei to deliver a seamless and responsive user experience by enabling real-time updates and interactions without the need for traditional page refreshes or complex JavaScript frameworks.
 
+## Demo 
+
+https://github.com/Daniel-Brai/Jetei/assets/88239970/b3c0d949-f8ea-4c67-8ae6-5d544db06500
+
+
 ## Getting Started
 
 To run Jetei locally on your machine, follow these steps:
