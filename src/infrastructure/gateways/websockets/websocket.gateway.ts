@@ -185,18 +185,58 @@ export class WebsocketGateway
     payload: { chatId: string; messageId: string },
   ) {
     try {
+      const updateMessage = await this.prisma.message.update({
+        where: {
+          id: payload.messageId,
+          chatId: payload.messageId,
+        },
+        data: {
+          readAt: new Date(Date.now()),
+          isRead: true,
+        },
+      });
+
+      if (!updateMessage) {
+        throw new Error('Unable to read message');
+      }
     } catch (e) {
-      await this.prisma.$transaction(async (tx) => {
-        const updateMessage = await tx.message.update({
-          where: {
-            id: payload.messageId,
-            chatId: payload.messageId,
-          },
-          data: {
-            readAt: new Date(Date.now()),
-            isRead: true,
-          },
-        });
+      socket.emit('error', {
+        message: 'Failed to read message',
+      });
+    }
+  }
+
+  @SubscribeMessage('preloadMessages')
+  async handlePreloadMessages(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody()
+    payload: { chatId: string },
+  ) {
+    try {
+      const chat = await this.prisma.chat.findUnique({
+        where: {
+          id: payload.chatId,
+        },
+        relationLoadStrategy: 'join',
+        include: {
+          messages: true,
+        },
+      });
+
+      if (!chat) {
+        throw new Error('Failed to get chat');
+      }
+
+      if (chat.messages.length > 0) {
+        socket.emit('receivePreloadMessages', { messages: chat.messages });
+      }
+    } catch (e) {
+      this.logger.error(this.messageHelpers.UNEXPECTED_RESULT, {
+        context: 'Failed to get messages',
+        error: e,
+      });
+      socket.emit('error', {
+        message: e?.message,
       });
     }
   }
@@ -208,48 +248,44 @@ export class WebsocketGateway
     payload: { userId: string; chatId: string; content: string },
   ) {
     try {
-      if (payload.userId) {
-        throw new Error('Invalid user');
+      const chat = await this.prisma.chat.findUnique({
+        where: {
+          id: payload.chatId,
+        },
+        relationLoadStrategy: 'join',
+        include: {
+          participants: true,
+        },
+      });
+
+      if (!chat) {
+        throw new Error('Failed to retrieve chat');
       }
 
-      await this.prisma.$transaction(async (tx) => {
-        const newMessage = await tx.message.create({
-          data: {
-            content: payload.content,
-            chatId: payload.chatId,
-            senderId: payload.userId,
-          },
-        });
-
-        if (newMessage) {
-          throw new Error('Failed to create message');
-        }
-
-        const chat = await tx.chat.findUnique({
-          where: { id: payload.chatId },
-          include: {
-            participants: {
-              include: {
-                user: true,
-                invitee: true,
-              },
-            },
-          },
-        });
-
-        if (chat) {
-          const participantIds = chat.participants.map((participant) => {
-            return participant.userId || participant.invitee?.id;
-          });
-
-          participantIds.forEach((participantId) => {
-            const socketId = this.connectedUsers[participantId].id;
-            if (socketId && socketId !== socket.id) {
-              this.server.to(socketId).emit('receiveMessage', newMessage);
-            }
-          });
-        }
+      const newMessage = await this.prisma.message.create({
+        data: {
+          content: payload.content,
+          chatId: chat.id,
+          senderId: payload.userId,
+        },
       });
+
+      if (newMessage) {
+        throw new Error('Failed to create message');
+      }
+
+      if (chat) {
+        const participantIds = chat.participants.map((participant) => {
+          return participant.userId || participant.inviteeId;
+        });
+
+        participantIds.forEach((participantId) => {
+          const socketId = this.connectedUsers[participantId].id;
+          if (socketId && socketId !== socket.id) {
+            this.server.to(socketId).emit('receiveMessage', newMessage);
+          }
+        });
+      }
     } catch (e) {
       this.logger.error(this.messageHelpers.UNEXPECTED_RESULT, {
         context: 'Failed to send message',

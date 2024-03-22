@@ -129,15 +129,14 @@ model Link {
 }
 
 model ChatParticipant {
-  id        String    @id @default(uuid())
-  userId    String?   @unique
-  user      User?     @relation(fields: [userId], references: [id])
-  inviteeId String?   @unique
-  invitee   Invitee?  @relation(fields: [inviteeId], references: [id])
-  chats     Chat[]    @relation("ParticipantChats")
-  message   Message[]
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  inviteeId String?
+  invitee   Invitee? @relation(fields: [inviteeId], references: [id])
+  chats     Chat[]   @relation("ParticipantChats")
 
-  @@unique([userId, inviteeId])
+  @@index([userId, inviteeId])
 }
 
 model Chat {
@@ -149,15 +148,14 @@ model Chat {
 }
 
 model Message {
-  id       String          @id @default(uuid())
+  id       String    @id @default(uuid())
   content  String
-  sentAt   DateTime        @default(now())
+  sentAt   DateTime  @default(now())
   readAt   DateTime?
   senderId String
-  isRead   Boolean         @default(false)
-  sender   ChatParticipant @relation(fields: [senderId], references: [id])
+  isRead   Boolean   @default(false)
   chatId   String
-  chat     Chat            @relation(fields: [chatId], references: [id])
+  chat     Chat      @relation(fields: [chatId], references: [id])
 }
 
 enum UserRole {

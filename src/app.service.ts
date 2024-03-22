@@ -1363,6 +1363,67 @@ export class AppService {
   }
 
   /**
+   * Get or crate a chat for user
+   * @param req The request object
+   * @param inviteeId The id of the invitee
+   * @returns {Promise<void>} Redirects to a chat
+   */
+  public async createOrFindChatforUserWithInvitee(
+    req: RequestUser,
+    res: Response,
+    inviteeId: string,
+  ): Promise<void> {
+    this.logger.log(`Get or create chat for user with invitee ${inviteeId}`);
+
+    try {
+      const foundChat = await this.prisma.chat.findFirst({
+        where: {
+          participants: {
+            some: {
+              inviteeId: inviteeId,
+              userId: req.user.sub,
+            },
+          },
+        },
+      });
+
+      if (!foundChat) {
+        const newParticipants = await this.prisma.chatParticipant.create({
+          data: {
+            inviteeId: inviteeId,
+            userId: req.user.sub,
+          },
+        });
+
+        if (!newParticipants) {
+          throw new Error(this.messageHelpers.CREATE_ACTION_FAILED);
+        }
+
+        const newChat = await this.prisma.chat.create({
+          data: {
+            participants: {
+              connect: { id: newParticipants.id },
+            },
+          },
+        });
+
+        if (!newChat) {
+          throw new Error(this.messageHelpers.CREATE_ACTION_FAILED);
+        }
+
+        return res.redirect(302, `/workspace/chats/${newChat.id}`);
+      }
+
+      return res.redirect(302, `/workspace/chats/${foundChat.id}`);
+    } catch (e) {
+      this.logger.error(this.messageHelpers.HTTP_INTERNAL_SERVER_ERROR, {
+        error: e,
+      });
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  /**
    * Get workspace hub search results
    * @param {RequestUser} req The request object
    * @param {SearchQueryDto} query The search query

@@ -908,24 +908,7 @@ export class HubsService {
           include: {
             chats: {
               include: {
-                messages: {
-                  include: {
-                    sender: {
-                      include: {
-                        user: {
-                          select: {
-                            id: true,
-                            email: true,
-                            profile: true,
-                          },
-                        },
-                        invitee: {
-                          select: { id: true, email: true, name: true },
-                        },
-                      },
-                    },
-                  },
-                },
+                messages: true,
               },
             },
             user: {

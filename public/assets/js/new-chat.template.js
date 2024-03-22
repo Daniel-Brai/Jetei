@@ -81,9 +81,6 @@ htmx.defineExtension('load-templates', {
             </div>
         </div>
         {% for invitee in data %}
-            <script>
-                console.log("{{ invitee }}")
-            </script>
             <div
                 id="invitee-{{ invitee.inviteeId }}"
                 class="flex items-center justify-between mb-3 gap-2 overflow-hidden bg-outline rounded-lg border p-3 text-left text-sm transition-all"
@@ -99,11 +96,11 @@ htmx.defineExtension('load-templates', {
                 </div>
                 <div class="flex w-full flex-col items-end">
                     <div class="flex space-x-2">
-                        <div data-id="{{ invitee.inviteeId }}" class="btn-ghost px-2 py-1 rounded-md cursor-pointer chat-btn">
+                        <a href="/workspace/chats/invitees/{{ invitee.inviteeId }}" data-invitee-id="{{ invitee.inviteeId }}" class="btn-ghost px-2 py-1 rounded-md cursor-pointer chat-btn">
                             <div title="Chat with {{ invitee.inviteeName }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                             </div>
-                        </div>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -129,6 +126,7 @@ htmx.defineExtension('load-templates', {
             }    
         });
     }
+
 </script>
       `;
             if (template) {
@@ -140,3 +138,29 @@ htmx.defineExtension('load-templates', {
     },
 });
 
+
+// setTimeout(() => {
+//     const chatBtns = document.querySelectorAll('.chat-btn')
+
+//     console.log(chatBtns)
+//     chatBtns.forEach((b) => {
+//         b.addEventListener('click', async (e) => {
+//             console.log("Button clicked")
+//             const inviteeId = e.target.getAttribute('data-invitee-id')
+//             if (inviteeId) {
+//                 try {
+//                     const res = await fetch(`/workspace/chats/invitees/${inviteeId}`, {
+//                         method: 'GET',
+//                         headers: {
+//                             "Content-Type": "application/json",
+//                         }
+//                     })
+//                     return await res.
+//                 } catch (e) {
+//                     console.log(e)
+//                 }
+//             }
+//         })
+//     })
+
+// }, 2000)

@@ -1,100 +1,173 @@
-{% extends 'views/layouts/base.html' %}
-
-{% block js %}
+{% extends 'views/layouts/base.html' %} {% block js %}
 <script nonce="{{ nonce }}" src="/assets/js/socket.io.min.js"></script>
-{% endblock %}
-
-{% block content %}
-<section class="h-full mt-8 py-24">
-    <div class="mb-3 px-8 flex flex-col w-full space-x-3" id="messages"></div>
-    <form id="chat-form" class="absolute bottom-4 w-full px-8">
-        <div class="relative cursor-pointer">
-            <button id="send-msg-btn" class="absolute right-2 top-1.5 text-muted-foreground btn-ghost py-1 px-3 rounded-md" type="submit">
-                <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-            </button>
-            <input
-                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-3 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                type="text"
-                id="message-input"
-                name="message"
-                placeholder="Send a message..."
-            />
-        </div>
-    </form>
+{% endblock %} {% block content %}
+<section class="h-full mt-8 pt-14">
+  <div
+    id="toast-message-container"
+    data-state="open"
+    data-slide="left"
+    class="absolute -bottom-10 mx-auto ml-2 mb-4 hidden max-w-fit items-center rounded-md px-8 py-3 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2"
+  >
+    <div id="toast-message-icon"></div>
+    <p class="ml-2 text-sm" id="toast-message-renderer"></p>
+  </div>
+  <div class="mb-3 px-8 flex flex-col w-full space-x-3" id="messages"></div>
+  <form id="chat-form" class="absolute bottom-4 w-full px-8">
+    <div class="relative cursor-pointer">
+      <button
+        id="send-msg-btn"
+        class="absolute right-2 top-1.5 text-muted-foreground btn-ghost py-1 px-3 rounded-md"
+        type="submit"
+      >
+        <svg
+          class="size-5"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="m22 2-7 20-4-9-9-4Z" />
+          <path d="M22 2 11 13" />
+        </svg>
+      </button>
+      <input
+        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-3 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        type="text"
+        id="message-input"
+        name="message"
+        placeholder="Send a message..."
+      />
+    </div>
+  </form>
 </section>
 <script nonce="{{ nonce }}">
+  function genInitials(user) {
+    const words = user.name.trim().split(/\s+/);
 
-    function genInitials(user) {
-        const words = user.name.trim().split(/\s+/);
+    const initials = words.map((word) => word.charAt(0).toUpperCase());
 
-        const initials = words.map((word) => word.charAt(0).toUpperCase());
+    return initials.join('');
+  }
 
-        return initials.join('');
-    }
+  const socket = io('{{ ws_url }}', {
+    transports: ['websocket', 'polling'],
+  });
+  const user = { id: '{{ user.sub }}', name: '{{ user.name }}' };
+  const chatId = '{{ chatId }}';
 
-    const socket = io('{{ ws_url }}', {
-        transports: ['websocket', 'polling'],
-    });
-    const user = { id: '{{ user.sub }}', name: '{{ user.name }}' };
-    const chatId = "{{ chatId }}"
+  window.addEventListener('load', () => {
+    socket.emit('preloadMessages', { chatId: chatId });
+  });
 
-    const messages = document.getElementById('messages')
+  const messagesTop = document.getElementById('messages');
+  const toastContainer = document.getElementById('toast-message-container');
+  const toastIcon = document.getElementById('toast-message-icon');
+  const toastRenderer = document.getElementById('toast-message-renderer');
 
-    socket.on('recieveMessage', (message) => {
+  socket.on('error', (data) => {
+    const message = data.message;
+    toastIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-alert"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`;
+    toastContainer.classList.remove('hidden');
+    toastContainer.classList.add('bg-destructive', 'flex');
+    toastContainer.setAttribute('data-state', 'open');
+    toastContainer.setAttribute('data-slide', 'left');
+    toastRenderer.textContent = message;
+
+    setTimeout(() => {
+      toastIcon.innerHTML = '';
+      toastContainer.classList.remove('bg-destructive', 'flex');
+      toastContainer.classList.add('hidden');
+      toastContainer.setAttribute('data-state', 'closed');
+      toastContainer.setAttribute('data-slide', '');
+      toastRenderer.textContent = '';
+    }, 2500);
+  });
+
+  socket.on('receivePreloadMessages', (data) => {
+    const { messages } = data;
+    console.log(messages);
+    messages.forEach((message) => {
       const messageContainerDiv = document.createElement('div');
       const messageDetailsDiv = document.createElement('div');
-      
-      if (message.senderId === user.id) {
-        messages.classList.add('items-end');
 
+      if (message.senderId === user.id) {
+        messagesTop.classList.add('items-end');
       } else if (message.senderId !== user.id) {
-        messages.classList.add('items-start');
+        messagesTop.classList.add('items-start');
       }
 
       messageContainerDiv.className = `mb-2 ${message.senderId === user.id ? 'bg-blue-500 text-white rounded-lg p-2 ml-auto max-w-xs text-sm' : 'bg-gray-300 rounded-lg p-2 max-w-xs text-sm'}`;
       messageContainerDiv.innerHTML = `
+          ${message.content}
+        `;
+      messageDetailsDiv.className = `flex flex-row space-x-3 items-center justify-center mb-4`;
+      messageDetailsDiv.innerHTML = `
+          <div class="text-xs rounded-full btn-secondary h-8 w-8 flex items-center justify-center cursor-pointer" title="${user.name}">
+            ${genInitials(user)}
+          </div>
+          <div class="message-sent-at text-xs">${formatDate(message.sentAt)}</div>
+        `;
+      messagesTop.appendChild(messageContainerDiv);
+      messagesTop.appendChild(messageDetailsDiv);
+    });
+  });
+
+  socket.on('recieveMessage', (message) => {
+    const messageContainerDiv = document.createElement('div');
+    const messageDetailsDiv = document.createElement('div');
+
+    if (message.senderId === user.id) {
+      messages.classList.add('items-end');
+    } else if (message.senderId !== user.id) {
+      messagesTop.classList.add('items-start');
+    }
+
+    messageContainerDiv.className = `mb-2 ${message.senderId === user.id ? 'bg-blue-700 text-white rounded-lg p-2 ml-auto max-w-xs text-sm' : 'bg-gray-300 rounded-lg p-2 max-w-xs text-sm'}`;
+    messageContainerDiv.innerHTML = `
         ${message.content}
       `;
-      messageDetailsDiv.innerHTML = `
-        <span class="mb-4 text-xs rounded-full btn-secondary h-8 w-8 flex items-center justify-center">
+    messageDetailsDiv.className = `flex flex-row space-x-3 items-center justify-center mb-4`;
+    messageDetailsDiv.innerHTML = `
+        <div class="text-xs rounded-full btn-secondary h-8 w-8 flex items-center justify-center cursor-pointer" title="${user.name}">
           ${genInitials(user)}
-        </span>
-      `; 
-      messages.appendChild(messageContainerDiv);
-      messages.appendChild(messageDetailsDiv);
+        </div>
+        <div class="message-sent-at text-xs">${formatDate(message.sentAt)}</div>
+      `;
+    messagesTop.appendChild(messageContainerDiv);
+    messagesTop.appendChild(messageDetailsDiv);
 
-      socket.on('userCount', (data) => {
-        let userCount = data.users.length;
-        const otherUser = data.users.filter((id) => id !== user.id)
+    socket.on('userCount', (data) => {
+      let userCount = data.users.length;
+      const otherUser = data.users.filter((id) => id !== user.id);
 
-        if (otherUser) {
-          socket.emit('readMessage', { chatId: chatId, messageId: message.id })
-        }
-      })
-    });
-
-
-
-
-    document.getElementById('chat-form').addEventListener('submit', (e) => {
-      e.preventDefault()
-      const messageInput = document.getElementById('message-input');
-      const content = messageInput.value.trim();
-      if (content) {
-        socket.emit('sendMessage', { userId: user.id, chatId: chatId, content: content });
-        messageInput.value = '';
+      if (otherUser) {
+        socket.emit('readMessage', { chatId: chatId, messageId: message.id });
       }
     });
+  });
 
-    document.getElementById('messages').addEventListener('scroll', () => {
-      const messagesContainer = document.getElementById('messages');
-      if (messagesContainer.scrollTop === 0) {
-        const unreadMessageIds = Array.from(messagesContainer.querySelectorAll('div:not(.text-green-500)'))
-          .map((div) => div.dataset.messageId);
-        if (unreadMessageIds.length > 0) {
-          socket.emit('readMessages', { userId: currentUserId, messageIds: unreadMessageIds });
-        }
-      }
-    });
+  document.getElementById('chat-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const messageInput = document.getElementById('message-input');
+    const content = messageInput.value.trim();
+    if (content) {
+      socket.emit('sendMessage', {
+        userId: user.id,
+        chatId: chatId,
+        content: content,
+      });
+      messageInput.value = '';
+    }
+  });
+
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', { hour12: true });
+  }
 </script>
 {% endblock %}

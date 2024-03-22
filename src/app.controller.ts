@@ -203,6 +203,20 @@ export class AppController {
   }
 
   @UseGuards(AccessTokenGuard)
+  @Get('/workspace/chats/invitees/:inviteeId')
+  public async createorFindWorkspaceChatForUserWithInvitee(
+    @Req() req: RequestUser,
+    @Res() res: Response,
+    @Param('inviteeId', ParseUUIDPipe) inviteeId: string,
+  ) {
+    return await this.appService.createOrFindChatforUserWithInvitee(
+      req,
+      res,
+      inviteeId,
+    );
+  }
+
+  @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs')
   public async getWorkspaceHubs(@Req() req: RequestUser, @Res() res: Response) {
     return await this.appService.getWorkspaceHubs(req, res);

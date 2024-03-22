@@ -317,7 +317,6 @@ htmx.defineExtension('load-templates', {
                 },
             );
             const data = await res.json();
-            console.log(data.url);
         } catch (e) {
             console.log(e);
         }
