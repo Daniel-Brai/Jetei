@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   UseGuards,
   InternalServerErrorException,
+  Response,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { RequestUser } from '@/interfaces';
@@ -286,6 +287,11 @@ export class AppController {
       res,
     );
   }
+
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles(UserRole['OWNER'], UserRole['EDITOR'])
+  @Get('/workspace/hubs/:hubId/notes/:noteId/links')
+  public async getNotesLinks(@Param('hubId', ParseUUIDPipe) hubId: string, @Param('noteId') noteId: string, @Req() req: RequestUser, @Res() res: Response) {}
 
   @UseGuards(AccessTokenGuard)
   @Get('/workspace/hubs/:hubId/invitees/:inviteeId/edit')

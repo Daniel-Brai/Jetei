@@ -39,7 +39,7 @@ model Hub {
   name        String    @db.VarChar(255)
   description String?
   photo       String?
-  user        User      @relation("HubOwner", fields: [userId], references: [id])
+  user        User      @relation("HubOwner", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   userId      String
   notes       Note[]    @relation("IsConnectedTo")
   invitee     Invitee[] @relation("HubInvitee")
@@ -58,7 +58,7 @@ model Invitee {
   role         UserRole
   tokens       AuthToken[]
   participants ChatParticipant[]
-  hub          Hub               @relation("HubInvitee", fields: [hubId], references: [id])
+  hub          Hub               @relation("HubInvitee", fields: [hubId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 }
@@ -68,7 +68,7 @@ model Profile {
   name   String?
   avatar String?
   bio    String?
-  user   User    @relation(fields: [userId], references: [id])
+  user   User    @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   userId String  @unique
 }
 
@@ -76,8 +76,8 @@ model AuthToken {
   id                String   @id @default(uuid())
   userId            String?
   inviteeId         String?
-  user              User?    @relation(fields: [userId], references: [id])
-  invitee           Invitee? @relation(fields: [inviteeId], references: [id])
+  user              User?    @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  invitee           Invitee? @relation(fields: [inviteeId], references: [id], onUpdate: Cascade, onDelete: NoAction)
   name              String?
   content           String?  @unique
   expiryInMilliSecs String
@@ -91,11 +91,11 @@ model Note {
   name        String
   markdown    String?
   text        String?
-  hub         Hub      @relation("IsConnectedTo", fields: [hubId], references: [id])
+  hub         Hub      @relation("IsConnectedTo", fields: [hubId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   hubId       String
   links       Link[]   @relation("SourceLinks")
   targetLink  Link?    @relation("TargetLinks")
-  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdBy   User     @relation(fields: [createdById], references: [id], onUpdate: Cascade, onDelete: Cascade)
   createdById String
   updatedById String?
   createdAt   DateTime @default(now())
@@ -105,7 +105,7 @@ model Note {
 model Bookmark {
   id          String   @id @default(uuid())
   userId      String?
-  user        User?    @relation(fields: [userId], references: [id])
+  user        User?    @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   name        String
   content     String
   url         String?
@@ -117,9 +117,9 @@ model Bookmark {
 
 model Link {
   id           String   @id @default(uuid())
-  sourceNote   Note     @relation("SourceLinks", fields: [sourceNoteId], references: [id])
+  sourceNote   Note     @relation("SourceLinks", fields: [sourceNoteId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   sourceNoteId String
-  targetNote   Note?    @relation("TargetLinks", fields: [targetNoteId], references: [id])
+  targetNote   Note?    @relation("TargetLinks", fields: [targetNoteId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   targetNoteId String?  @unique
   createdById  String?
   createdAt    DateTime @default(now())
@@ -131,9 +131,9 @@ model Link {
 model ChatParticipant {
   id        String   @id @default(uuid())
   userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   inviteeId String?
-  invitee   Invitee? @relation(fields: [inviteeId], references: [id])
+  invitee   Invitee? @relation(fields: [inviteeId], references: [id], onUpdate: Cascade, onDelete: NoAction)
   chats     Chat[]   @relation("ParticipantChats")
 
   @@index([userId, inviteeId])
@@ -155,7 +155,7 @@ model Message {
   senderId String
   isRead   Boolean   @default(false)
   chatId   String
-  chat     Chat      @relation(fields: [chatId], references: [id])
+  chat     Chat      @relation(fields: [chatId], references: [id], onUpdate: Cascade, onDelete: Cascade)
 }
 
 enum UserRole {
