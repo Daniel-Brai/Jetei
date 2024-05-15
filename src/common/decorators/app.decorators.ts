@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { IsFileOptions } from '@/interfaces';
 import { applyDecorators, Controller } from '@nestjs/common';
 import {

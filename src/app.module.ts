@@ -18,6 +18,8 @@ import { WebsocketModule } from '@/infra/gateways/websockets/websockets.module';
 import { MailerModule } from '@/lib/mailer/mailer.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CacheModule } from '@nestjs/cache-manager';
+import { RedisOptions } from './lib/redis/redis.provider';
 
 const site_name = SiteConfig.name;
 const node_env = AppConfig.environment.NODE_ENV;
@@ -36,6 +38,7 @@ const node_env = AppConfig.environment.NODE_ENV;
       ],
     } as Params),
     PrismaModule,
+    CacheModule.registerAsync(RedisOptions),
     APIV1Module,
     WebsocketModule,
     MailerModule,

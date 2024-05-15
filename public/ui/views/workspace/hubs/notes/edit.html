@@ -540,7 +540,7 @@
     const lineHeight = 20;
     const rect = textareaElement.getBoundingClientRect();
     const top = rect.top + numLineBreaks * lineHeight;
-    const left = rect.left + (lastLineBreakIndex > -1 ? textareaElement.value.slice(lastLineBreakIndex + 1, selectionStart).length * 8 : textBeforeCursor.length * 8); // Assuming a monospace font with a character width of 8px
+    const left = rect.left + (lastLineBreakIndex > -1 ? textareaElement.value.slice(lastLineBreakIndex + 1, selectionStart).length * 8 : textBeforeCursor.length * 8); 
 
     return { top, left };
   }
