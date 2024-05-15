@@ -8,7 +8,6 @@ import {
   ParseUUIDPipe,
   UseGuards,
   InternalServerErrorException,
-  Response,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { RequestUser } from '@/interfaces';
