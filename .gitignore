@@ -4,6 +4,9 @@
 /build
 /public/assets/css/globals.min.css
 
+# credentails
+jetei-dev.pem
+
 # Logs
 logs
 *.log

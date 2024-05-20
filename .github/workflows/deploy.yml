@@ -1,0 +1,23 @@
+name: Deploy and Restart
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploying Jetei
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploying application to EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY  }}
+          HOSTNAME: ${{ secrets.SERVER_HOST  }}
+          USER_NAME: ${{ secrets.SERVER_USERNAME  }}
+          DEPLOY_SCRIPT_PATH: ${{ secrets.DEPLOY_SCRIPT_PATH }}
+
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME} "chmod +x ${DEPLOY_SCRIPT_PATH} && ${DEPLOY_SCRIPT_PATH}"
