@@ -14,7 +14,7 @@
     "start:dev": "concurrently \"npm run watch:css\" \"npm run start:app-dev\"",
     "start:app-dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/src/main",
+    "start:prod": "node dist/src/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "prisma:deploy": "npx prisma migrate deploy",
