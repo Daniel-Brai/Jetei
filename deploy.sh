@@ -2,12 +2,8 @@
 
 echo "========Starting deployment process========"
 
-# start ssh agent
-eval $(ssh-agent -s)
-
 # Add the SSH key to the ssh-agent
 ssh-add ~/.ssh/jetei_dev_github
-ssh -T git@github.com
 
 echo "========Pulling new API changes========"
 
