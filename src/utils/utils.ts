@@ -20,3 +20,8 @@ export const getCircularReplacer = () => {
     return value;
   };
 };
+
+export function customJSONStringify(obj) {
+  const replacer = getCircularReplacer();
+  return JSON.stringify(obj, replacer);
+}
