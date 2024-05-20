@@ -4,9 +4,6 @@ set -e
 
 echo "========Starting deployment process========"
 
-# start ssh-agent
-eval $(ssh-agent -s)
-
 # Add the SSH key to the ssh-agent
 ssh-add ~/.ssh/jetei_dev_github
 ssh -T git@github.com
@@ -15,7 +12,7 @@ echo "========Pulling new API changes========"
 
 # download new version of our application
 cd /home/ubuntu/jetei-dev
-git pull git@github.com:Daniel-Brai/Jetei.git
+git pull origin main 
 
 # install all the dependencies
 echo "========Installing dependencies========"
