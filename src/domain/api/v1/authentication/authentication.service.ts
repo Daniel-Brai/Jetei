@@ -243,6 +243,8 @@ export class AuthenticationService {
           api_description: 'Proceeding to your workspace...',
         };
 
+        const responseData = JSON.stringify(response);
+
         res
           .cookie('accessToken', accessToken, {
             httpOnly: true,
@@ -263,7 +265,7 @@ export class AuthenticationService {
             sameSite: 'lax',
           });
 
-        return res.json(response);
+        return res.send(responseData);
       } else if (
         query.type === 'member' &&
         query.token !== null &&
