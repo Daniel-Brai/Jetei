@@ -25,13 +25,12 @@ pnpm run prisma:migrate
 
 # build the application
 echo "========Building the application========"
-pnpm run build:css
-pnpm run build
+pnpm run build:css && pnpm run build
 
 # run the application
 echo "=====Starting the application========="
 cd ~
-pm2 start jetei --watch
+pm2 restart /dist/src/main.js --watch
 pm2 save --force
 
 echo "✨ Deployment process completed"
