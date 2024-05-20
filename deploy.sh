@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 echo "========Starting deployment process========"
 
 # start ssh-agent
