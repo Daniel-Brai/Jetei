@@ -150,7 +150,7 @@ export class AuthenticationService {
           to: d.email,
           templatePath: './registration-successful',
           data: {
-            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/verification?token=${d.token}` : `${this.appConfig.environment.PROD_URL}/verification?token=${d.token}`}`,
+            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/verification?token=${d.token}` : `${this.appConfig.environment.PROD_URL}/account/verification?token=${d.token}`}`,
           },
         }),
       );
