@@ -1,8 +1,9 @@
 #!/bin/bash
 
-set -e
-
 echo "========Starting deployment process========"
+
+# start ssh agent
+eval $(ssh-agent -s)
 
 # Add the SSH key to the ssh-agent
 ssh-add ~/.ssh/jetei_dev_github
