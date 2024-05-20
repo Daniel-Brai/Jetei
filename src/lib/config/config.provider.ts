@@ -14,7 +14,7 @@ export const AppConfig: IAppConfig = {
     NODE_ENV: configService.getOrThrow<string>('NODE_ENV'),
     PORT: Number(configService.get<number>('PORT') || 3000),
     WS_PORT: Number(configService.get<number>('WS_PORT') || 3001),
-    PROD_URL: configService.get<string>('PROD_URL'),
+    PROD_URL: configService.get<string>('PROD_URL') || 'http://16.171.141.105',
     FLAGS: configService.get<string>('FLAGS'),
   },
   authentication: {

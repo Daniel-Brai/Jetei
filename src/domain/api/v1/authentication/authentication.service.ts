@@ -150,7 +150,7 @@ export class AuthenticationService {
           to: d.email,
           templatePath: './registration-successful',
           data: {
-            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/verification?token=${d.token}` : `${this.appConfig.environment.NODE_ENV}/verification?token=${d.token}`}`,
+            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/verification?token=${d.token}` : `${this.appConfig.environment.PROD_URL}/verification?token=${d.token}`}`,
           },
         }),
       );
@@ -419,7 +419,7 @@ export class AuthenticationService {
           to: d.email,
           templatePath: './verification-successful',
           data: {
-            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/login` : `${this.appConfig.environment.NODE_ENV}/login`}`,
+            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/login` : `${this.appConfig.environment.PROD_URL}/login`}`,
           },
         }),
       );
@@ -506,7 +506,7 @@ export class AuthenticationService {
           to: d.email,
           templatePath: './reset-password-started',
           data: {
-            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/reset-password?token=${d.token}` : `${this.appConfig.environment.NODE_ENV}/account/reset-password?token=${d.token}`}`,
+            url: `${this.appConfig.environment.NODE_ENV === 'development' ? `http://localhost:${this.appConfig.environment.PORT}/account/reset-password?token=${d.token}` : `${this.appConfig.environment.PROD_URL}/account/reset-password?token=${d.token}`}`,
           },
         }),
       );
