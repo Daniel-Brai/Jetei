@@ -263,7 +263,7 @@ export class AuthenticationService {
             sameSite: 'lax',
           });
 
-        return res.send(response);
+        return res.json(response);
       } else if (
         query.type === 'member' &&
         query.token !== null &&
