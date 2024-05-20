@@ -1,5 +1,5 @@
-import { NestFactory, Reflector } from '@nestjs/core';
-import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AppConfig } from '@/lib/config/config.provider';
@@ -19,7 +19,6 @@ async function bootstrap() {
     bufferLogs: true,
   });
   const logger = app.get(Logger);
-  const reflector = app.get(Reflector);
   const port = AppConfig.environment.PORT;
   const node_env = AppConfig.environment.NODE_ENV;
   const nunjucks_options: nunjucks.ConfigureOptions = {
@@ -44,10 +43,7 @@ async function bootstrap() {
   app.useWebSocketAdapter(new IoAdapter());
 
   // pipes, filters and interceptors
-  app.useGlobalInterceptors(
-    new LoggerErrorInterceptor(),
-    new ClassSerializerInterceptor(reflector),
-  );
+  app.useGlobalInterceptors(new LoggerErrorInterceptor());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
