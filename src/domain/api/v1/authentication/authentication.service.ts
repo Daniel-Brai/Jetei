@@ -241,11 +241,9 @@ export class AuthenticationService {
           type: 'success',
           api_message: 'Login successful',
           api_description: 'Proceeding to your workspace...',
-        } as APIResponse<any>;
+        };
 
-        const responseData = JSON.stringify(response);
-
-        return res
+        res
           .cookie('accessToken', accessToken, {
             httpOnly: true,
             secure:
@@ -263,8 +261,9 @@ export class AuthenticationService {
                 : false,
             expires: new Date(Date.now() + 36000000),
             sameSite: 'lax',
-          })
-          .send(responseData);
+          });
+
+        return res.send(response);
       } else if (
         query.type === 'member' &&
         query.token !== null &&
