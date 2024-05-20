@@ -30,7 +30,6 @@ import {
 import { MailerEvent } from '@/common/events/app.events';
 import { CloudinaryService } from '@/lib/cloudinary/cloudinary.service';
 import { CreateBookmarkDto } from '@/common/dtos/app.dtos';
-import { customJSONStringify } from '@/utils/utils';
 
 @Injectable()
 export class AuthenticationService {
@@ -244,6 +243,8 @@ export class AuthenticationService {
           api_description: 'Proceeding to your workspace...',
         } as APIResponse<any>;
 
+        const responseData = JSON.stringify(response);
+
         return res
           .cookie('accessToken', accessToken, {
             httpOnly: true,
@@ -263,7 +264,7 @@ export class AuthenticationService {
             expires: new Date(Date.now() + 36000000),
             sameSite: 'lax',
           })
-          .send(customJSONStringify(response));
+          .send(responseData);
       } else if (
         query.type === 'member' &&
         query.token !== null &&
