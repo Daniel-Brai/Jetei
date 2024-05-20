@@ -32,7 +32,6 @@ pnpm run build:css && pnpm run build
 # run the application
 echo "=====Starting the application========="
 cd ~
-pm2 restart jetei-dev/dist/src/main.js --watch
-pm2 save --force
+pm2 restart jetei --watch && pm2 save --force
 
 echo "✨ Deployment process completed"
